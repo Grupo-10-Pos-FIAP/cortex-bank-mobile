@@ -1,37 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:cortex_bank_mobile/pages/home_page.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'package:cortex_bank_mobile/app.dart';
+import 'package:cortex_bank_mobile/core/di/injection.dart';
+import 'package:cortex_bank_mobile/core/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
+import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: '.env');
   } catch (e) {
-    print("Erro ao carregar .env: $e");
+    // ignore: avoid_print
+    print('Erro ao carregar .env: $e');
   }
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const App());
+  configureDependencies();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(getIt<IAuthRepository>())..loadCurrentUser(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => TransactionsProvider(getIt<ITransactionsRepository>()),
+        ),
+      ],
+      child: const App(),
+    ),
+  );
 }
-
-class App extends StatelessWidget {
-  const App({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Cortex Bank Mobile',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const HomePage(title: 'Cortex Bank Mobile Home Page'),
-    );
-  }
-}
-
