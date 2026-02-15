@@ -1,0 +1,25 @@
+import 'package:cortex_bank_mobile/core/models/user.dart';
+import 'package:cortex_bank_mobile/core/utils/failure.dart';
+import 'package:cortex_bank_mobile/core/utils/result.dart';
+import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_remote_datasource.dart';
+
+/// Fake implementation: any non-empty user/pass authenticates. Replace with Firebase Auth when ready.
+class AuthRemoteDataSourceFake implements AuthRemoteDataSource {
+  @override
+  Future<Result<User>> signIn(String email, String password) async {
+    final e = email.trim();
+    final p = password.trim();
+    if (e.isEmpty || p.isEmpty) {
+      return FailureResult(
+        const Failure(message: 'Email e senha são obrigatórios'),
+      );
+    }
+    return Success(
+      User(
+        id: 'fake-${DateTime.now().millisecondsSinceEpoch}',
+        name: e,
+        token: 'fake-token-$e',
+      ),
+    );
+  }
+}
