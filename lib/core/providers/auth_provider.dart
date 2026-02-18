@@ -56,6 +56,26 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> signUp(String fullName, String email, String password) async {
+    _loading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final result = await _authRepository.signUp(fullName, email, password);
+    result.fold(
+      (u) {
+        _user = u;
+        _errorMessage = null;
+      },
+      (f) {
+        _user = null;
+        _errorMessage = f.message;
+      },
+    );
+    _loading = false;
+    notifyListeners();
+  }
+
   Future<void> signOut() async {
     _loading = true;
     notifyListeners();

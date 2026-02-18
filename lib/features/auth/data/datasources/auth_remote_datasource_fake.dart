@@ -18,8 +18,39 @@ class AuthRemoteDataSourceFake implements AuthRemoteDataSource {
       User(
         id: 'fake-${DateTime.now().millisecondsSinceEpoch}',
         name: e,
+        email: e,
         token: 'fake-token-$e',
       ),
     );
+  }
+
+  @override
+  Future<Result<User>> signUp(String fullName, String email, String password) async {
+    final e = email.trim();
+    final p = password.trim();
+    final n = fullName.trim();
+    if (e.isEmpty || p.isEmpty || n.isEmpty) {
+      return FailureResult(
+        const Failure(message: 'Todos os campos são obrigatórios'),
+      );
+    }
+    return Success(
+      User(
+        id: 'fake-${DateTime.now().millisecondsSinceEpoch}',
+        name: n,
+        email: e,
+        token: 'fake-token-$e',
+      ),
+    );
+  }
+
+  @override
+  Future<Result<User?>> getCurrentUser() async {
+    return const Success(null);
+  }
+
+  @override
+  Future<Result<void>> signOut() async {
+    return const Success(null);
   }
 }
