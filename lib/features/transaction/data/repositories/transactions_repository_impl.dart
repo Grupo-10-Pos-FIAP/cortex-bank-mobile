@@ -1,4 +1,5 @@
 import 'package:cortex_bank_mobile/core/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
 import 'package:cortex_bank_mobile/core/models/transaction.dart';
 import 'package:cortex_bank_mobile/core/utils/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
@@ -16,7 +17,8 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       await _dataSource.add(transaction);
       return const Success(null);
     } catch (e) {
-      return FailureResult(Failure(message: e.toString()));
+      safeLogError('Erro ao adicionar transação', e);
+      return FailureResult(Failure(message: 'Erro ao adicionar transação'));
     }
   }
 
@@ -26,7 +28,8 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       final list = await _dataSource.getAll();
       return Success(list);
     } catch (e) {
-      return FailureResult(Failure(message: e.toString()));
+      safeLogError('Erro ao obter transações', e);
+      return FailureResult(Failure(message: 'Erro ao obter transações'));
     }
   }
 
@@ -36,7 +39,8 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       await _dataSource.delete(id);
       return const Success(null);
     } catch (e) {
-      return FailureResult(Failure(message: e.toString()));
+      safeLogError('Erro ao deletar transação', e);
+      return FailureResult(Failure(message: 'Erro ao deletar transação'));
     }
   }
 
@@ -46,7 +50,8 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       final summary = await _dataSource.getBalanceSummary();
       return Success(summary);
     } catch (e) {
-      return FailureResult(Failure(message: e.toString()));
+      safeLogError('Erro ao obter resumo de saldo', e);
+      return FailureResult(Failure(message: 'Erro ao obter resumo de saldo'));
     }
   }
 }

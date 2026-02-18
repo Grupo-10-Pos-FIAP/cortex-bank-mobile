@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/core/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
@@ -19,36 +20,47 @@ class _ExtratoPageState extends State<ExtratoPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = context.read<AuthProvider>();
-      if (!auth.isAuthenticated) {
-        Navigator.of(context).pushReplacementNamed('/login');
-        return;
-      }
+      // Com login obrigatório: redirecionar se não autenticado
+      // final auth = context.read<AuthProvider>();
+      // if (!auth.isAuthenticated) {
+      //   Navigator.of(context).pushReplacementNamed('/login');
+      //   return;
+      // }
       context.read<TransactionsProvider>().loadTransactions();
     });
+  }
+
+  Future<void> _onSignOut() async {
+    await context.read<AuthProvider>().signOut();
+    if (!mounted) return;
+    // Com login obrigatório: redirecionar para login após logout
+    // Navigator.of(context).pushReplacementNamed('/login');
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        if (!auth.isAuthenticated) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+        // Com login obrigatório: mostrar loading enquanto não autenticado
+        // if (!auth.isAuthenticated) {
+        //   return const Scaffold(
+        //     body: Center(child: CircularProgressIndicator()),
+        //   );
+        // }
         return Scaffold(
           appBar: AppBar(
             title: const Text('Extrato'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  await auth.signOut();
-                  if (!mounted) return;
-                  Navigator.of(context).pushReplacementNamed('/login');
-                },
-              ),
+              if (auth.isAuthenticated)
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: _onSignOut,
+                ),
+              // Com login obrigatório: mostrar logout sempre (e redirecionar no _onSignOut)
+              // IconButton(
+              //   icon: const Icon(Icons.logout),
+              //   onPressed: _onSignOut,
+              // ),
             ],
           ),
           body: Consumer<TransactionsProvider>(
@@ -59,12 +71,16 @@ class _ExtratoPageState extends State<ExtratoPage> {
               if (tx.errorMessage != null && tx.transactions.isEmpty) {
                 return Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(tx.errorMessage!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
+                        Text(
+                          tx.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: AppDesignTokens.spacingMd),
                         AppButton(
                           label: 'Tentar novamente',
                           onPressed: () => tx.loadTransactions(),
@@ -76,11 +92,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
               }
               final list = tx.transactions;
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
                 itemCount: list.length,
                 itemBuilder: (context, i) {
                   final t = list[i];
                   return _TransactionTile(
+                    key: ValueKey(t.id),
                     transaction: t,
                     onDelete: () => tx.deleteTransaction(t.id),
                   );
@@ -100,6 +117,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
 
 class _TransactionTile extends StatelessWidget {
   const _TransactionTile({
+    super.key,
     required this.transaction,
     required this.onDelete,
   });
@@ -111,7 +129,7 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIncome = transaction.type == model.TransactionType.income;
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppDesignTokens.spacingSm),
       child: ListTile(
         title: Text(transaction.title),
         subtitle: Text(
@@ -123,8 +141,10 @@ class _TransactionTile extends StatelessWidget {
             Text(
               formatCentsToBRL(isIncome ? transaction.amountCents : -transaction.amountCents),
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isIncome ? Colors.green : Colors.red,
+                fontWeight: AppDesignTokens.fontWeightBold,
+                color: isIncome
+                    ? AppDesignTokens.colorFeedbackSuccess
+                    : AppDesignTokens.colorFeedbackError,
               ),
             ),
             IconButton(
