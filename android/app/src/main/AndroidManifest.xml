@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Rede: Firebase, login, url_launcher (mailto) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:label="cortex_bank_mobile"
+        android:label="Cortex Bank"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
