@@ -90,6 +90,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppDesignTokens.colorBgDefault,
+
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppDesignTokens.spacingLg),

@@ -48,21 +48,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
         //   );
         // }
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Extrato'),
-            actions: [
-              if (auth.isAuthenticated)
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: _onSignOut,
-                ),
-              // Com login obrigatório: mostrar logout sempre (e redirecionar no _onSignOut)
-              // IconButton(
-              //   icon: const Icon(Icons.logout),
-              //   onPressed: _onSignOut,
-              // ),
-            ],
-          ),
+          backgroundColor: AppDesignTokens.colorBgDefault,
           body: Consumer<TransactionsProvider>(
             builder: (context, tx, _) {
               if (tx.loading && tx.transactions.isEmpty) {

@@ -79,7 +79,9 @@ class _TransactionFormPageState extends State<TransactionFormPage> {
       type: _type,
       date: _date,
     );
-    final ok = await context.read<TransactionsProvider>().addTransaction(transaction);
+    final ok = await context.read<TransactionsProvider>().addTransaction(
+      transaction,
+    );
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
@@ -89,78 +91,8 @@ class _TransactionFormPageState extends State<TransactionFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Nova transação')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppTextField(
-                    label: 'Título',
-                    controller: _titleController,
-                    validator: requiredField,
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingMd),
-                  AppTextField(
-                    label: 'Valor (ex: 100 ou 99,50)',
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: _validateAmount,
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingMd),
-                  SegmentedButton<model.TransactionType>(
-                    segments: const [
-                      ButtonSegment(
-                        value: model.TransactionType.income,
-                        label: Text('Receita'),
-                        icon: Icon(Icons.arrow_downward),
-                      ),
-                      ButtonSegment(
-                        value: model.TransactionType.expense,
-                        label: Text('Despesa'),
-                        icon: Icon(Icons.arrow_upward),
-                      ),
-                    ],
-                    selected: {_type},
-                    onSelectionChanged: (s) => setState(() => _type = s.first),
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingMd),
-                  ListTile(
-                    title: const Text('Data'),
-                    subtitle: Text(
-                      '${_date.day}/${_date.month}/${_date.year}',
-                    ),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: _pickDate,
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingLg),
-                  Consumer<TransactionsProvider>(
-                    builder: (context, tx, _) {
-                      return AppButton(
-                        label: 'Salvar',
-                        loading: tx.loading,
-                        onPressed: _onSubmit,
-                      );
-                    },
-                  ),
-                  if (context.watch<TransactionsProvider>().errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppDesignTokens.spacingMd),
-                      child: Text(
-                        context.watch<TransactionsProvider>().errorMessage!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: AppDesignTokens.colorBgDefault,
+      body: SafeArea(child: Center(child: Text("Transaction Page"))),
     );
   }
 }
