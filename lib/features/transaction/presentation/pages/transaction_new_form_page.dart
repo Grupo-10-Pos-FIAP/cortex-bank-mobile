@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cortex_bank_mobile/core/models/transaction.dart' as model;
-import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 // Ao descomentar checagem de auth em _onSubmit/initState: adicione import auth_provider
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';

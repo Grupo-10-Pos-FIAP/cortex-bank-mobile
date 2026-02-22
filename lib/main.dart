@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:cortex_bank_mobile/app.dart';
 import 'package:cortex_bank_mobile/core/di/injection.dart';
-import 'package:cortex_bank_mobile/core/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';

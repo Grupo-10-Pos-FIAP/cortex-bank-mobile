@@ -1,8 +1,7 @@
-import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
-import 'package:cortex_bank_mobile/features/transaction/pages/transaction_form_page.dart';
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
 import 'package:flutter/material.dart';
-import 'package:cortex_bank_mobile/features/extrato/pages/extrato_page.dart';
-import 'package:cortex_bank_mobile/features/transaction/pages/transaction_new_form_page.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

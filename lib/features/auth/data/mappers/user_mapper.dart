@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/core/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 
 /// Mapeia documento Firestore da coleção `users` para o modelo [User].
 class UserMapper {

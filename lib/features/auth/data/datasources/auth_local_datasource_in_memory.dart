@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/core/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_local_datasource.dart';
 
 /// In-memory implementation. TODO: replace with local persistence (e.g. Hive/SecureStorage).

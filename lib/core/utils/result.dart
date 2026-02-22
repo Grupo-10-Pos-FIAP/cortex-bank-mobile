@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/core/utils/failure.dart';
+import 'package:cortex_bank_mobile/core/errors/failure.dart';
 
 /// Base type for operations that can succeed or fail.
 sealed class Result<T> {

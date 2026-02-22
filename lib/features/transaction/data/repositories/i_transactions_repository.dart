@@ -1,5 +1,5 @@
-import 'package:cortex_bank_mobile/core/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/core/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 
 abstract class ITransactionsRepository {

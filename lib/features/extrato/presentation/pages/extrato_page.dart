@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cortex_bank_mobile/core/providers/auth_provider.dart';
-import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
+import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
-import 'package:cortex_bank_mobile/core/models/transaction.dart' as model;
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
 
 class ExtratoPage extends StatefulWidget {
   const ExtratoPage({super.key});

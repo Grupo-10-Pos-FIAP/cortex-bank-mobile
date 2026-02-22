@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:cortex_bank_mobile/core/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/core/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
 
 class TransactionsProvider extends ChangeNotifier {

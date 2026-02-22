@@ -1,7 +1,7 @@
-import 'package:cortex_bank_mobile/core/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
-import 'package:cortex_bank_mobile/core/models/transaction.dart';
-import 'package:cortex_bank_mobile/core/utils/failure.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';

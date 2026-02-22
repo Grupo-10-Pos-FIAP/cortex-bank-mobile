@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/core/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 
 abstract class AuthLocalDataSource {
   Future<void> saveUser(User user);

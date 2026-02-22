@@ -1,5 +1,5 @@
-import 'package:cortex_bank_mobile/core/models/user.dart';
-import 'package:cortex_bank_mobile/core/utils/failure.dart';
+import 'package:cortex_bank_mobile/features/auth/models/user.dart';
+import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_remote_datasource.dart';
 

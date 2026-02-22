@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/services/firebase_service.dart';
+import 'package:cortex_bank_mobile/core/services/firebase_service.dart';
 
 class MockDatabase implements DatabaseService {
   bool called = false;

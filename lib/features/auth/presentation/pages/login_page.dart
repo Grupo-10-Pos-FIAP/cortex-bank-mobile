@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cortex_bank_mobile/core/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
-import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_page_header.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_field_styles.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -107,53 +109,14 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: AppDesignTokens.spacing2xl),
-                      // Logo
-                      Text(
-                        'CortexBank',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: AppDesignTokens.fontWeightBold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingSm),
-                      // Tagline
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppDesignTokens.colorContentInverse,
-                          ),
-                          children: [
-                            const TextSpan(text: 'O futuro das suas finanças merece esse '),
-                            TextSpan(
-                              text: 'up',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: AppDesignTokens.fontWeightBold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingXl),
-                      // Título
-                      Text(
-                        'Acesso para clientes',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppDesignTokens.colorContentInverse,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingXl),
+                      const AuthPageHeader(title: 'Acesso para clientes'),
                       // Mensagem de erro
                       if (auth.errorMessage != null)
                         AppErrorMessage(
                           message: auth.errorMessage,
                           onDismiss: () => auth.clearError(),
                         ),
-                      // Campo Email — erro apenas ao sair do campo (blur)
+                      // Campo Email — validação ao sair do campo (blur)
                       AppTextField(
                         formFieldKey: _emailFieldKey,
                         label: 'Email',
@@ -164,21 +127,17 @@ class _LoginPageState extends State<LoginPage> {
                         prefixIcon: const Icon(Icons.email_outlined, color: AppDesignTokens.colorContentInverse),
                         hintText: 'Digite seu email',
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(context).requestFocus(_passwordFocusNode);
-                        },
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).requestFocus(_passwordFocusNode),
                         showRequiredIndicator: true,
                         autofocus: true,
-                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppDesignTokens.colorContentInverse,
-                          fontWeight: AppDesignTokens.fontWeightMedium,
-                        ),
+                        labelStyle: AuthFieldStyles.labelStyle(context),
                         fillColor: AppDesignTokens.colorBgDefault,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppDesignTokens.colorContentInverse),
-                        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppDesignTokens.colorGray400),
+                        style: AuthFieldStyles.inputStyle(context),
+                        hintStyle: AuthFieldStyles.hintStyle(context),
                       ),
                       const SizedBox(height: AppDesignTokens.spacingMd),
-                      // Campo Senha — erro ao blur (clicar fora) ou ao clicar em Entrar
+                      // Campo Senha — validação ao blur ou ao submeter
                       AppTextField(
                         formFieldKey: _passwordFieldKey,
                         label: 'Senha',
@@ -194,23 +153,17 @@ class _LoginPageState extends State<LoginPage> {
                                 : Icons.visibility_off_outlined,
                             color: AppDesignTokens.colorContentInverse,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
+                          onPressed: () =>
+                              setState(() => _obscurePassword = !_obscurePassword),
                         ),
                         hintText: 'Digite sua senha',
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => _onSubmit(),
                         showRequiredIndicator: true,
-                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppDesignTokens.colorContentInverse,
-                          fontWeight: AppDesignTokens.fontWeightMedium,
-                        ),
+                        labelStyle: AuthFieldStyles.labelStyle(context),
                         fillColor: AppDesignTokens.colorBgDefault,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppDesignTokens.colorContentInverse),
-                        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppDesignTokens.colorGray400),
+                        style: AuthFieldStyles.inputStyle(context),
+                        hintStyle: AuthFieldStyles.hintStyle(context),
                       ),
                       const SizedBox(height: AppDesignTokens.spacingLg),
                       // Botão Entrar

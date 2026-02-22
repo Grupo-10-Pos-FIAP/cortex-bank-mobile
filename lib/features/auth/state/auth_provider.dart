@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:cortex_bank_mobile/core/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -17,6 +17,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
 
   Future<void> loadCurrentUser() async {
+    if (_loading) return;
     _loading = true;
     _errorMessage = null;
     notifyListeners();
@@ -37,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signIn(String email, String password) async {
+    if (_loading) return;
     _loading = true;
     _errorMessage = null;
     notifyListeners();
@@ -57,6 +59,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signUp(String fullName, String email, String password) async {
+    if (_loading) return;
     _loading = true;
     _errorMessage = null;
     notifyListeners();
@@ -77,6 +80,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    if (_loading) return;
     _loading = true;
     notifyListeners();
 

@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cortex_bank_mobile/core/utils/failure.dart';
+import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/firebase_error_translator.dart';
 
 /// Contexto da operação de auth, usado para mensagem genérica.

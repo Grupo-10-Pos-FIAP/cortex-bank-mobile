@@ -1,12 +1,12 @@
-import 'package:cortex_bank_mobile/features/transaction/pages/transaction_form_page.dart';
-import 'package:cortex_bank_mobile/pages/home_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
+import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
 import 'package:flutter/material.dart';
-import 'package:cortex_bank_mobile/core/theme/app_theme.dart';
+import 'package:cortex_bank_mobile/shared/theme/app_theme.dart';
 // Ao descomentar o bloco [home] com login: adicione provider e auth_provider
-import 'package:cortex_bank_mobile/features/auth/pages/login_page.dart';
-import 'package:cortex_bank_mobile/features/auth/pages/register_page.dart';
-import 'package:cortex_bank_mobile/features/extrato/pages/extrato_page.dart';
-import 'package:cortex_bank_mobile/features/transaction/pages/transaction_new_form_page.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/pages/register_page.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_new_form_page.dart';
 
 /// Acesso à plataforma é livre por enquanto; login/cadastro serão exigidos depois.
 /// Para exigir login: descomente o bloco [home] abaixo e use initialRoute: '/login'.

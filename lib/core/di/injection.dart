@@ -9,7 +9,7 @@ import 'package:cortex_bank_mobile/features/transaction/data/datasources/transac
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource_in_memory.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/transactions_repository_impl.dart';
-import 'package:cortex_bank_mobile/services/firebase_service.dart';
+import 'package:cortex_bank_mobile/core/services/firebase_service.dart';
 
 final getIt = GetIt.instance;
 

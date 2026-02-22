@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 
 class AppErrorMessage extends StatelessWidget {
   const AppErrorMessage({
