@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,9 +29,7 @@ Future<void> main() async {
     return;
   }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   configureDependencies();
 
@@ -75,21 +74,27 @@ class _ConfigErrorApp extends StatelessWidget {
                   'Configuração incompleta',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontSize: AppDesignTokens.fontSizeTitle,
+                    fontWeight: AppDesignTokens.fontWeightBold,
                   ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'Verifique o arquivo .env. Faltam variáveis necessárias para o Firebase.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: AppDesignTokens.fontSizeBody,
+                    fontWeight: AppDesignTokens.fontWeightMedium,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Variáveis ausentes: ${missingKeys.join(", ")}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                  style: const TextStyle(
+                    fontSize: AppDesignTokens.fontSizeCaption,
+                    fontFamily: 'monospace',
+                  ),
                 ),
               ],
             ),

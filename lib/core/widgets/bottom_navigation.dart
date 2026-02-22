@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -21,14 +22,14 @@ class NavegacaoPrincipal extends StatefulWidget {
 class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
   int _indiceAtual = 0;
 
-  // Lista das páginas que serão exibidas
+  /* Lista das páginas que serão exibidas */
   final List<Widget> _paginas = [
-    const Center(child: Text('Página Home', style: TextStyle(fontSize: 24))),
+    const Center(child: Text('Página Home', style: TextStyle(fontSize: AppDesignTokens.fontSizeH3))),
     const Center(
-      child: Text('Página de Transações', style: TextStyle(fontSize: 24)),
+      child: Text('Página de Transações', style: TextStyle(fontSize: AppDesignTokens.fontSizeH3)),
     ),
     const Center(
-      child: Text('Página de Perfil', style: TextStyle(fontSize: 24)),
+      child: Text('Página de Perfil', style: TextStyle(fontSize: AppDesignTokens.fontSizeH3)),
     ),
   ];
 
@@ -40,7 +41,7 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(      // Exibe a página de acordo com o índice selecionado
+    return Scaffold(  
       body: _paginas[_indiceAtual],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _indiceAtual,

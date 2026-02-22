@@ -2,7 +2,7 @@ import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.d
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 
-/// In-memory implementation. TODO: replace with Hive/SQLite or MongoDB API.
+/// In-memory implementation. For production, replace with Hive/SQLite or MongoDB API.
 class TransactionsDataSourceInMemory implements TransactionsDataSource {
   final List<Transaction> _list = [];
 
