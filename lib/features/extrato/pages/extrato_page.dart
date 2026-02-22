@@ -1,9 +1,9 @@
+import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:cortex_bank_mobile/core/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/core/models/transaction.dart' as model;
@@ -20,83 +20,79 @@ class _ExtratoPageState extends State<ExtratoPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Com login obrigatório: redirecionar se não autenticado
-      // final auth = context.read<AuthProvider>();
-      // if (!auth.isAuthenticated) {
-      //   Navigator.of(context).pushReplacementNamed('/login');
-      //   return;
-      // }
       context.read<TransactionsProvider>().loadTransactions();
+      context.read<TransactionsProvider>().loadBalanceSummary();
     });
-  }
 
-  Future<void> _onSignOut() async {
-    await context.read<AuthProvider>().signOut();
-    if (!mounted) return;
-    // Com login obrigatório: redirecionar para login após logout
-    // Navigator.of(context).pushReplacementNamed('/login');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        // Com login obrigatório: mostrar loading enquanto não autenticado
-        // if (!auth.isAuthenticated) {
-        //   return const Scaffold(
-        //     body: Center(child: CircularProgressIndicator()),
-        //   );
-        // }
-        return Scaffold(
-          backgroundColor: AppDesignTokens.colorBgDefault,
-          body: Consumer<TransactionsProvider>(
-            builder: (context, tx, _) {
-              if (tx.loading && tx.transactions.isEmpty) {
-                return const AppLoading();
-              }
-              if (tx.errorMessage != null && tx.transactions.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          tx.errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: AppDesignTokens.spacingMd),
-                        AppButton(
-                          label: 'Tentar novamente',
-                          onPressed: () => tx.loadTransactions(),
-                        ),
-                      ],
-                    ),
+    return Scaffold(
+      backgroundColor: AppDesignTokens.colorBgDefault,
+      body: Consumer<TransactionsProvider>(
+        builder: (context, tx, _) {
+          if (tx.loading && tx.transactions.isEmpty) {
+            return const AppLoading();
+          }
+
+          final list = tx.transactions;
+
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Consumer<TransactionsProvider>(
+                  builder: (context, tx, _) {
+                    final saldoReal =
+                        tx.balanceSummary?.totalIncomeCents.toDouble() ?? 0.0;
+                    return AppBalanceCard(
+                      mostrarSaldoInicial: true,
+                      saldo: saldoReal / 100,
+                    );
+                  },
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Text(
+                    "Suas atividades",
+                    style: GoogleFonts.roboto(fontWeight: FontWeight.bold, fontSize: AppDesignTokens.fontSizeBody),
                   ),
-                );
-              }
-              final list = tx.transactions;
-              return ListView.builder(
-                padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
-                itemCount: list.length,
-                itemBuilder: (context, i) {
-                  final t = list[i];
-                  return _TransactionTile(
-                    key: ValueKey(t.id),
-                    transaction: t,
-                    onDelete: () => tx.deleteTransaction(t.id),
-                  );
-                },
-              );
-            },
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => Navigator.of(context).pushNamed('/transaction/new'),
-            child: const Icon(Icons.add),
-          ),
-        );
-      },
+                ),
+              ),
+
+              list.isEmpty
+                  ? SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          tx.errorMessage ?? "Nenhuma transação encontrada",
+                        ),
+                      ),
+                    )
+                  : SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, i) {
+                          final t = list[i];
+                          return _TransactionTile(
+                            key: ValueKey(t.id),
+                            transaction: t,
+                            onDelete: () => tx.deleteTransaction(t.id),
+                          );
+                        }, childCount: list.length),
+                      ),
+                    ),
+            ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).pushNamed('/transaction/new'),
+        backgroundColor: AppDesignTokens.colorPrimary,
+        child: const Icon(Icons.add, color: AppDesignTokens.colorWhite),
+      ),
     );
   }
 }
@@ -125,7 +121,9 @@ class _TransactionTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              formatCentsToBRL(isIncome ? transaction.amountCents : -transaction.amountCents),
+              formatCentsToBRL(
+                isIncome ? transaction.amountCents : -transaction.amountCents,
+              ),
               style: TextStyle(
                 fontWeight: AppDesignTokens.fontWeightBold,
                 color: isIncome

@@ -1,8 +1,9 @@
+import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/core/models/transaction.dart' as model;
 import 'package:cortex_bank_mobile/core/theme/app_design_tokens.dart';
-// Ao descomentar checagem de auth em _onSubmit/initState: adicione import auth_provider
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
@@ -79,7 +80,9 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
       type: _type,
       date: _date,
     );
-    final ok = await context.read<TransactionsProvider>().addTransaction(transaction);
+    final ok = await context.read<TransactionsProvider>().addTransaction(
+      transaction,
+    );
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
@@ -93,69 +96,89 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppTextField(
-                    label: 'Título',
-                    controller: _titleController,
-                    validator: requiredField,
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingMd),
-                  AppTextField(
-                    label: 'Valor (ex: 100 ou 99,50)',
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: _validateAmount,
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingMd),
-                  SegmentedButton<model.TransactionType>(
-                    segments: const [
-                      ButtonSegment(
-                        value: model.TransactionType.income,
-                        label: Text('Receita'),
-                        icon: Icon(Icons.arrow_downward),
-                      ),
-                      ButtonSegment(
-                        value: model.TransactionType.expense,
-                        label: Text('Despesa'),
-                        icon: Icon(Icons.arrow_upward),
-                      ),
-                    ],
-                    selected: {_type},
-                    onSelectionChanged: (s) => setState(() => _type = s.first),
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingMd),
-                  ListTile(
-                    title: const Text('Data'),
-                    subtitle: Text(
-                      '${_date.day}/${_date.month}/${_date.year}',
-                    ),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: _pickDate,
-                  ),
-                  const SizedBox(height: AppDesignTokens.spacingLg),
-                  Consumer<TransactionsProvider>(
-                    builder: (context, tx, _) {
-                      return AppButton(
-                        label: 'Salvar',
-                        loading: tx.loading,
-                        onPressed: _onSubmit,
-                      );
-                    },
-                  ),
-                  if (context.watch<TransactionsProvider>().errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppDesignTokens.spacingMd),
-                      child: Text(
-                        context.watch<TransactionsProvider>().errorMessage!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+          child: AppCardContainer(
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Nova transação',
+                      style: GoogleFonts.roboto(
+                        fontSize: AppDesignTokens.fontSizeTitle,
+                        fontWeight: AppDesignTokens.fontWeightSemibold,
+                        color: AppDesignTokens.colorContentDefault,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 8),
+
+                    AppTextField(
+                      label: 'Título',
+                      controller: _titleController,
+                      validator: requiredField,
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingMd),
+                    AppTextField(
+                      label: 'Valor (ex: 100 ou 99,50)',
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: _validateAmount,
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingMd),
+                    SegmentedButton<model.TransactionType>(
+                      segments: const [
+                        ButtonSegment(
+                          value: model.TransactionType.income,
+                          label: Text('Receita'),
+                          icon: Icon(Icons.arrow_downward),
+                        ),
+                        ButtonSegment(
+                          value: model.TransactionType.expense,
+                          label: Text('Despesa'),
+                          icon: Icon(Icons.arrow_upward),
+                        ),
+                      ],
+                      selected: {_type},
+                      onSelectionChanged: (s) =>
+                          setState(() => _type = s.first),
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingMd),
+                    ListTile(
+                      title: const Text('Data'),
+                      subtitle: Text(
+                        '${_date.day}/${_date.month}/${_date.year}',
+                      ),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: _pickDate,
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingLg),
+                    Consumer<TransactionsProvider>(
+                      builder: (context, tx, _) {
+                        return AppButton(
+                          label: 'Salvar',
+                          loading: tx.loading,
+                          onPressed: _onSubmit,
+                        );
+                      },
+                    ),
+                    if (context.watch<TransactionsProvider>().errorMessage !=
+                        null)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: AppDesignTokens.spacingMd,
+                        ),
+                        child: Text(
+                          context.watch<TransactionsProvider>().errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

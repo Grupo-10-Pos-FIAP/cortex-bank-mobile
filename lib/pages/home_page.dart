@@ -24,17 +24,17 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppDesignTokens.colorBgDefault,
-       appBar: AppBar(
+      appBar: AppBar(
         title: const Text(
           'CortexBank',
           style: TextStyle(
-            color: Color(0xFF00509D), // Azul próximo ao da imagem
-            fontWeight: FontWeight.bold,
+            color: AppDesignTokens.colorPrimary,
+            fontWeight: AppDesignTokens.fontWeightBold,
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0, // Mantém flat como no design moderno
-        centerTitle: false, // Alinhado à esquerda conforme logos costumam ser
+        backgroundColor: AppDesignTokens.colorWhite,
+        elevation: 0, 
+        centerTitle: false,
       ),
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
         },
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           BottomNavigationBarItem(icon: Icon(Icons.repeat), label: 'Transação'),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
