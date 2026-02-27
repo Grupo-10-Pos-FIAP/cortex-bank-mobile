@@ -121,6 +121,7 @@ class AppDesignTokens {
   static const Color colorFeedbackError = Color(0xFFE53935);
   static const Color colorFeedbackInfo = Color(0xFF1C6EA4);
   static const Color colorFeedbackAlert = Color(0xFFD32F2F);
+  static const Color colorFeedbackFavorite = Colors.red;
   static const Color colorFeedbackMuted = colorGray100;
 
   // ---------------------------------------------------------------------------
