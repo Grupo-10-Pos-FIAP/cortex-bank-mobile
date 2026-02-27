@@ -6,11 +6,13 @@ import 'package:google_fonts/google_fonts.dart';
 class AppBalanceCard extends StatefulWidget {
   final bool mostrarSaldoInicial;
   final double saldo;
+  final VoidCallback? onTap;
 
   const AppBalanceCard({
     super.key,
     this.mostrarSaldoInicial = false,
     this.saldo = 5000.00,
+    this.onTap,
   });
 
   @override
@@ -28,7 +30,7 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
 
   @override
   Widget build(BuildContext context) {
-    return AppCardContainer(
+    final content = AppCardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -78,5 +80,14 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
         ],
       ),
     );
+
+    if (widget.onTap != null) {
+      return InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: content,
+      );
+    }
+    return content;
   }
 }

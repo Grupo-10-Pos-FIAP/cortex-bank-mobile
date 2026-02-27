@@ -7,6 +7,7 @@ import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.d
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/register_page.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_new_form_page.dart';
+import 'package:cortex_bank_mobile/core/constants/app_routes.dart';
 
 /// Acesso à plataforma é livre por enquanto; login/cadastro serão exigidos depois.
 /// Para exigir login: descomente o bloco [home] abaixo e use initialRoute: '/login'.
@@ -24,7 +25,7 @@ class App extends StatelessWidget {
       routes: {
         '/login': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),
-        '/extrato': (_) => const ExtratoPage(),
+        AppRoutes.extrato: (_) => const ExtratoPage(),
         '/transaction': (_) => const TransactionFormPage(),
         '/transaction/new': (_) => const TransactionNewFormPage(),
       },
