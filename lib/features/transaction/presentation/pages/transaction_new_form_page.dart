@@ -9,6 +9,9 @@ import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 
+/// accountId fixo até integrar com conta autenticada.
+const String _defaultAccountId = 'mobile-default';
+
 class TransactionNewFormPage extends StatefulWidget {
   const TransactionNewFormPage({super.key});
 
@@ -18,43 +21,35 @@ class TransactionNewFormPage extends StatefulWidget {
 
 class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+  final _fromController = TextEditingController();
+  final _toController = TextEditingController();
   DateTime _date = DateTime.now();
-  model.TransactionType _type = model.TransactionType.expense;
-
-  @override
-  void initState() {
-    super.initState();
-    // Com login obrigatório: redirecionar para login se não autenticado
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   final auth = context.read<AuthProvider>();
-    //   if (!auth.isAuthenticated) {
-    //     Navigator.of(context).pushReplacementNamed('/login');
-    //   }
-    // });
-  }
+  model.TransactionType _type = model.TransactionType.debit;
 
   @override
   void dispose() {
-    _titleController.dispose();
     _amountController.dispose();
+    _fromController.dispose();
+    _toController.dispose();
     super.dispose();
   }
 
   String? _validateAmount(String? value) {
     final err = requiredField(value);
     if (err != null) return err;
-    final parsed = int.tryParse(value!.replaceAll(RegExp(r'[^\d-]'), ''));
-    if (parsed == null) return 'Valor inválido';
+    final s = value!.trim().replaceAll(',', '.');
+    final n = num.tryParse(s);
+    if (n == null || n < 0) return 'Valor inválido';
     return null;
   }
 
-  int _parseAmountCents() {
+  /// Valor em reais (double).
+  double _parseValueReais() {
     final s = _amountController.text.trim().replaceAll(',', '.');
-    final num? n = num.tryParse(s);
+    final n = num.tryParse(s);
     if (n == null) return 0;
-    return (n * 100).round();
+    return n.toDouble();
   }
 
   Future<void> _pickDate() async {
@@ -70,15 +65,17 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
 
   Future<void> _onSubmit() async {
     if (_formKey.currentState?.validate() != true) return;
-    // Com login obrigatório: exigir autenticação para criar transação
-    // final auth = context.read<AuthProvider>();
-    // if (!auth.isAuthenticated) return;
+    final value = _parseValueReais();
+    if (value <= 0) return;
     final transaction = model.Transaction(
       id: 'tx-${DateTime.now().millisecondsSinceEpoch}',
-      title: _titleController.text.trim(),
-      amountCents: _parseAmountCents(),
+      accountId: _defaultAccountId,
       type: _type,
+      value: value,
       date: _date,
+      from: _fromController.text.trim().isEmpty ? null : _fromController.text.trim(),
+      to: _toController.text.trim().isEmpty ? null : _toController.text.trim(),
+      status: 'Pending',
     );
     final ok = await context.read<TransactionsProvider>().addTransaction(
       transaction,
@@ -112,15 +109,8 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-
                     AppTextField(
-                      label: 'Título',
-                      controller: _titleController,
-                      validator: requiredField,
-                    ),
-                    const SizedBox(height: AppDesignTokens.spacingMd),
-                    AppTextField(
-                      label: 'Valor (ex: 100 ou 99,50)',
+                      label: 'Valor em reais (ex: 100 ou 99,50)',
                       controller: _amountController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -128,16 +118,26 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
                       validator: _validateAmount,
                     ),
                     const SizedBox(height: AppDesignTokens.spacingMd),
+                    AppTextField(
+                      label: 'De (origem)',
+                      controller: _fromController,
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingSm),
+                    AppTextField(
+                      label: 'Para (destino)',
+                      controller: _toController,
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingMd),
                     SegmentedButton<model.TransactionType>(
                       segments: const [
                         ButtonSegment(
-                          value: model.TransactionType.income,
-                          label: Text('Receita'),
+                          value: model.TransactionType.credit,
+                          label: Text('Crédito'),
                           icon: Icon(Icons.arrow_downward),
                         ),
                         ButtonSegment(
-                          value: model.TransactionType.expense,
-                          label: Text('Despesa'),
+                          value: model.TransactionType.debit,
+                          label: Text('Débito'),
                           icon: Icon(Icons.arrow_upward),
                         ),
                       ],

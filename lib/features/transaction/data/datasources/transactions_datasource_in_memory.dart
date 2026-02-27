@@ -2,9 +2,13 @@ import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.d
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 
-/// In-memory implementation. For production, replace with Hive/SQLite or MongoDB API.
+/// In-memory implementation. For production, replace with Firestore.
+/// Use [initialData] para iniciar com transações mockadas.
 class TransactionsDataSourceInMemory implements TransactionsDataSource {
-  final List<Transaction> _list = [];
+  TransactionsDataSourceInMemory({List<Transaction>? initialData})
+      : _list = List.from(initialData ?? []);
+
+  final List<Transaction> _list;
 
   @override
   Future<void> add(Transaction transaction) async {
@@ -23,19 +27,20 @@ class TransactionsDataSourceInMemory implements TransactionsDataSource {
 
   @override
   Future<BalanceSummary> getBalanceSummary() async {
-    var income = 0;
-    var expense = 0;
+    var incomeCents = 0;
+    var expenseCents = 0;
     for (final t in _list) {
-      if (t.type == TransactionType.income) {
-        income += t.amountCents;
+      final cents = (t.value.abs() * 100).round();
+      if (t.type == TransactionType.credit) {
+        incomeCents += cents;
       } else {
-        expense += t.amountCents;
+        expenseCents += cents;
       }
     }
     return BalanceSummary(
-      totalIncomeCents: income,
-      totalExpenseCents: expense,
-      balanceCents: income - expense,
+      totalIncomeCents: incomeCents,
+      totalExpenseCents: expenseCents,
+      balanceCents: incomeCents - expenseCents,
     );
   }
 }

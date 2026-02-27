@@ -1,6 +1,7 @@
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_new_transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/core/constants/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +25,10 @@ class _TransactionFormPageState extends State<TransactionFormPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              AppBalanceCard(saldo: saldoReal),
+              AppBalanceCard(
+                saldo: saldoReal,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.extrato),
+              ),
               const AppNewTransactionCard(),
             ],
           ),
