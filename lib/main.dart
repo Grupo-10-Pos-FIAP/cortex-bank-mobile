@@ -29,25 +29,56 @@ Future<void> main() async {
     return;
   }
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    }
+  } on FirebaseException catch (e) {
+    if (e.message != null && e.message!.contains('exists')) {
+      // App [Default] já criado pelo SDK nativo (plist no iOS) — continua
+    } else {
+      safeLogError('Erro ao inicializar Firebase', e);
+      runApp(_StartupErrorApp(message: 'Firebase: ${e.message ?? e.code}'));
+      return;
+    }
+  } catch (e, st) {
+    final msg = e.toString();
+    if (msg.contains('exists') || msg.contains('Default')) {
+      // Firebase já inicializado pelo plist no iOS — continua
+    } else {
+      safeLogError('Erro ao inicializar Firebase', e);
+      runApp(_StartupErrorApp(message: 'Firebase: $e'));
+      return;
+    }
+  }
 
-  configureDependencies();
+  try {
+    configureDependencies();
+  } catch (e, st) {
+    safeLogError('Erro ao configurar dependências', e);
+    runApp(_StartupErrorApp(message: 'Dependências: $e'));
+    return;
+  }
 
-  // Criar e inicializar AuthProvider antes de runApp
-  final authProvider = AuthProvider(getIt<IAuthRepository>());
-  await authProvider.loadCurrentUser();
+  try {
+    final authProvider = AuthProvider(getIt<IAuthRepository>());
+    await authProvider.loadCurrentUser();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: authProvider),
-        ChangeNotifierProvider(
-          create: (_) => TransactionsProvider(getIt<ITransactionsRepository>()),
-        ),
-      ],
-      child: const App(),
-    ),
-  );
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: authProvider),
+          ChangeNotifierProvider(
+            create: (_) => TransactionsProvider(getIt<ITransactionsRepository>()),
+          ),
+        ],
+        child: const App(),
+      ),
+    );
+  } catch (e, st) {
+    safeLogError('Erro ao iniciar app', e);
+    runApp(_StartupErrorApp(message: '$e'));
+  }
 }
 
 /// Tela exibida quando variáveis .env necessárias ao Firebase estão ausentes.
@@ -90,6 +121,52 @@ class _ConfigErrorApp extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Variáveis ausentes: ${missingKeys.join(", ")}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: AppDesignTokens.fontSizeCaption,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tela exibida quando ocorre um erro na inicialização (evita fechar o app).
+class _StartupErrorApp extends StatelessWidget {
+  const _StartupErrorApp({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Cortex Bank Mobile',
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
+                const SizedBox(height: 24),
+                const Text(
+                  'Erro ao iniciar',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppDesignTokens.fontSizeTitle,
+                    fontWeight: AppDesignTokens.fontWeightBold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SelectableText(
+                  message,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: AppDesignTokens.fontSizeCaption,
