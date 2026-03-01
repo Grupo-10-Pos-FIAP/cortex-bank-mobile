@@ -12,12 +12,19 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  final PageController _pageController = PageController();
 
-  late final List<Widget> _screens = [
-    const DashboardPage(),
-    const TransactionFormPage(),
-    const Center(child: Text('Perfil')),
+  final List<Widget> _screens = const [
+    DashboardPage(),
+    TransactionFormPage(),
+    Center(child: Text('Perfil')),
   ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,13 +42,24 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         centerTitle: false,
       ),
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: _screens,
+        onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
           });
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.ease,
+          );
         },
         type: BottomNavigationBarType.fixed,
         items: const [
