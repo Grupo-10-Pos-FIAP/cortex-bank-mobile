@@ -17,17 +17,16 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      
       title: 'Cortex Bank Mobile',
       theme: AppTheme.lightTheme,
       initialRoute: '/',
       // Com login obrigatório: initialRoute: '/login',
       routes: {
-        '/login': (_) => const LoginPage(),
-        '/register': (_) => const RegisterPage(),
+        AppRoutes.login: (_) => const LoginPage(),
+        AppRoutes.register: (_) => const RegisterPage(),
         AppRoutes.extrato: (_) => const ExtratoPage(),
-        '/transaction': (_) => const TransactionFormPage(),
-        '/transaction/new': (_) => const TransactionNewFormPage(),
+        AppRoutes.transaction: (_) => const TransactionFormPage(),
+        AppRoutes.transactionNew: (_) => const TransactionNewFormPage(),
       },
       home: const HomePage(),
       // --- Código de login (descomente para exigir autenticação; adicione imports provider + auth_provider) ---
@@ -39,7 +38,7 @@ class App extends StatelessWidget {
       //       );
       //     }
       //     return auth.isAuthenticated
-      //         ? const ExtratoPage()
+      //         ? const HomePage()
       //         : const LoginPage();
       //   },
       // ),
