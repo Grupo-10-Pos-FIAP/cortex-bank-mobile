@@ -39,18 +39,10 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   @override
   Widget build(BuildContext context) {
     return AppCardContainer(
+      title: 'Nova transferência',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Nova transferência',
-            style: GoogleFonts.roboto(
-              fontSize: AppDesignTokens.fontSizeTitle,
-              fontWeight: AppDesignTokens.fontWeightSemibold,
-              color: AppDesignTokens.colorContentDefault,
-            ),
-          ),
-          const SizedBox(height: 24),
           AppDropdownField<String>(
             label: 'Selecione o tipo de transação',
             hintText: 'Selecione o tipo de transação',
