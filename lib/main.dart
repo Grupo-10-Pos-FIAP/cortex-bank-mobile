@@ -35,7 +35,6 @@ Future<void> main() async {
     }
   } on FirebaseException catch (e) {
     if (e.message != null && e.message!.contains('exists')) {
-      // App [Default] já criado pelo SDK nativo (plist no iOS) — continua
     } else {
       safeLogError('Erro ao inicializar Firebase', e);
       runApp(_StartupErrorApp(message: 'Firebase: ${e.message ?? e.code}'));
@@ -44,7 +43,6 @@ Future<void> main() async {
   } catch (e, st) {
     final msg = e.toString();
     if (msg.contains('exists') || msg.contains('Default')) {
-      // Firebase já inicializado pelo plist no iOS — continua
     } else {
       safeLogError('Erro ao inicializar Firebase', e);
       runApp(_StartupErrorApp(message: 'Firebase: $e'));

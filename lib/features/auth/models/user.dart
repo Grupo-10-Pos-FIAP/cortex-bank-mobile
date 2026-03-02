@@ -1,13 +1,19 @@
 class User {
-  const User({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.token,
-  });
+  String? uid; // ID do Firebase Auth
+  String username;
+  String email;
 
-  final String id;
-  final String name;
-  final String email;
-  final String token;
+  User({this.uid, required this.username, required this.email});
+
+  Map<String, dynamic> toMap() {
+    return {'username': username, 'email': email};
+  }
+
+  factory User.fromFirestore(String uid, Map<String, dynamic> data) {
+    return User(
+      uid: uid,
+      username: data['username'] ?? '',
+      email: data['email'] ?? '',
+    );
+  }
 }

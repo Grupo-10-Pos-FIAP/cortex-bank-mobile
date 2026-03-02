@@ -1,10 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 import 'package:cortex_bank_mobile/core/mock/transactions_mock.dart';
-import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_local_datasource.dart';
-import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_local_datasource_in_memory.dart';
-import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_datasource_firebase.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
@@ -22,15 +18,8 @@ const bool useMockTransactions = true;
 void configureDependencies() {
   getIt.registerLazySingleton<DatabaseService>(() => FirestoreService());
 
-  getIt.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceInMemory(),
-  );
-  getIt.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthDatasourceFirebase(),
-  );
-  getIt.registerLazySingleton<IAuthRepository>(
-    () => AuthRepositoryImpl(getIt(), getIt()),
-  );
+  // Auth usa Firebase Auth diretamente, sem datasources locais/fake
+  getIt.registerLazySingleton<IAuthRepository>(() => AuthRepositoryImpl());
 
   getIt.registerLazySingleton<TransactionsDataSource>(
     () => useMockTransactions

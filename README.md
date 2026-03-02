@@ -154,4 +154,4 @@ Este projeto foi desenvolvido como parte do trabalho de pós-graduação em Enge
 - [Gabrielle Martins](https://github.com/Gabrielle-96)
 - [Helen Cris](https://github.com/HelenCrisM)
 
-**Desenvolvido para fins acadêmicos e de demonstração de arquitetura de microfrontends.**
+**Desenvolvido para fins acadêmicos.**
