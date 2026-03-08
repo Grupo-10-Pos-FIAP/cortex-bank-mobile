@@ -11,6 +11,7 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.enabled = true,
     this.variant = ButtonVariant.primary,
+    this.backgroundColor,
   });
 
   final String label;
@@ -18,6 +19,7 @@ class AppButton extends StatelessWidget {
   final bool loading;
   final bool enabled;
   final ButtonVariant variant;
+  final Color? backgroundColor;
 
   static const double _buttonHeight = 48;
 
@@ -57,8 +59,11 @@ class AppButton extends StatelessWidget {
           child: OutlinedButton(
             onPressed: (enabled && !loading) ? onPressed : null,
             style: OutlinedButton.styleFrom(
+              backgroundColor: backgroundColor,
               foregroundColor: AppDesignTokens.buttonNegativeContentDefault,
-              side: const BorderSide(color: AppDesignTokens.buttonNegativeBorderDefault),
+              side: const BorderSide(
+                color: AppDesignTokens.buttonNegativeBorderDefault,
+              ),
             ),
             child: child,
           ),

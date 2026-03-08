@@ -81,8 +81,9 @@ class AppDesignTokens {
   // ---------------------------------------------------------------------------
   // Backgrounds
   // ---------------------------------------------------------------------------
-  /// Background padrão do app (telas de login e cadastro). Sempre esta escala.
+  /// Background padrão do app. Sempre esta escala.
   static const Color colorBgDefault = Color(0xFFF5F5F5);
+  static const Color colorBgDefaultDark = Color(0xFF374151);
   static const Color colorBgLight = colorWhite;
   static const Color colorBgPrimary = colorPrimary;
   static const Color colorBgSecondary = colorSecondary;
