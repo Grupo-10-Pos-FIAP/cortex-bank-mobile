@@ -40,6 +40,11 @@ class AppButton extends StatelessWidget {
           height: _buttonHeight,
           child: FilledButton(
             onPressed: (enabled && !loading) ? onPressed : null,
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: child,
           ),
         );
@@ -49,6 +54,11 @@ class AppButton extends StatelessWidget {
           height: _buttonHeight,
           child: OutlinedButton(
             onPressed: (enabled && !loading) ? onPressed : null,
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: child,
           ),
         );
@@ -64,6 +74,9 @@ class AppButton extends StatelessWidget {
               side: const BorderSide(
                 color: AppDesignTokens.buttonNegativeBorderDefault,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: child,
           ),
@@ -76,6 +89,9 @@ class AppButton extends StatelessWidget {
             onPressed: (enabled && !loading) ? onPressed : null,
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.secondary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: child,
           ),
