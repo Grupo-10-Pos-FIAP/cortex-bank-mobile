@@ -150,9 +150,6 @@ lib/
 │       └── presentation/
 │           └── pages/
 │               └── home_page.dart
-│
-└── database/
-    └── mock_database.dart
 ```
 
 ---
@@ -196,8 +193,6 @@ lib/
 │   └── home/
 │       └── presentation/
 │           └── pages/             # HomePage (shell com bottom nav)
-│
-└── database/                      # Mocks/implementações de DB (ex.: testes)
 ```
 
 ---
@@ -218,7 +213,6 @@ lib/
 | **features/<nome>/state** | Providers/estado da feature (ex.: AuthProvider, TransactionsProvider). |
 | **features/<nome>/presentation/pages** | Telas da feature. |
 | **features/<nome>/presentation/widgets** | Widgets usados apenas nas páginas dessa feature. |
-| **database** | Mocks ou implementações de persistência para testes. |
 
 ---
 

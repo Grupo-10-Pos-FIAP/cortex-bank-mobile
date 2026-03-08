@@ -1,17 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+    as model;
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
-
-const String _collection = 'transactions';
 
 class TransactionsDataSourceFirestore implements TransactionsDataSource {
   TransactionsDataSourceFirestore(this._firestore);
 
   final FirebaseFirestore _firestore;
 
-  CollectionReference<Map<String, dynamic>> get _col =>
-      _firestore.collection(_collection);
+  CollectionReference<Map<String, dynamic>> get _col {
+    final user = fa.FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Usuário não está logado');
+    }
+    return _firestore.collection(user.uid);
+  }
 
   @override
   Future<void> add(model.Transaction transaction) async {
@@ -71,7 +76,9 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     };
   }
 
-  static model.Transaction _fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+  static model.Transaction _fromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final d = doc.data();
     final date = d['date'];
     final value = (d['value'] as num?)?.toDouble() ?? 0.0;
@@ -79,7 +86,9 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     return model.Transaction(
       id: d['id'] as String? ?? doc.id,
       accountId: d['accountId'] as String? ?? '',
-      type: typeStr == 'Debit' ? model.TransactionType.debit : model.TransactionType.credit,
+      type: typeStr == 'Debit'
+          ? model.TransactionType.debit
+          : model.TransactionType.credit,
       value: value,
       date: date is Timestamp ? date.toDate() : DateTime.now(),
       from: d['from'] as String?,

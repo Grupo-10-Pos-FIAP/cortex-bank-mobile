@@ -43,7 +43,6 @@ lib/
 │   ├── transaction/ → transações, Transaction, TransactionsProvider
 │   ├── extrato/   → tela de extrato
 │   └── home/      → tela principal (bottom nav)
-└── database/      → mocks para testes
 ```
 
 Dentro de uma feature (ex.: auth):
