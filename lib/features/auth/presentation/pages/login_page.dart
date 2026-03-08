@@ -7,6 +7,7 @@ import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_page_header.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_field_styles.dart';
@@ -53,11 +54,7 @@ class _LoginPageState extends State<LoginPage> {
       await launchUrl(uri);
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível abrir o cliente de email.'),
-        ),
-      );
+      AppSnackBar.error(context, 'Não foi possível abrir o cliente de email.');
     }
   }
 
@@ -78,10 +75,8 @@ class _LoginPageState extends State<LoginPage> {
     await auth.signIn(_emailController.text.trim(), _passwordController.text);
     if (!mounted) return;
     if (auth.isAuthenticated) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Bem-vindo!')));
-      Navigator.of(context).pushReplacementNamed('/extrato');
+      AppSnackBar.success(context, 'Bem-vindo!');
+      Navigator.of(context).pushReplacementNamed('/');
     }
   }
 

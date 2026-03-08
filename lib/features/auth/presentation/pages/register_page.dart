@@ -6,6 +6,7 @@ import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_page_header.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_field_styles.dart';
@@ -104,10 +105,8 @@ class _RegisterPageState extends State<RegisterPage> {
     );
     if (!mounted) return;
     if (auth.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Conta criada com sucesso!')),
-      );
-      Navigator.of(context).pushReplacementNamed('/extrato');
+      AppSnackBar.success(context, 'Conta criada com sucesso!');
+      Navigator.of(context).pushReplacementNamed('/login');
     }
   }
 

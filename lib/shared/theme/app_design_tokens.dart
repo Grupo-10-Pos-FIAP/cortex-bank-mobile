@@ -96,6 +96,8 @@ class AppDesignTokens {
   // Content
   // ---------------------------------------------------------------------------
   static const Color colorContentDefault = colorBase;
+  static const Color colorContentPrimary = colorPrimary;
+  static const Color colorContentSecondary = colorSecondary;
   static const Color colorContentInverse = colorWhite;
   static const Color colorContentDisabled = colorGray500;
 

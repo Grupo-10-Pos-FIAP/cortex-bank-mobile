@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/features/auth/presentation/pages/profile_page.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/dashboard_page.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
@@ -17,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _screens = const [
     DashboardPage(),
     TransactionFormPage(),
-    Center(child: Text('Perfil')),
+    ProfilePage(),
   ];
 
   @override

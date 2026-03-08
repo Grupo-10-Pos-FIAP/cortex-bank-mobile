@@ -7,4 +7,5 @@ class AppRoutes {
   static const extrato = '/extrato';
   static const transaction = '/transaction';
   static const transactionNew = '/transaction/new';
+  static const profile = '/profile';
 }
