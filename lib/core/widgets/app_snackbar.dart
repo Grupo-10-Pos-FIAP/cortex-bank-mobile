@@ -8,7 +8,6 @@ import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 class AppSnackBar {
   static void _showOverlay(BuildContext context, Widget child) {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
 
     late OverlayEntry entry;
     entry = OverlayEntry(

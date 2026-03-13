@@ -1,20 +1,79 @@
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+    as model;
 
-class EntryExitChart extends StatelessWidget {
-  const EntryExitChart({Key? key}) : super(key: key);
+class EntryExitChart extends StatefulWidget {
+  const EntryExitChart({super.key});
+
+  @override
+  State<EntryExitChart> createState() => _EntryExitChartState();
+}
+
+class _EntryExitChartState extends State<EntryExitChart> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  Future<void> _loadData() async {
+    final provider = context.read<TransactionsProvider>();
+    await provider.loadTransactions();
+  }
+
+  List<_EntryExitData> _computeEntryExit(List<model.Transaction> transactions) {
+    if (transactions.isEmpty) return [];
+
+    // Group by month: YYYY-MM
+    Map<String, Map<String, double>> monthlyData = {};
+
+    for (final t in transactions) {
+      final monthKey =
+          '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
+      monthlyData.putIfAbsent(monthKey, () => {'entry': 0, 'exit': 0});
+
+      if (t.type == model.TransactionType.credit) {
+        monthlyData[monthKey]!['entry'] =
+            (monthlyData[monthKey]!['entry'] ?? 0) + t.value;
+      } else {
+        monthlyData[monthKey]!['exit'] =
+            (monthlyData[monthKey]!['exit'] ?? 0) + t.value;
+      }
+    }
+
+    // Convert to list, sort by month, take last 12
+    final entries = monthlyData.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    return entries
+        .take(12)
+        .map(
+          (e) => _EntryExitData(
+            e.key,
+            e.value['entry'] ?? 0,
+            e.value['exit'] ?? 0,
+          ),
+        )
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<_EntryExitData> data = [
-      _EntryExitData('Jan', 800, 400),
-      _EntryExitData('Feb', 900, 550),
-      _EntryExitData('Mar', 700, 600),
-      _EntryExitData('Apr', 1200, 780),
-      _EntryExitData('May', 1100, 900),
-    ];
+    final provider = context.watch<TransactionsProvider>();
+    final chartData = _computeEntryExit(provider.transactions);
+    if (provider.loading) {
+      return AppCardContainer(
+        title: 'Entradas e Saídas',
+        child: const Center(child: Text('Carregando...')),
+      );
+    }
     return AppCardContainer(
       title: 'Entradas e Saídas',
       child: SfCartesianChart(
@@ -23,7 +82,7 @@ class EntryExitChart extends StatelessWidget {
         tooltipBehavior: TooltipBehavior(enable: true),
         series: <CartesianSeries<_EntryExitData, String>>[
           ColumnSeries<_EntryExitData, String>(
-            dataSource: data,
+            dataSource: chartData,
             xValueMapper: (_EntryExitData item, _) => item.month,
             yValueMapper: (_EntryExitData item, _) => item.entry,
             name: 'Entrada',
@@ -31,7 +90,7 @@ class EntryExitChart extends StatelessWidget {
             dataLabelSettings: DataLabelSettings(isVisible: true),
           ),
           ColumnSeries<_EntryExitData, String>(
-            dataSource: data,
+            dataSource: chartData,
             xValueMapper: (_EntryExitData item, _) => item.month,
             yValueMapper: (_EntryExitData item, _) => item.exit,
             name: 'Saída',

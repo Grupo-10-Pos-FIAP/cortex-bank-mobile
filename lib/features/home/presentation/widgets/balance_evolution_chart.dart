@@ -1,29 +1,82 @@
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+    as model;
 
-class BalanceEvolutionChart extends StatelessWidget {
-  const BalanceEvolutionChart({Key? key}) : super(key: key);
+class BalanceEvolutionChart extends StatefulWidget {
+  const BalanceEvolutionChart({super.key});
+
+  @override
+  State<BalanceEvolutionChart> createState() => _BalanceEvolutionChartState();
+}
+
+class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  Future<void> _loadData() async {
+    final provider = context.read<TransactionsProvider>();
+    await provider.loadTransactions();
+  }
+
+  List<_BalanceEvolutionData> _computeEvolution(
+    List<model.Transaction> transactions,
+  ) {
+    if (transactions.isEmpty) return [];
+
+    // Sort transactions by date
+    final sorted = List<model.Transaction>.from(transactions)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    // Compute cumulative balance
+    double balance = 0;
+    Map<String, double> monthlyBalance = {};
+
+    for (final t in sorted) {
+      balance += t.type == model.TransactionType.credit ? t.value : -t.value;
+      final monthKey =
+          '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
+      monthlyBalance[monthKey] = balance;
+    }
+
+    // Convert to chart data (last 5 months or all)
+    final entries = monthlyBalance.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    return entries
+        .take(5)
+        .map((e) => _BalanceEvolutionData(e.key, e.value))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<_BalanceEvolutionData> data = [
-      _BalanceEvolutionData('Jan', 1200),
-      _BalanceEvolutionData('Feb', 1350),
-      _BalanceEvolutionData('Mar', 1280),
-      _BalanceEvolutionData('Apr', 1420),
-      _BalanceEvolutionData('May', 1500),
-    ];
+    final provider = context.watch<TransactionsProvider>();
+    final chartData = _computeEvolution(provider.transactions);
+    if (provider.loading) {
+      return AppCardContainer(
+        title: 'Evolução do Saldo',
+        child: const Center(child: Text('Carregando...')),
+      );
+    }
     return AppCardContainer(
-      title: 'Evolução do Saldo', 
+      title: 'Evolução do Saldo',
       child: SfCartesianChart(
         primaryXAxis: CategoryAxis(),
         legend: Legend(isVisible: false),
         tooltipBehavior: TooltipBehavior(enable: true),
         series: <CartesianSeries<_BalanceEvolutionData, String>>[
           LineSeries<_BalanceEvolutionData, String>(
-            dataSource: data,
+            dataSource: chartData,
             xValueMapper: (_BalanceEvolutionData balance, _) => balance.month,
             yValueMapper: (_BalanceEvolutionData balance, _) => balance.amount,
             name: 'Saldo',

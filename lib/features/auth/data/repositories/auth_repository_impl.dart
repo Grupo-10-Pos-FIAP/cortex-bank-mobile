@@ -1,8 +1,8 @@
+import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_datasource_firebase.dart';
 import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 
-import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_datasource_firebase.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
   AuthRepositoryImpl() : _remote = AuthDatasourceFirebase();

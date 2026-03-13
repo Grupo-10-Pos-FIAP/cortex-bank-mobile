@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
@@ -18,124 +19,82 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppDesignTokens.colorBgDefault,
-      appBar: AppBar(
-        title: const Text('Meu Perfil'),
-        backgroundColor: AppDesignTokens.colorBgDefault,
-        elevation: 0,
-      ),
-      body: Container(
-        color: AppDesignTokens.colorBgDefault,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
-            child: Consumer<AuthProvider>(
-              builder: (context, auth, _) {
-                final user = auth.user;
-                if (user == null) {
-                  return Center(
-                    child: Text(
-                      'Nenhum usuário autenticado',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppDesignTokens.colorContentDefault,
-                      ),
-                    ),
-                  );
-                }
+      body: SafeArea(
+        child: Consumer<AuthProvider>(
+          builder: (context, auth, _) {
+            final user = auth.user;
+            if (user == null) {
+              return Center(
+                child: Text(
+                  'Nenhum usuário autenticado',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppDesignTokens.colorContentDefault,
+                  ),
+                ),
+              );
+            }
 
-                return Column(
+            return AppCardContainer(
+              padding: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Avatar
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppDesignTokens.colorBgDefault,
-                      ),
-                      child: Center(
-                        child: Text(
-                          user.username.isNotEmpty
-                              ? user.username[0].toUpperCase()
-                              : '?',
-                          style: Theme.of(context).textTheme.headlineLarge
-                              ?.copyWith(
-                                color: AppDesignTokens.colorContentDefault,
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppDesignTokens.spacingLg),
-                    // Nome
-                    Container(
-                      padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
-                      decoration: BoxDecoration(
-                        color: AppDesignTokens.colorBgDefault,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Nome',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: AppDesignTokens.colorContentSecondary,
-                                ),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingSm),
-                          Text(
-                            user.username,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: AppDesignTokens.colorContentDefault,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                        ],
+                    Center(
+                      child: Text(
+                        user.username.isNotEmpty
+                            ? user.username[0].toUpperCase()
+                            : '?',
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(
+                              color: AppDesignTokens.colorContentDefault,
+                            ),
                       ),
                     ),
                     const SizedBox(height: AppDesignTokens.spacingMd),
-                    // Email
-                    Container(
-                      padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
-                      decoration: BoxDecoration(
-                        color: AppDesignTokens.colorBgDefault,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Email',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: AppDesignTokens.colorContentSecondary,
-                                ),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingSm),
-                          Text(
-                            user.email,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: AppDesignTokens.colorContentDefault,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                        ],
+                    Text(
+                      'Nome',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppDesignTokens.colorContentSecondary,
                       ),
                     ),
-                    const Spacer(),
-                    // Botão Logout
+                    const SizedBox(height: AppDesignTokens.spacingXs),
+                    Text(
+                      user.username,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppDesignTokens.colorContentDefault,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingMd),
+
+                    Text(
+                      'Email',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppDesignTokens.colorContentSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingXs),
+                    Text(
+                      user.email,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppDesignTokens.colorContentDefault,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppDesignTokens.spacingLg),
+
                     AppButton(
                       label: 'Sair',
                       onPressed: () => _onLogout(context),
                       variant: ButtonVariant.outlined,
                     ),
                   ],
-                );
-              },
-            ),
-          ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

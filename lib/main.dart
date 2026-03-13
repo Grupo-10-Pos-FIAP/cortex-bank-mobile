@@ -1,3 +1,6 @@
+import 'package:cortex_bank_mobile/core/widgets/app_connectivity.dart';
+import 'package:cortex_bank_mobile/features/contacts/data/repositories/i_contacts_repository.dart';
+import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +34,9 @@ Future<void> main() async {
 
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     }
   } on FirebaseException catch (e) {
     if (e.message != null && e.message!.contains('exists')) {
@@ -40,7 +45,7 @@ Future<void> main() async {
       runApp(_StartupErrorApp(message: 'Firebase: ${e.message ?? e.code}'));
       return;
     }
-  } catch (e, st) {
+  } catch (e) {
     final msg = e.toString();
     if (msg.contains('exists') || msg.contains('Default')) {
     } else {
@@ -52,7 +57,7 @@ Future<void> main() async {
 
   try {
     configureDependencies();
-  } catch (e, st) {
+  } catch (e) {
     safeLogError('Erro ao configurar dependências', e);
     runApp(_StartupErrorApp(message: 'Dependências: $e'));
     return;
@@ -67,13 +72,18 @@ Future<void> main() async {
         providers: [
           ChangeNotifierProvider.value(value: authProvider),
           ChangeNotifierProvider(
-            create: (_) => TransactionsProvider(getIt<ITransactionsRepository>()),
+            create: (_) => ContactsProvider(getIt<IContactsRepository>()),
+          ),
+
+          ChangeNotifierProvider(
+            create: (_) =>
+                TransactionsProvider(getIt<ITransactionsRepository>()),
           ),
         ],
         child: const App(),
       ),
     );
-  } catch (e, st) {
+  } catch (e) {
     safeLogError('Erro ao iniciar app', e);
     runApp(_StartupErrorApp(message: '$e'));
   }
@@ -152,7 +162,11 @@ class _StartupErrorApp extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  size: 64,
+                  color: Colors.orange,
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   'Erro ao iniciar',

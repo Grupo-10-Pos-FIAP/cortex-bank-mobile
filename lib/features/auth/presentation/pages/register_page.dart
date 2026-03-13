@@ -49,13 +49,15 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _onFirstNameBlur() {
-    if (!_firstNameFocusNode.hasFocus)
+    if (!_firstNameFocusNode.hasFocus) {
       _firstNameFieldKey.currentState?.validate();
+    }
   }
 
   void _onLastNameBlur() {
-    if (!_lastNameFocusNode.hasFocus)
+    if (!_lastNameFocusNode.hasFocus) {
       _lastNameFieldKey.currentState?.validate();
+    }
   }
 
   void _onEmailBlur() {
@@ -63,13 +65,15 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _onPasswordBlur() {
-    if (!_passwordFocusNode.hasFocus)
+    if (!_passwordFocusNode.hasFocus) {
       _passwordFieldKey.currentState?.validate();
+    }
   }
 
   void _onConfirmPasswordBlur() {
-    if (!_confirmPasswordFocusNode.hasFocus)
+    if (!_confirmPasswordFocusNode.hasFocus) {
       _confirmPasswordFieldKey.currentState?.validate();
+    }
   }
 
   @override

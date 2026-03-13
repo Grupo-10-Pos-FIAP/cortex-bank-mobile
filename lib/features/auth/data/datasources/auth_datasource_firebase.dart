@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cortex_bank_mobile/core/di/injection.dart';
+import 'package:cortex_bank_mobile/features/auth/data/datasources/user_datasource.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
@@ -12,6 +15,7 @@ const _authTimeout = Duration(seconds: 25);
 
 class AuthDatasourceFirebase {
   final fa.FirebaseAuth _auth = fa.FirebaseAuth.instance;
+  final _userDataSource = getIt<UserDataSource>(); 
 
   /// Mapeia um fa.User para o modelo de User do app.
   User _mapFirebaseUser(fa.User firebaseUser) {
@@ -81,19 +85,27 @@ class AuthDatasourceFirebase {
         email: email.trim(),
         password: password,
       );
+
       final firebaseUser = credential.user;
       if (firebaseUser == null) {
         return FailureResult(const Failure(message: 'Erro ao criar usuário'));
       }
-      // Atualiza o displayName no Firebase Auth
       await firebaseUser.updateDisplayName(fullName.trim());
       await firebaseUser.reload();
+      final uid = firebaseUser.uid;
+
+      await _userDataSource.createUserProfile({
+        'uid': firebaseUser
+            .uid, 
+        'fullName': fullName.trim(),
+        'email': email.trim(),
+        'balance': 0.0,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      
       return Success(
-        User(
-          uid: firebaseUser.uid,
-          username: fullName.trim(),
-          email: email.trim(),
-        ),
+        User(uid: uid, username: fullName.trim(), email: email.trim()),
       );
     } on fa.FirebaseAuthException catch (e) {
       return FailureResult(

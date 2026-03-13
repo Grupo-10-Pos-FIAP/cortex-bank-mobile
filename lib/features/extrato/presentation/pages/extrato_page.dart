@@ -1,6 +1,7 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
     show formatCentsToBRL, parseBRLMaskToCents, CurrencyBRLInputFormatter;
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+    as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -18,12 +19,17 @@ class ExtratoPage extends StatefulWidget {
 
 class _ExtratoPageState extends State<ExtratoPage> {
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _minValueController = TextEditingController(text: 'R\$ 0,00');
-  final TextEditingController _maxValueController = TextEditingController(text: 'R\$ 0,00');
+  final TextEditingController _minValueController = TextEditingController(
+    text: 'R\$ 0,00',
+  );
+  final TextEditingController _maxValueController = TextEditingController(
+    text: 'R\$ 0,00',
+  );
 
   DateTime? _dateStart;
   DateTime? _dateEnd;
   String _tipoFiltro = 'Todas';
+
   /// Preset: 'last7' | 'last15' | 'last30' | 'last90' | 'custom' (intervalo no calendário).
   String _periodoPreset = 'last30';
 
@@ -105,28 +111,50 @@ class _ExtratoPageState extends State<ExtratoPage> {
       }).toList();
     }
     if (_dateStart != null) {
-      final start = DateTime(_dateStart!.year, _dateStart!.month, _dateStart!.day);
+      final start = DateTime(
+        _dateStart!.year,
+        _dateStart!.month,
+        _dateStart!.day,
+      );
       result = result.where((t) {
         final txDate = DateTime(t.date.year, t.date.month, t.date.day);
         return !txDate.isBefore(start);
       }).toList();
     }
     if (_dateEnd != null) {
-      final end = DateTime(_dateEnd!.year, _dateEnd!.month, _dateEnd!.day, 23, 59, 59, 999);
-      result = result.where((t) => t.date.isBefore(end) || t.date.isAtSameMomentAs(end)).toList();
+      final end = DateTime(
+        _dateEnd!.year,
+        _dateEnd!.month,
+        _dateEnd!.day,
+        23,
+        59,
+        59,
+        999,
+      );
+      result = result
+          .where((t) => t.date.isBefore(end) || t.date.isAtSameMomentAs(end))
+          .toList();
     }
     if (_tipoFiltro == 'Crédito') {
-      result = result.where((t) => t.type == model.TransactionType.credit).toList();
+      result = result
+          .where((t) => t.type == model.TransactionType.credit)
+          .toList();
     } else if (_tipoFiltro == 'Débito') {
-      result = result.where((t) => t.type == model.TransactionType.debit).toList();
+      result = result
+          .where((t) => t.type == model.TransactionType.debit)
+          .toList();
     }
     final minCents = _parseValorBRL(_minValueController.text);
     final maxCents = _parseValorBRL(_maxValueController.text);
     if (minCents > 0) {
-      result = result.where((t) => (t.value.abs() * 100).round() >= minCents).toList();
+      result = result
+          .where((t) => (t.value.abs() * 100).round() >= minCents)
+          .toList();
     }
     if (maxCents > 0) {
-      result = result.where((t) => (t.value.abs() * 100).round() <= maxCents).toList();
+      result = result
+          .where((t) => (t.value.abs() * 100).round() <= maxCents)
+          .toList();
     }
     return result;
   }
@@ -169,7 +197,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Text(
                   'Escolha o período',
                   style: GoogleFonts.roboto(
@@ -182,8 +213,16 @@ class _ExtratoPageState extends State<ExtratoPage> {
               _periodOption('Últimos 7 dias', 'last7', Icons.today),
               _periodOption('Últimos 15 dias', 'last15', Icons.date_range),
               _periodOption('Últimos 30 dias', 'last30', Icons.calendar_month),
-              _periodOption('Últimos 90 dias', 'last90', Icons.calendar_view_month),
-              _periodOption('Escolher intervalo no calendário', 'custom', Icons.edit_calendar),
+              _periodOption(
+                'Últimos 90 dias',
+                'last90',
+                Icons.calendar_view_month,
+              ),
+              _periodOption(
+                'Escolher intervalo no calendário',
+                'custom',
+                Icons.edit_calendar,
+              ),
             ],
           ),
         ),
@@ -194,16 +233,27 @@ class _ExtratoPageState extends State<ExtratoPage> {
   Widget _periodOption(String label, String value, IconData icon) {
     final isSelected = _periodoPreset == value;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? AppDesignTokens.colorPrimary : AppDesignTokens.colorContentDisabled),
+      leading: Icon(
+        icon,
+        color: isSelected
+            ? AppDesignTokens.colorPrimary
+            : AppDesignTokens.colorContentDisabled,
+      ),
       title: Text(
         label,
         style: GoogleFonts.roboto(
           fontSize: AppDesignTokens.fontSizeBody,
-          fontWeight: isSelected ? AppDesignTokens.fontWeightSemibold : AppDesignTokens.fontWeightRegular,
+          fontWeight: isSelected
+              ? AppDesignTokens.fontWeightSemibold
+              : AppDesignTokens.fontWeightRegular,
           color: AppDesignTokens.colorContentDefault,
         ),
       ),
-      trailing: value == 'custom' ? const Icon(Icons.chevron_right) : (isSelected ? Icon(Icons.check, color: AppDesignTokens.colorPrimary) : null),
+      trailing: value == 'custom'
+          ? const Icon(Icons.chevron_right)
+          : (isSelected
+                ? Icon(Icons.check, color: AppDesignTokens.colorPrimary)
+                : null),
       onTap: () async {
         Navigator.pop(context);
         if (value == 'custom') {
@@ -227,8 +277,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
         return 'Últimos 90 dias';
       case 'custom':
         if (_dateStart == null || _dateEnd == null) return 'Selecionar período';
-        final s = '${_dateStart!.day.toString().padLeft(2, '0')}/${_dateStart!.month.toString().padLeft(2, '0')}/${_dateStart!.year}';
-        final e = '${_dateEnd!.day.toString().padLeft(2, '0')}/${_dateEnd!.month.toString().padLeft(2, '0')}/${_dateEnd!.year}';
+        final s =
+            '${_dateStart!.day.toString().padLeft(2, '0')}/${_dateStart!.month.toString().padLeft(2, '0')}/${_dateStart!.year}';
+        final e =
+            '${_dateEnd!.day.toString().padLeft(2, '0')}/${_dateEnd!.month.toString().padLeft(2, '0')}/${_dateEnd!.year}';
         return '$s - $e';
       default:
         return 'Selecionar período';
@@ -272,12 +324,15 @@ class _ExtratoPageState extends State<ExtratoPage> {
                         controller: _searchController,
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
-                          hintText: 'Buscar por origem, destino, ID ou valor...',
+                          hintText:
+                              'Buscar por origem, destino, ID ou valor...',
                           prefixIcon: const Icon(Icons.search),
                           filled: true,
                           fillColor: AppDesignTokens.colorWhite,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
                           ),
                         ),
                       ),
@@ -291,8 +346,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
                           ),
                           decoration: BoxDecoration(
                             color: AppDesignTokens.colorWhite,
-                            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
-                            border: Border.all(color: AppDesignTokens.colorBorderDefault),
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
+                            border: Border.all(
+                              color: AppDesignTokens.colorBorderDefault,
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -313,21 +372,33 @@ class _ExtratoPageState extends State<ExtratoPage> {
                       ),
                       const SizedBox(height: AppDesignTokens.spacingMd),
                       DropdownButtonFormField<String>(
-                        value: _tipoFiltro,
+                        initialValue: _tipoFiltro,
                         decoration: InputDecoration(
                           labelText: 'Tipo de Transação',
                           filled: true,
                           fillColor: AppDesignTokens.colorWhite,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
                           ),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'Todas', child: Text('Todas')),
-                          DropdownMenuItem(value: 'Crédito', child: Text('Crédito')),
-                          DropdownMenuItem(value: 'Débito', child: Text('Débito')),
+                          DropdownMenuItem(
+                            value: 'Todas',
+                            child: Text('Todas'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Crédito',
+                            child: Text('Crédito'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Débito',
+                            child: Text('Débito'),
+                          ),
                         ],
-                        onChanged: (v) => setState(() => _tipoFiltro = v ?? 'Todas'),
+                        onChanged: (v) =>
+                            setState(() => _tipoFiltro = v ?? 'Todas'),
                       ),
                       const SizedBox(height: AppDesignTokens.spacingMd),
                       TextField(
@@ -339,7 +410,9 @@ class _ExtratoPageState extends State<ExtratoPage> {
                           filled: true,
                           fillColor: AppDesignTokens.colorWhite,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -355,7 +428,9 @@ class _ExtratoPageState extends State<ExtratoPage> {
                           filled: true,
                           fillColor: AppDesignTokens.colorWhite,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -398,19 +473,18 @@ class _ExtratoPageState extends State<ExtratoPage> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDesignTokens.spacingMd),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDesignTokens.spacingMd,
+                  ),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        final t = filtered[i];
-                        return _TransactionCard(
-                          key: ValueKey(t.id),
-                          transaction: t,
-                          onDelete: () => tx.deleteTransaction(t.id),
-                        );
-                      },
-                      childCount: filtered.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      final t = filtered[i];
+                      return _TransactionCard(
+                        key: ValueKey(t.id),
+                        transaction: t,
+                        onDelete: () => tx.deleteTransaction(t.id),
+                      );
+                    }, childCount: filtered.length),
                   ),
                 ),
             ],
@@ -434,26 +508,39 @@ class _TransactionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCredit = transaction.type == model.TransactionType.credit;
-    final transactionTypeLabel = isCredit ? 'Transferência recebida' : 'Transferência efetuada';
+    final transactionTypeLabel = isCredit
+        ? 'Transferência recebida'
+        : 'Transferência efetuada';
     final valueCents = (transaction.value.abs() * 100).round();
     final valorStr = isCredit
         ? '+${formatCentsToBRL(valueCents)}'
         : '-${formatCentsToBRL(valueCents)}';
     final dateStr =
         '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
-    final statusLabel = transaction.status == 'Pending' ? 'Pendente' : transaction.status;
-    final hasFromTo = (transaction.from != null && transaction.from!.isNotEmpty) ||
+    final statusLabel = transaction.status == 'Pending'
+        ? 'Pendente'
+        : transaction.status;
+    final hasFromTo =
+        (transaction.from != null && transaction.from!.isNotEmpty) ||
         (transaction.to != null && transaction.to!.isNotEmpty);
     final fromToText = [
-      if (transaction.from != null && transaction.from!.isNotEmpty) 'De ${transaction.from}',
-      if (transaction.from != null && transaction.from!.isNotEmpty && transaction.to != null && transaction.to!.isNotEmpty) ' • ',
-      if (transaction.to != null && transaction.to!.isNotEmpty) 'Para ${transaction.to}',
+      if (transaction.from != null && transaction.from!.isNotEmpty)
+        'De ${transaction.from}',
+      if (transaction.from != null &&
+          transaction.from!.isNotEmpty &&
+          transaction.to != null &&
+          transaction.to!.isNotEmpty)
+        ' • ',
+      if (transaction.to != null && transaction.to!.isNotEmpty)
+        'Para ${transaction.to}',
     ].join();
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppDesignTokens.spacingSm),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
+        borderRadius: BorderRadius.circular(
+          AppDesignTokens.borderRadiusDefault,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
@@ -468,8 +555,12 @@ class _TransactionCard extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isCredit
-                        ? AppDesignTokens.colorFeedbackSuccess.withOpacity(0.15)
-                        : AppDesignTokens.colorFeedbackWarning.withOpacity(0.25),
+                        ? AppDesignTokens.colorFeedbackSuccess.withValues(
+                            alpha: 0.15,
+                          )
+                        : AppDesignTokens.colorFeedbackWarning.withValues(
+                            alpha: 0.25,
+                          ),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -496,9 +587,13 @@ class _TransactionCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       if (transaction.status == 'Pending')
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppDesignTokens.colorFeedbackWarning.withOpacity(0.2),
+                            color: AppDesignTokens.colorFeedbackWarning
+                                .withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -509,9 +604,13 @@ class _TransactionCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (transaction.status != 'Pending' && transaction.status.isNotEmpty)
+                      if (transaction.status != 'Pending' &&
+                          transaction.status.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppDesignTokens.colorGray200,
                             borderRadius: BorderRadius.circular(12),

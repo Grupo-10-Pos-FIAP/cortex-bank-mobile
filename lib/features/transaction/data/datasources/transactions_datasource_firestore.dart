@@ -4,6 +4,7 @@ import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.d
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
+import 'package:flutter/material.dart';
 
 class TransactionsDataSourceFirestore implements TransactionsDataSource {
   TransactionsDataSourceFirestore(this._firestore);
@@ -25,12 +26,12 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
 
   @override
   Future<List<model.Transaction>> getAll() async {
-    print('DEBUG Firestore: buscando transactions...');
+    debugPrint('DEBUG Firestore: buscando transactions...');
     final snapshot = await _col.get();
 
-    print('DEBUG Firestore: qtd docs = ${snapshot.docs.length}');
+    debugPrint('DEBUG Firestore: qtd docs = ${snapshot.docs.length}');
     for (final d in snapshot.docs) {
-      print('DEBUG Firestore doc: id=${d.id}, data=${d.data()}');
+      debugPrint('DEBUG Firestore doc: id=${d.id}, data=${d.data()}');
     }
 
     return snapshot.docs.map((d) => _fromDoc(d)).toList();

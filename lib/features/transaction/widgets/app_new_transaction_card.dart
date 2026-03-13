@@ -1,30 +1,22 @@
+import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
+import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_contact_dialog_widget.dart';
+import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contact_list_item.dart';
+import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart'; // Importe o Provider
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fa;
+import 'package:provider/provider.dart'; // Adicionado
 
 class AppNewTransactionCard extends StatefulWidget {
   const AppNewTransactionCard({super.key});
 
   @override
   State<AppNewTransactionCard> createState() => _AppNewTransactionCardState();
-}
-
-class Contact {
-  final String name;
-  bool isFavorite;
-  bool isSelected;
-  Contact({
-    required this.name,
-    this.isFavorite = false,
-    this.isSelected = false,
-  });
 }
 
 class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
@@ -34,40 +26,13 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   String? selectedValue;
   int? selectedTitularidade;
 
-  List<Contact> contacts = [];
-
   @override
   void initState() {
     super.initState();
-    _loadContacts();
-  }
-
-  Future<void> _loadContacts() async {
-    final user = fa.FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection(user.uid)
-          .doc('contacts')
-          .collection('list')
-          .get();
-      final fetched = snapshot.docs.map((d) {
-        final data = d.data();
-        return Contact(
-          name: data['name'] as String? ?? '',
-          isFavorite: data['isFavorite'] as bool? ?? false,
-          isSelected: false,
-        );
-      }).toList();
-      if (mounted) {
-        setState(() {
-          contacts = fetched;
-        });
-      }
-    } catch (e) {
-      // ignore errors for now or log them
-      // SafeLog or similar could be used here
-    }
+    // Carrega os contatos via Provider após o build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ContactsProvider>().loadContacts();
+    });
   }
 
   @override
@@ -78,6 +43,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Escuta o provider de contatos
+    final contactsProvider = context.watch<ContactsProvider>();
+
     return AppCardContainer(
       title: 'Nova transferência',
       child: Form(
@@ -97,138 +65,35 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                   child: Text('Transferência'),
                 ),
               ],
-              onChanged: (newValue) {
-                setState(() {
-                  selectedValue = newValue;
-                });
-              },
+              onChanged: (newValue) => setState(() => selectedValue = newValue),
               showRequiredIndicator: true,
               validator: (value) => value == null ? 'Campo obrigatório' : null,
             ),
 
             AppTabs(
-              height: 120,
+              height: 200,
               titles: const ['Nova conta', 'Contatos', 'Favoritos'],
               children: [
-                Column(
-                  children: [
-                    ListTile(
-                      title: const Text('Mesma titularidade'),
-                      trailing: const Icon(Icons.chevron_right),
-                      tileColor: selectedTitularidade == 0
-                          ? AppDesignTokens.colorPrimary.withOpacity(0.1)
-                          : null,
-                      selected: selectedTitularidade == 0,
-                      selectedTileColor: AppDesignTokens.colorPrimary
-                          .withOpacity(0.15),
-                      onTap: () {
-                        setState(() {
-                          selectedTitularidade = 0;
-                        });
-                      },
-                    ),
-                    ListTile(
-                      title: const Text('Outra titularidade'),
-                      trailing: const Icon(Icons.chevron_right),
-                      tileColor: selectedTitularidade == 1
-                          ? AppDesignTokens.colorPrimary.withOpacity(0.1)
-                          : null,
-                      selected: selectedTitularidade == 1,
-                      selectedTileColor: AppDesignTokens.colorPrimary
-                          .withOpacity(0.15),
-                      onTap: () {
-                        setState(() {
-                          selectedTitularidade = 1;
-                        });
-                      },
-                    ),
-                  ],
+                // Aba 1: Nova Conta
+                _buildTitularidadeTab(),
+
+                // Aba 2: Contatos
+                _buildListTab(
+                  contactsProvider.contacts,
+                  contactsProvider,
+                  'Nenhum Contato',
                 ),
-                SingleChildScrollView(
-                  child: Column(
-                    children: contacts
-                        .map(
-                          (contact) => Row(
-                            children: [
-                              Checkbox(
-                                value: contact.isSelected,
-                                onChanged: (bool? value) {
-                                  setState(
-                                    () => contact.isSelected = value ?? false,
-                                  );
-                                },
-                                shape: const CircleBorder(),
-                              ),
-                              Expanded(child: Text(contact.name)),
-                              IconButton(
-                                icon: Icon(
-                                  contact.isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: contact.isFavorite
-                                      ? AppDesignTokens.colorFeedbackFavorite
-                                      : null,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    contact.isFavorite = !contact.isFavorite;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-                SingleChildScrollView(
-                  child: Column(
-                    children: contacts.where((c) => c.isFavorite).isEmpty
-                        ? [const Center(child: Text('Nenhum favorito'))]
-                        : contacts
-                              .where((c) => c.isFavorite)
-                              .map(
-                                (contact) => Row(
-                                  children: [
-                                    Checkbox(
-                                      value: contact.isSelected,
-                                      onChanged: (bool? value) {
-                                        setState(
-                                          () => contact.isSelected =
-                                              value ?? false,
-                                        );
-                                      },
-                                      shape: const CircleBorder(),
-                                    ),
-                                    Expanded(child: Text(contact.name)),
-                                    IconButton(
-                                      icon: Icon(
-                                        contact.isFavorite
-                                            ? Icons.favorite
-                                            : Icons.favorite_border,
-                                        color: contact.isFavorite
-                                            ? AppDesignTokens
-                                                  .colorFeedbackFavorite
-                                            : null,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          contact.isFavorite =
-                                              !contact.isFavorite;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              )
-                              .toList(),
-                  ),
+
+                // Aba 3: Favoritos
+                _buildListTab(
+                  contactsProvider.favoriteContacts,
+                  contactsProvider,
+                  'Nenhum Contato Favorito',
                 ),
               ],
             ),
 
             const Divider(height: 1, color: AppDesignTokens.colorNeutral),
-
             const SizedBox(height: 24),
             AppTextField(
               label: 'Valor a ser transferido',
@@ -237,7 +102,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              hintText: '0,00',
+                hintText: '0,00',
             ),
 
             const SizedBox(height: 32),
@@ -255,4 +120,83 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       ),
     );
   }
+
+  Widget _buildTitularidadeTab() {
+    return Column(
+      children: [
+        _buildTitularidadeTile(title: 'Mesma titularidade', index: 0),
+        _buildTitularidadeTile(title: 'Outra titularidade', index: 1),
+      ],
+    );
+  }
+
+  // Widget auxiliar para os itens de titularidade preservando seu estilo
+  Widget _buildTitularidadeTile({required String title, required int index}) {
+    final isSelected = selectedTitularidade == index;
+    return ListTile(
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      tileColor: isSelected
+          ? AppDesignTokens.colorPrimary.withValues(alpha: 0.1)
+          : null,
+      selected: isSelected,
+      selectedTileColor: AppDesignTokens.colorPrimary.withValues(alpha: 0.15),
+      onTap: () => setState(() => selectedTitularidade = index),
+    );
+  }
+
+
+  // Aba 2 e 3: Lista de Contatos/Favoritos
+ Widget _buildListTab(
+  List<Contact> list,
+  ContactsProvider provider,
+  String textEmpty,
+) {
+  if (provider.isLoading) {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  return Column(
+    children: [
+      // Botão sempre visível no topo da aba
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: AppButton(
+          label: 'Adicionar contato',
+          onPressed: () async {
+            final name = await showDialog<String>(
+              context: context,
+              builder: (ctx) => const AddContactDialogWidget(),
+            );
+            if (name != null && name.isNotEmpty) {
+              await provider.addContact(name);
+            }
+          },
+        ),
+      ),
+      
+      // Conteúdo condicional: Lista ou Mensagem de Vazio
+      Expanded(
+        child: list.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(textEmpty),
+                ),
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  children: list.map((contact) => ContactListItem(
+                    contact: contact,
+                    onToggleFavorite: () => provider.toggleFavorite(contact),
+                    onSelectChanged: (value) {
+                      setState(() => contact.isSelected = value ?? false);
+                    },
+                  )).toList(),
+                ),
+              ),
+      ),
+    ],
+  );
+}
 }
