@@ -21,10 +21,20 @@ class _AddContactDialogWidgetState extends State<AddContactDialogWidget> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Novo contato'),
-      content: AppTextField(
-        label: 'Nome do contato',
-        controller: _controller,
-        hintText: 'Digite o nome',
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize
+              .min,
+          children: [
+            AppTextField(
+              label: 'Nome do contato',
+              controller: _controller,
+              hintText: 'Digite o nome',
+              autofocus: true,
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -37,5 +47,6 @@ class _AddContactDialogWidgetState extends State<AddContactDialogWidget> {
         ),
       ],
     );
+
   }
 }

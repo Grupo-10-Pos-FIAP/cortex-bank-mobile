@@ -71,7 +71,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
             ),
 
             AppTabs(
-              height: 200,
+              height: 160,
               titles: const ['Nova conta', 'Contatos', 'Favoritos'],
               children: [
                 // Aba 1: Nova Conta
