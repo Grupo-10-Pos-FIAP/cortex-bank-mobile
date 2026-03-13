@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 
-/// lightweight utility that shows snackbars at the top of the screen
-/// with a slide‑down animation. For more complex scenarios you might use an
-/// external package, but this implementation keeps the dependency list
-/// minimal by building an [OverlayEntry] and animating it manually.
 class AppSnackBar {
   static void _showOverlay(BuildContext context, Widget child) {
     final overlay = Overlay.of(context);
@@ -59,8 +55,6 @@ class AppSnackBar {
   }
 }
 
-/// internal widget that animates from the top and removes itself after a short
-/// delay.
 class _TopSnackBar extends StatefulWidget {
   const _TopSnackBar({required this.entry, required this.child});
 

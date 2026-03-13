@@ -1,4 +1,3 @@
-/// Rotas nomeadas do app.
 class AppRoutes {
   AppRoutes._();
 
