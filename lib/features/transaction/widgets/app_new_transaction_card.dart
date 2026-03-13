@@ -31,20 +31,23 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   @override
   void initState() {
     super.initState();
-    // Carrega os contatos via Provider após o build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ContactsProvider>().loadContacts();
     });
   }
 
-  Future<void> _submitTransaction(BuildContext context) async {
-    // 1. Valida o formulário (Dropdown e Valor)
+  @override
+  void dispose() {
+    _valueController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitTransaction() async {
     if (!_formKey.currentState!.validate()) return;
 
     final contactsProvider = context.read<ContactsProvider>();
     final txProvider = context.read<TransactionsProvider>();
 
-    // 2. Identifica o destino selecionado
     Contact? selectedContact;
     try {
       selectedContact = contactsProvider.contacts.firstWhere(
@@ -54,7 +57,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       selectedContact = null;
     }
 
-    // 3. Validação de negócio: Se for transferência, exige um destino
     if (selectedValue == 'transferencia' &&
         selectedContact == null &&
         selectedTitularidade == null) {
@@ -93,16 +95,100 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
           c.isSelected = false;
         }
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Transação realizada com sucesso!')),
+        const SnackBar(
+          content: Text('Transação realizada com sucesso!'),
+          backgroundColor: AppDesignTokens.colorFeedbackSuccess,
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(txProvider.errorMessage ?? 'Erro desconhecido')),
       );
     }
   }
 
-  @override
-  void dispose() {
-    _valueController.dispose();
-    super.dispose();
+  Widget _buildTitularidadeTile({required String title, required int index}) {
+    final isSelected = selectedTitularidade == index;
+    return ListTile(
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      tileColor: isSelected
+          ? AppDesignTokens.colorPrimary.withValues(alpha: 0.1)
+          : null,
+      selected: isSelected,
+      selectedTileColor: AppDesignTokens.colorPrimary.withValues(alpha: 0.15),
+      onTap: () => setState(() => selectedTitularidade = index),
+    );
+  }
+
+  Widget _buildTitularidadeTab() {
+    return Column(
+      children: [
+        _buildTitularidadeTile(title: 'Mesma titularidade', index: 0),
+        _buildTitularidadeTile(title: 'Outra titularidade', index: 1),
+      ],
+    );
+  }
+
+  Widget _buildListTab(
+    List<Contact> list,
+    ContactsProvider provider,
+    String textEmpty,
+  ) {
+    if (provider.isLoading) return Center(child: CircularProgressIndicator());
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: AppButton(
+            label: 'Adicionar contato',
+            onPressed: () async {
+              final name = await showDialog<String>(
+                context: context,
+                builder: (ctx) => const AddContactDialogWidget(),
+              );
+              if (name != null && name.isNotEmpty)
+                await provider.addContact(name);
+            },
+          ),
+        ),
+        Expanded(
+          child: list.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(textEmpty),
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    children: list
+                        .map(
+                          (contact) => ContactListItem(
+                            contact: contact,
+                            onToggleFavorite: () =>
+                                provider.toggleFavorite(contact),
+                            onSelectChanged: (value) {
+                              setState(() {
+                                for (var c in provider.contacts) {
+                                  c.isSelected = false;
+                                }
+                                contact.isSelected = value ?? false;
+                                if (contact.isSelected)
+                                  selectedTitularidade = null;
+                              });
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -132,22 +218,16 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               showRequiredIndicator: true,
               validator: (value) => value == null ? 'Campo obrigatório' : null,
             ),
-
             AppTabs(
               height: 160,
               titles: const ['Nova conta', 'Contatos', 'Favoritos'],
               children: [
-                // Aba 1: Nova Conta
                 _buildTitularidadeTab(),
-
-                // Aba 2: Contatos
                 _buildListTab(
                   contactsProvider.contacts,
                   contactsProvider,
                   'Nenhum Contato',
                 ),
-
-                // Aba 3: Favoritos
                 _buildListTab(
                   contactsProvider.favoriteContacts,
                   contactsProvider,
@@ -155,7 +235,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                 ),
               ],
             ),
-
             const Divider(height: 1, color: AppDesignTokens.colorNeutral),
             const SizedBox(height: 24),
             AppTextField(
@@ -167,13 +246,44 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               ),
               hintText: '0,00',
             ),
-
             const SizedBox(height: 24),
             Consumer<TransactionsProvider>(
               builder: (context, txProvider, child) {
                 return AppButton(
                   label: 'Confirmar transferência',
-                  onPressed: () => _submitTransaction(context),
+                  loading: txProvider.isLoading,
+                  onPressed: () async {
+                    final confirmar = await showDialog<bool>(
+                      context: context,
+                      useRootNavigator: true,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Confirmar Transação'),
+                        content: const Text(
+                          'Deseja realmente realizar esta transferência?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text(
+                              'Confirmar',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    // Verificamos se o widget ainda está montado antes de realizar a ação
+                    if (confirmar == true && mounted) {
+                      // Chamamos a função sem passar o context por parâmetro,
+                      // usando o context interno do State dentro do _submitTransaction
+                      _submitTransaction();
+                    }
+                  },
                 );
               },
             ),
@@ -181,96 +291,5 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
         ),
       ),
     );
-  }
-
-  Widget _buildTitularidadeTab() {
-    return Column(
-      children: [
-        _buildTitularidadeTile(title: 'Mesma titularidade', index: 0),
-        _buildTitularidadeTile(title: 'Outra titularidade', index: 1),
-      ],
-    );
-  }
-
-  // Widget auxiliar para os itens de titularidade preservando seu estilo
-  Widget _buildTitularidadeTile({required String title, required int index}) {
-    final isSelected = selectedTitularidade == index;
-    return ListTile(
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      tileColor: isSelected
-          ? AppDesignTokens.colorPrimary.withValues(alpha: 0.1)
-          : null,
-      selected: isSelected,
-      selectedTileColor: AppDesignTokens.colorPrimary.withValues(alpha: 0.15),
-      onTap: () => setState(() => selectedTitularidade = index),
-    );
-  }
-
-  Widget _buildListTab(
-    List<Contact> list,
-    ContactsProvider provider,
-    String textEmpty,
-  ) {
-    if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: AppButton(
-            label: 'Adicionar contato',
-            onPressed: () async {
-              final name = await showDialog<String>(
-                context: context,
-                builder: (ctx) => const AddContactDialogWidget(),
-              );
-              if (name != null && name.isNotEmpty) {
-                await provider.addContact(name);
-              }
-            },
-          ),
-        ),
-        Expanded(
-          child: list.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(textEmpty),
-                  ),
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    children: list
-                        .map(
-                          (contact) => ContactListItem(
-                            contact: contact,
-                            onToggleFavorite: () =>
-                                provider.toggleFavorite(contact),
-                            onSelectChanged: (value) {
-                              setState(() {
-                                // 1. Desmarca TODOS os contatos da lista mestre do provider
-                                for (var c in provider.contacts) {
-                                  c.isSelected = false;
-                                }
-                                // 2. Marca apenas o atual
-                                contact.isSelected = value ?? false;
-
-                                // 3. Se marcou um contato, limpa a seleção de titularidade da Aba 1
-                                if (contact.isSelected) {
-                                  selectedTitularidade = null;
-                                }
-                              });
-                            },
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-        ),
-      ],
-    ); // Removido o ); extra que causava erro
   }
 }

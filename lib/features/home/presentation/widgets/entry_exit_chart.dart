@@ -68,7 +68,7 @@ class _EntryExitChartState extends State<EntryExitChart> {
   Widget build(BuildContext context) {
     final provider = context.watch<TransactionsProvider>();
     final chartData = _computeEntryExit(provider.transactions);
-    if (provider.loading) {
+    if (provider.isLoading) {
       return AppCardContainer(
         title: 'Entradas e Saídas',
         child: const Center(child: Text('Carregando...')),

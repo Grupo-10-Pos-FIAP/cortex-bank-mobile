@@ -2,8 +2,9 @@ import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_new_transaction_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 
 class TransactionFormPage extends StatefulWidget {
   const TransactionFormPage({super.key});
@@ -25,18 +26,12 @@ class _TransactionFormPageState extends State<TransactionFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppDesignTokens.colorBgDefault,
-      appBar: AppBar(
-        title: const Text('Nova Transação'),
-        backgroundColor: AppDesignTokens.colorBgDefault,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
           child: Column(
             children: [
-              AppBalanceCard(),
-              const SizedBox(height: AppDesignTokens.spacingLg),
+              const AppBalanceCard(),
               const AppNewTransactionCard(),
             ],
           ),

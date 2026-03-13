@@ -16,8 +16,7 @@ import 'package:cortex_bank_mobile/features/transaction/data/repositories/transa
 final getIt = GetIt.instance;
 
 void configureDependencies() {
-
-   getIt.registerLazySingleton<UserDataSource>(
+  getIt.registerLazySingleton<UserDataSource>(
     () => UserDataSourceFirestore(FirebaseFirestore.instance),
   );
 

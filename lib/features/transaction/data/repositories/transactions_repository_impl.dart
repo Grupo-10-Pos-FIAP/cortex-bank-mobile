@@ -1,5 +1,5 @@
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
@@ -7,18 +7,17 @@ import 'package:cortex_bank_mobile/features/transaction/data/datasources/transac
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
 
 class TransactionsRepositoryImpl implements ITransactionsRepository {
+  final TransactionsDataSource _dataSource;
   TransactionsRepositoryImpl(this._dataSource);
 
-  final TransactionsDataSource _dataSource;
-
   @override
-  Future<Result<void>> add(Transaction transaction) async {
+  Future<Result<String>> add(Transaction transaction) async {
     try {
-      await _dataSource.add(transaction);
-      return const Success(null);
+      final id = await _dataSource.add(transaction);
+      return Success(id);
     } catch (e) {
       safeLogError('Erro ao adicionar transação', e);
-      return FailureResult(Failure(message: 'Erro ao adicionar transação'));
+      return FailureResult(Failure(message: 'Erro ao processar transação'));
     }
   }
 
@@ -28,8 +27,8 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       final list = await _dataSource.getAll();
       return Success(list);
     } catch (e) {
-      safeLogError('Erro ao obter transações', e);
-      return FailureResult(Failure(message: 'Erro ao obter transações'));
+      safeLogError('Erro ao obter extrato', e);
+      return FailureResult(Failure(message: 'Erro ao carregar extrato'));
     }
   }
 
@@ -40,18 +39,19 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       return const Success(null);
     } catch (e) {
       safeLogError('Erro ao deletar transação', e);
-      return FailureResult(Failure(message: 'Erro ao deletar transação'));
+      return FailureResult(Failure(message: 'Erro ao remover item'));
     }
   }
 
-  @override
+    @override
   Future<Result<BalanceSummary>> getBalanceSummary() async {
     try {
       final summary = await _dataSource.getBalanceSummary();
       return Success(summary);
     } catch (e) {
-      safeLogError('Erro ao obter resumo de saldo', e);
-      return FailureResult(Failure(message: 'Erro ao obter resumo de saldo'));
+      safeLogError('Erro ao calcular resumo de saldo', e);
+      return FailureResult(Failure(message: 'Erro ao carregar saldo'));
     }
   }
+
 }

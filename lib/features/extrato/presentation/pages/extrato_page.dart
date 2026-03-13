@@ -305,7 +305,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       ),
       body: Consumer<TransactionsProvider>(
         builder: (context, tx, _) {
-          if (tx.loading && tx.transactions.isEmpty) {
+          if (tx.isLoading && tx.transactions.isEmpty) {
             return const AppLoading();
           }
           final filtered = _filtrar(tx.transactions);

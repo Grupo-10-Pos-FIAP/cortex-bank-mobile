@@ -1,6 +1,6 @@
+import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
-import '../models/balance_summary.dart';
 import '../data/repositories/i_transactions_repository.dart';
 
 class TransactionsProvider extends ChangeNotifier {
@@ -13,18 +13,19 @@ class TransactionsProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Getters públicos (Essenciais para a UI enxergar os dados)
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   BalanceSummary? get balanceSummary => _balanceSummary;
   bool get isLoading => _isLoading;
-  bool get loading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Carregar transações
+  // Carregar lista de transações
   Future<void> loadTransactions() async {
     _setLoading(true);
     _errorMessage = null;
 
     final result = await _repository.getAll();
+
     result.fold(
       (success) => _transactions = success,
       (failure) => _errorMessage = failure.message,
@@ -33,16 +34,15 @@ class TransactionsProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  // Carregar sumário de saldo
   Future<void> loadBalanceSummary() async {
     final result = await _repository.getBalanceSummary();
+
     result.fold((success) {
       _balanceSummary = success;
       notifyListeners();
     }, (failure) => _errorMessage = failure.message);
   }
 
-  // Adicionar transação
   Future<bool> addTransaction(Transaction transaction) async {
     _setLoading(true);
     _errorMessage = null;
@@ -50,10 +50,10 @@ class TransactionsProvider extends ChangeNotifier {
     final result = await _repository.add(transaction);
 
     final isSuccess = result.fold(
-      (_) {
-        // Adiciona no topo da lista local
+      (id) {
+        // Adiciona localmente para feedback instantâneo
         _transactions = [transaction, ..._transactions];
-        // Recarrega o saldo para refletir a nova transação
+        // Atualiza o saldo automaticamente
         loadBalanceSummary();
         return true;
       },
@@ -75,12 +75,12 @@ class TransactionsProvider extends ChangeNotifier {
     result.fold((_) {
       _transactions.removeWhere((t) => t.id == id);
       loadBalanceSummary();
-      notifyListeners();
     }, (failure) => _errorMessage = failure.message);
+
     _setLoading(false);
   }
 
-  // Métodos auxiliares idênticos ao ContactsProvider
+  // Métodos auxiliares de estado
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

@@ -62,7 +62,7 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
   Widget build(BuildContext context) {
     final provider = context.watch<TransactionsProvider>();
     final chartData = _computeEvolution(provider.transactions);
-    if (provider.loading) {
+    if (provider.isLoading) {
       return AppCardContainer(
         title: 'Evolução do Saldo',
         child: const Center(child: Text('Carregando...')),
