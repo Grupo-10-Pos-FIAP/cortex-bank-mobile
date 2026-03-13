@@ -1,4 +1,5 @@
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_contact_dialog_widget.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contact_list_item.dart';
@@ -60,11 +61,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     if (selectedValue == 'transferencia' &&
         selectedContact == null &&
         selectedTitularidade == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecione um destino para a transferência'),
-        ),
-      );
+        AppSnackBar.show(context, 'Selecione um destino para a transferência');
       return;
     }
 
@@ -96,16 +93,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
         }
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transação realizada com sucesso!'),
-          backgroundColor: AppDesignTokens.colorFeedbackSuccess,
-        ),
-      );
+      AppSnackBar.success(context, 'Transação realizada com sucesso!');
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(txProvider.errorMessage ?? 'Erro desconhecido')),
-      );
+      AppSnackBar.error(context, txProvider.errorMessage ?? 'Erro desconhecido');
     }
   }
 
