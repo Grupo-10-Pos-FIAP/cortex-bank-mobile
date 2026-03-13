@@ -1,89 +1,89 @@
-import 'package:flutter/foundation.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
+import 'package:flutter/material.dart';
+import '../models/transaction.dart';
+import '../models/balance_summary.dart';
+import '../data/repositories/i_transactions_repository.dart';
 
 class TransactionsProvider extends ChangeNotifier {
-  TransactionsProvider(this._repository);
-
   final ITransactionsRepository _repository;
+
+  TransactionsProvider(this._repository);
 
   List<Transaction> _transactions = [];
   BalanceSummary? _balanceSummary;
-  bool _loading = false;
+  bool _isLoading = false;
   String? _errorMessage;
 
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   BalanceSummary? get balanceSummary => _balanceSummary;
-  bool get loading => _loading;
+  bool get isLoading => _isLoading;
+  bool get loading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  // Carregar transações
   Future<void> loadTransactions() async {
-    _loading = true;
+    _setLoading(true);
     _errorMessage = null;
-    notifyListeners();
 
     final result = await _repository.getAll();
     result.fold(
-      (list) {
-        _transactions = list;
-        _errorMessage = null;
-      },
-      (f) => _errorMessage = f.message,
+      (success) => _transactions = success,
+      (failure) => _errorMessage = failure.message,
     );
-    _loading = false;
-    notifyListeners();
+
+    _setLoading(false);
   }
 
+  // Carregar sumário de saldo
   Future<void> loadBalanceSummary() async {
     final result = await _repository.getBalanceSummary();
-    result.fold(
-      (s) {
-        _balanceSummary = s;
-        notifyListeners();
-      },
-      (_) {},
-    );
+    result.fold((success) {
+      _balanceSummary = success;
+      notifyListeners();
+    }, (failure) => _errorMessage = failure.message);
   }
 
+  // Adicionar transação
   Future<bool> addTransaction(Transaction transaction) async {
-    _loading = true;
+    _setLoading(true);
     _errorMessage = null;
-    notifyListeners();
 
     final result = await _repository.add(transaction);
-    var ok = false;
-    result.fold(
+
+    final isSuccess = result.fold(
       (_) {
-        _transactions = [..._transactions, transaction];
-        _errorMessage = null;
-        ok = true;
+        // Adiciona no topo da lista local
+        _transactions = [transaction, ..._transactions];
+        // Recarrega o saldo para refletir a nova transação
+        loadBalanceSummary();
+        return true;
       },
-      (f) => _errorMessage = f.message,
+      (failure) {
+        _errorMessage = failure.message;
+        return false;
+      },
     );
-    _loading = false;
-    notifyListeners();
-    return ok;
+
+    _setLoading(false);
+    return isSuccess;
   }
 
-  Future<bool> deleteTransaction(String id) async {
-    _loading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+  // Deletar transação
+  Future<void> deleteTransaction(String id) async {
+    _setLoading(true);
     final result = await _repository.delete(id);
-    var ok = false;
-    result.fold(
-      (_) {
-        _transactions = _transactions.where((t) => t.id != id).toList();
-        _errorMessage = null;
-        ok = true;
-      },
-      (f) => _errorMessage = f.message,
-    );
-    _loading = false;
+
+    result.fold((_) {
+      _transactions.removeWhere((t) => t.id == id);
+      loadBalanceSummary();
+      notifyListeners();
+    }, (failure) => _errorMessage = failure.message);
+    _setLoading(false);
+  }
+
+  // Métodos auxiliares idênticos ao ContactsProvider
+  void _setLoading(bool value) {
+    _isLoading = value;
     notifyListeners();
-    return ok;
   }
 
   void clearError() {

@@ -1,8 +1,10 @@
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/profile_page.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/dashboard_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,6 +22,16 @@ class _HomePageState extends State<HomePage> {
     TransactionFormPage(),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TransactionsProvider>().loadBalanceSummary();
+      context.read<TransactionsProvider>().loadTransactions();
+    });
+  }
+
 
   @override
   void dispose() {

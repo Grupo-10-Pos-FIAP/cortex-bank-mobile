@@ -3,43 +3,42 @@ import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
-import 'package:flutter/material.dart';
+import 'transactions_datasource.dart';
 
 class TransactionsDataSourceFirestore implements TransactionsDataSource {
+  final FirebaseFirestore _firestore;
   TransactionsDataSourceFirestore(this._firestore);
 
-  final FirebaseFirestore _firestore;
-
-  CollectionReference<Map<String, dynamic>> get _col {
+  CollectionReference<Map<String, dynamic>> get _transactionsCol {
     final user = fa.FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw Exception('Usuário não está logado');
-    }
-    return _firestore.collection(user.uid);
-  }
-
-  @override
-  Future<void> add(model.Transaction transaction) async {
-    await _col.doc(transaction.id).set(_toMap(transaction));
+    if (user == null) throw Exception('Usuário não autenticado');
+    return _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('transactions');
   }
 
   @override
   Future<List<model.Transaction>> getAll() async {
-    debugPrint('DEBUG Firestore: buscando transactions...');
-    final snapshot = await _col.get();
-
-    debugPrint('DEBUG Firestore: qtd docs = ${snapshot.docs.length}');
-    for (final d in snapshot.docs) {
-      debugPrint('DEBUG Firestore doc: id=${d.id}, data=${d.data()}');
-    }
+    final snapshot = await _transactionsCol
+        .orderBy('date', descending: true)
+        .get();
 
     return snapshot.docs.map((d) => _fromDoc(d)).toList();
   }
 
   @override
+  Future<void> add(model.Transaction transaction) async {
+    // Segue a base do Contacts: usa .add() para o Firestore gerar o ID único
+    final docRef = await _transactionsCol.add(_toMap(transaction));
+
+    // Opcional: Se o seu objeto 'transaction' precisar carregar o ID gerado pelo Firebase
+    // transaction.id = docRef.id;
+  }
+
+  @override
   Future<void> delete(String id) async {
-    await _col.doc(id).delete();
+    await _transactionsCol.doc(id).delete();
   }
 
   @override
@@ -47,6 +46,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     final list = await getAll();
     var incomeCents = 0;
     var expenseCents = 0;
+
     for (final t in list) {
       final cents = (t.value.abs() * 100).round();
       if (t.type == model.TransactionType.credit) {
@@ -55,6 +55,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         expenseCents += cents;
       }
     }
+
     return BalanceSummary(
       totalIncomeCents: incomeCents,
       totalExpenseCents: expenseCents,
@@ -64,16 +65,16 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
 
   static Map<String, dynamic> _toMap(model.Transaction t) {
     return {
-      'id': t.id,
       'accountId': t.accountId,
       'type': t.type == model.TransactionType.credit ? 'Credit' : 'Debit',
       'value': t.value,
       'date': Timestamp.fromDate(t.date),
+      'createdAt': FieldValue.serverTimestamp(),
       'status': t.status.isEmpty ? 'Pending' : t.status,
-      if (t.from != null && t.from!.isNotEmpty) 'from': t.from,
-      if (t.to != null && t.to!.isNotEmpty) 'to': t.to,
-      if (t.anexo != null && t.anexo!.isNotEmpty) 'anexo': t.anexo,
-      if (t.urlAnexo != null && t.urlAnexo!.isNotEmpty) 'urlAnexo': t.urlAnexo,
+      'to': t.to,
+      'from': t.from,
+      'anexo': t.anexo,
+      'urlAnexo': t.urlAnexo,
     };
   }
 
@@ -81,22 +82,18 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     QueryDocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final d = doc.data();
-    final date = d['date'];
-    final value = (d['value'] as num?)?.toDouble() ?? 0.0;
-    final typeStr = d['type'] as String? ?? 'Credit';
+    final date = d['date'] as Timestamp?;
     return model.Transaction(
-      id: d['id'] as String? ?? doc.id,
+      id: doc.id,
       accountId: d['accountId'] as String? ?? '',
-      type: typeStr == 'Debit'
+      type: d['type'] == 'Debit'
           ? model.TransactionType.debit
           : model.TransactionType.credit,
-      value: value,
-      date: date is Timestamp ? date.toDate() : DateTime.now(),
-      from: d['from'] as String?,
+      value: (d['value'] as num?)?.toDouble() ?? 0.0,
+      date: date?.toDate() ?? DateTime.now(),
       to: d['to'] as String?,
-      anexo: d['anexo'] as String?,
-      urlAnexo: d['urlAnexo'] as String?,
-      status: (d['status'] as String?) ?? 'Pending',
+      from: d['from'] as String?,
+      status: d['status'] as String? ?? 'Pending',
     );
   }
 }

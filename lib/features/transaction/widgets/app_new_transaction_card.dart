@@ -3,6 +3,8 @@ import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_contact_dialog_widget.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contact_list_item.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart'; // Importe o Provider
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
@@ -10,7 +12,7 @@ import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Adicionado
+import 'package:provider/provider.dart';
 
 class AppNewTransactionCard extends StatefulWidget {
   const AppNewTransactionCard({super.key});
@@ -35,6 +37,68 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     });
   }
 
+  Future<void> _submitTransaction(BuildContext context) async {
+    // 1. Valida o formulário (Dropdown e Valor)
+    if (!_formKey.currentState!.validate()) return;
+
+    final contactsProvider = context.read<ContactsProvider>();
+    final txProvider = context.read<TransactionsProvider>();
+
+    // 2. Identifica o destino selecionado
+    Contact? selectedContact;
+    try {
+      selectedContact = contactsProvider.contacts.firstWhere(
+        (c) => c.isSelected,
+      );
+    } catch (_) {
+      selectedContact = null;
+    }
+
+    // 3. Validação de negócio: Se for transferência, exige um destino
+    if (selectedValue == 'transferencia' &&
+        selectedContact == null &&
+        selectedTitularidade == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecione um destino para a transferência'),
+        ),
+      );
+      return;
+    }
+
+    final transaction = Transaction(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      accountId: '',
+      type: selectedValue == 'credito'
+          ? TransactionType.credit
+          : TransactionType.debit,
+      value: double.tryParse(_valueController.text.replaceAll(',', '.')) ?? 0.0,
+      date: DateTime.now(),
+      to:
+          selectedContact?.name ??
+          (selectedTitularidade == 0
+              ? 'Mesma Titularidade'
+              : 'Outra Titularidade'),
+      status: 'Completed',
+    );
+
+    final success = await txProvider.addTransaction(transaction);
+
+    if (success && mounted) {
+      _valueController.clear();
+      setState(() {
+        selectedValue = null;
+        selectedTitularidade = null;
+        for (var c in contactsProvider.contacts) {
+          c.isSelected = false;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transação realizada com sucesso!')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _valueController.dispose();
@@ -43,7 +107,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuta o provider de contatos
     final contactsProvider = context.watch<ContactsProvider>();
 
     return AppCardContainer(
@@ -102,17 +165,16 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-                hintText: '0,00',
+              hintText: '0,00',
             ),
 
-            const SizedBox(height: 32),
-
-            AppButton(
-              label: 'Concluir transação',
-              onPressed: () {
-                if (_formKey.currentState?.validate() ?? false) {
-                  // formulário válido; prossiga com a ação (ex.: enviar à provider)
-                }
+            const SizedBox(height: 24),
+            Consumer<TransactionsProvider>(
+              builder: (context, txProvider, child) {
+                return AppButton(
+                  label: 'Confirmar transferência',
+                  onPressed: () => _submitTransaction(context),
+                );
               },
             ),
           ],
@@ -145,58 +207,70 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     );
   }
 
+  Widget _buildListTab(
+    List<Contact> list,
+    ContactsProvider provider,
+    String textEmpty,
+  ) {
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  // Aba 2 e 3: Lista de Contatos/Favoritos
- Widget _buildListTab(
-  List<Contact> list,
-  ContactsProvider provider,
-  String textEmpty,
-) {
-  if (provider.isLoading) {
-    return const Center(child: CircularProgressIndicator());
-  }
-
-  return Column(
-    children: [
-      // Botão sempre visível no topo da aba
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: AppButton(
-          label: 'Adicionar contato',
-          onPressed: () async {
-            final name = await showDialog<String>(
-              context: context,
-              builder: (ctx) => const AddContactDialogWidget(),
-            );
-            if (name != null && name.isNotEmpty) {
-              await provider.addContact(name);
-            }
-          },
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: AppButton(
+            label: 'Adicionar contato',
+            onPressed: () async {
+              final name = await showDialog<String>(
+                context: context,
+                builder: (ctx) => const AddContactDialogWidget(),
+              );
+              if (name != null && name.isNotEmpty) {
+                await provider.addContact(name);
+              }
+            },
+          ),
         ),
-      ),
-      
-      // Conteúdo condicional: Lista ou Mensagem de Vazio
-      Expanded(
-        child: list.isEmpty
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(textEmpty),
+        Expanded(
+          child: list.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(textEmpty),
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    children: list
+                        .map(
+                          (contact) => ContactListItem(
+                            contact: contact,
+                            onToggleFavorite: () =>
+                                provider.toggleFavorite(contact),
+                            onSelectChanged: (value) {
+                              setState(() {
+                                // 1. Desmarca TODOS os contatos da lista mestre do provider
+                                for (var c in provider.contacts) {
+                                  c.isSelected = false;
+                                }
+                                // 2. Marca apenas o atual
+                                contact.isSelected = value ?? false;
+
+                                // 3. Se marcou um contato, limpa a seleção de titularidade da Aba 1
+                                if (contact.isSelected) {
+                                  selectedTitularidade = null;
+                                }
+                              });
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ),
-              )
-            : SingleChildScrollView(
-                child: Column(
-                  children: list.map((contact) => ContactListItem(
-                    contact: contact,
-                    onToggleFavorite: () => provider.toggleFavorite(contact),
-                    onSelectChanged: (value) {
-                      setState(() => contact.isSelected = value ?? false);
-                    },
-                  )).toList(),
-                ),
-              ),
-      ),
-    ],
-  );
-}
+        ),
+      ],
+    ); // Removido o ); extra que causava erro
+  }
 }

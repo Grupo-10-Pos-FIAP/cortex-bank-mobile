@@ -25,16 +25,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tx = context.watch<TransactionsProvider>();
-    final saldo = (tx.balanceSummary?.totalIncomeCents ?? 0) / 100.0;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
       child: Column(
         children: [
           AppBalanceCard(
             mostrarSaldoInicial: true,
-            saldo: saldo,
-            onTap: () => Navigator.pushNamed(context, AppRoutes.extrato),
           ),
           const BalanceEvolutionChart(),
           const EntryExitChart(),
