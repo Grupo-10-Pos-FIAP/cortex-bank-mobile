@@ -6,7 +6,7 @@ Versão resumida. Quem quiser todos os detalhes vê [ESTRUTURA_PROJETO.md](ESTRU
 
 ## Em uma frase
 
-O código é organizado **por funcionalidade** (auth, transação, extrato, home). Cada uma tem suas telas, estado, dados e modelos dentro da própria pasta. O que serve para várias funcionalidades fica em `core/` ou `shared/`.
+O código é organizado **por funcionalidade** (auth, transação, extrato, home, contatos). Cada uma tem suas telas, estado, dados e modelos dentro da própria pasta. O que serve para várias funcionalidades fica em `core/` ou `shared/`.
 
 ---
 
@@ -27,34 +27,35 @@ O código é organizado **por funcionalidade** (auth, transação, extrato, home
 
 ## Estrutura em uma olhada
 
-```
+```txt
 lib/
 ├── main.dart, app.dart
-├── core/          → coisas que várias partes do app usam
-│   ├── utils/     → validadores, formatters, result
-│   ├── errors/    → Failure
-│   ├── widgets/   → AppButton, AppTextField, etc.
-│   ├── services/  → Firebase genérico
+├── core/          → utilitários compartilhados
+│   ├── constants/ → valores de configuração
 │   └── di/        → registro de dependências (único que conhece as features)
+│   ├── errors/    → Failure
+│   ├── utils/     → validadores, formatters, result
+│   ├── widgets/   → AppButton, AppTextField, etc.
 ├── shared/
 │   └── theme/     → tema e cores
 ├── features/      → uma pasta por funcionalidade
 │   ├── auth/      → login, cadastro, User, AuthProvider
-│   ├── transaction/ → transações, Transaction, TransactionsProvider
+│   ├── contacts/  → contatos do usuário
 │   ├── extrato/   → tela de extrato
 │   └── home/      → tela principal (bottom nav)
+│   ├── transaction/ → transações, Transaction, TransactionsProvider
 ```
 
 Dentro de uma feature (ex.: auth):
 
-```
+```txt
 auth/
 ├── data/          → repositórios, datasources (API/Firebase)
 ├── models/        → User
-├── state/         → AuthProvider
-└── presentation/
+├── presentation/
     ├── pages/     → LoginPage, RegisterPage
     └── widgets/  → cabeçalho, estilos dos campos
+└── state/         → AuthProvider
 ```
 
 ---

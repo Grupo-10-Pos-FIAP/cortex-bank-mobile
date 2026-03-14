@@ -70,6 +70,7 @@ lib/
 │
 ├── core/
 │   ├── constants/
+|   |   |── app_routes.dart
 │   │   └── .gitkeep
 │   ├── di/
 │   │   └── injection.dart
@@ -84,12 +85,15 @@ lib/
 │   │   ├── result.dart
 │   └── widgets/
 │       ├── app_button.dart
-│       ├── app_text_field.dart
+│       ├── app_card_container.dart
+│       ├── app_connectivity.dart
+│       ├── app_dropdown_field.dart
 │       ├── app_error_message.dart
 │       ├── app_loading.dart
+│       ├── app_snackbar.dart
+│       ├── app_tabs.dart
+│       ├── app_text_field.dart
 │       └── bottom_navigation.dart
-│   └── services/
-│       └── firebase_service.dart
 │
 ├── shared/
 │   └── theme/
@@ -100,14 +104,12 @@ lib/
 │   ├── auth/
 │   │   ├── data/
 │   │   │   ├── datasources/
-│   │   │   │   ├── auth_remote_datasource.dart
 │   │   │   │   ├── auth_datasource_firebase.dart
-│   │   │   │   ├── auth_remote_datasource_fake.dart
-│   │   │   │   ├── auth_local_datasource.dart
-│   │   │   │   └── auth_local_datasource_in_memory.dart
+│   │   │   │   ├── auth_datasource.dart
+│   │   │   │   ├── user_datasource_firebase.dart
+|   |   |   |   └── user_datasource.dart
 │   │   │   ├── mappers/
-│   │   │   │   ├── auth_error_mapper.dart
-│   │   │   │   └── user_mapper.dart
+│   │   │   │   └── auth_error_mapper.dart
 │   │   │   └── repositories/
 │   │   │       ├── i_auth_repository.dart
 │   │   │       └── auth_repository_impl.dart
@@ -118,16 +120,48 @@ lib/
 │   │   └── presentation/
 │   │       ├── pages/
 │   │       │   ├── login_page.dart
+│   │       │   ├── profile_page.dart
 │   │       │   └── register_page.dart
 │   │       └── widgets/
 │   │           ├── auth_page_header.dart
 │   │           └── auth_field_styles.dart
 │   │
+│   ├── contacts/
+│   │   ├── data/
+│   │   │   ├── datasources/
+│   │   │   │   ├── contacts_datasource.dart
+│   │   │   │   └── contacts_datasource_firebase.dart
+│   │   │   └── repositories/
+│   │   │       ├── i_contacts_repository.dart
+│   │   │       └── contacts_repository_impl.dart
+│   │   ├── models/
+│   │   │   └──  contact.dart
+│   │   ├── state/
+│   │   │   └── contacts_provider.dart
+│   │   └── presentation/
+│   │       └── widgets/
+│   │           ├── add_contact_dialog_widget.dart
+│   │           └── contact_list_item.dart
+│   
+│   ├── extrato/
+│   │   └── presentation/
+│   │       └── pages/
+│   │           └── extrato_page.dart
+│   │
+│   └── home/
+│       └── presentation/
+│           └── pages/
+|               ├── dashboard_page.dart
+│               └── home_page.dart
+|           └── widgets/
+|               ├── dbalance_evolution_chart.dart
+│               └── entry_exit_chart.dart
+|
 │   ├── transaction/
 │   │   ├── data/
 │   │   │   ├── datasources/
 │   │   │   │   ├── transactions_datasource.dart
-│   │   │   │   └── transactions_datasource_in_memory.dart
+│   │   │   │   └── transactions_datasource_firestore.dart
 │   │   │   └── repositories/
 │   │   │       ├── i_transactions_repository.dart
 │   │   │       └── transactions_repository_impl.dart
@@ -140,16 +174,9 @@ lib/
 │   │       └── pages/
 │   │           ├── transaction_form_page.dart
 │   │           └── transaction_new_form_page.dart
-│   │
-│   ├── extrato/
-│   │   └── presentation/
-│   │       └── pages/
-│   │           └── extrato_page.dart
-│   │
-│   └── home/
-│       └── presentation/
-│           └── pages/
-│               └── home_page.dart
+│   │       └── widgets/
+│   │           ├── app_balance_card.dart
+│   │           └── app_new_transaction_card.dart
 ```
 
 ---
@@ -168,7 +195,6 @@ lib/
 │   ├── errors/                    # Failure, tipos de erro
 │   ├── utils/                     # Validadores, formatters, result, log, env
 │   ├── widgets/                   # Componentes reutilizáveis (botões, campos, loading)
-│   └── services/                  # Serviços de infra (ex.: FirestoreService genérico)
 │
 ├── shared/                        # Compartilhado, fora do core
 │   └── theme/                     # AppTheme, design tokens
