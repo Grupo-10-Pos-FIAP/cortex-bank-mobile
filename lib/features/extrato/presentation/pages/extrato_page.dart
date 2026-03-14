@@ -1,6 +1,8 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
     show formatCentsToBRL, parseBRLMaskToCents, CurrencyBRLInputFormatter;
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
@@ -407,40 +409,17 @@ class _ExtratoPageState extends State<ExtratoPage> {
                       ),
 
                       const SizedBox(height: AppDesignTokens.spacingMd),
-                      TextField(
+                      AppTextFieldDecorator(
+                        label: 'Valor Mínimo',
                         controller: _minValueController,
                         onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          labelText: 'Valor mínimo',
-                          hintText: 'R\$ 0,00',
-                          filled: true,
-                          fillColor: AppDesignTokens.colorWhite,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [CurrencyBRLInputFormatter()],
                       ),
                       const SizedBox(height: AppDesignTokens.spacingMd),
-                      TextField(
+                      AppTextFieldDecorator(
+                        label: 'Valor máximo',
                         controller: _maxValueController,
+
                         onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          labelText: 'Valor máximo',
-                          hintText: 'R\$ 0,00',
-                          filled: true,
-                          fillColor: AppDesignTokens.colorWhite,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [CurrencyBRLInputFormatter()],
                       ),
                       const SizedBox(height: AppDesignTokens.spacingLg),
                       SizedBox(
@@ -485,7 +464,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, i) {
                       final t = filtered[i];
-                      return _TransactionCard(
+                      return TransactionCard(
                         key: ValueKey(t.id),
                         transaction: t,
                         onDelete: () => tx.deleteTransaction(t.id),
@@ -496,202 +475,6 @@ class _ExtratoPageState extends State<ExtratoPage> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _TransactionCard extends StatelessWidget {
-  const _TransactionCard({
-    super.key,
-    required this.transaction,
-    required this.onDelete,
-  });
-
-  final model.Transaction transaction;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final isCredit = transaction.type == model.TransactionType.credit;
-    final transactionTypeLabel = isCredit
-        ? 'Transferência recebida'
-        : 'Transferência efetuada';
-    final valueCents = (transaction.value.abs() * 100).round();
-    final valorStr = isCredit
-        ? '+${formatCentsToBRL(valueCents)}'
-        : '-${formatCentsToBRL(valueCents)}';
-    final dateStr =
-        '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
-    final statusLabel = transaction.status == 'Pending'
-        ? 'Pendente'
-        : transaction.status;
-    final hasFromTo =
-        (transaction.from != null && transaction.from!.isNotEmpty) ||
-        (transaction.to != null && transaction.to!.isNotEmpty);
-    final fromToText = [
-      if (transaction.from != null && transaction.from!.isNotEmpty)
-        'De ${transaction.from}',
-      if (transaction.from != null &&
-          transaction.from!.isNotEmpty &&
-          transaction.to != null &&
-          transaction.to!.isNotEmpty)
-        ' • ',
-      if (transaction.to != null && transaction.to!.isNotEmpty)
-        'Para ${transaction.to}',
-    ].join();
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppDesignTokens.spacingSm),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          AppDesignTokens.borderRadiusDefault,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isCredit
-                        ? AppDesignTokens.colorFeedbackSuccess.withValues(
-                            alpha: 0.15,
-                          )
-                        : AppDesignTokens.colorFeedbackWarning.withValues(
-                            alpha: 0.25,
-                          ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-                    color: isCredit
-                        ? AppDesignTokens.colorFeedbackSuccess
-                        : AppDesignTokens.colorFeedbackWarning,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        transactionTypeLabel,
-                        style: GoogleFonts.roboto(
-                          fontWeight: AppDesignTokens.fontWeightSemibold,
-                          fontSize: AppDesignTokens.fontSizeBody,
-                          color: AppDesignTokens.colorContentDefault,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (transaction.status == 'Pending')
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppDesignTokens.colorFeedbackWarning
-                                .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: GoogleFonts.roboto(
-                              fontSize: AppDesignTokens.fontSizeCaption,
-                              color: AppDesignTokens.colorContentDefault,
-                            ),
-                          ),
-                        ),
-                      if (transaction.status != 'Pending' &&
-                          transaction.status.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppDesignTokens.colorGray200,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: GoogleFonts.roboto(
-                              fontSize: AppDesignTokens.fontSizeCaption,
-                              color: AppDesignTokens.colorContentDefault,
-                            ),
-                          ),
-                        ),
-                      if (hasFromTo) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person_outline,
-                              size: 16,
-                              color: AppDesignTokens.colorContentDisabled,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                fromToText,
-                                style: GoogleFonts.roboto(
-                                  fontSize: AppDesignTokens.fontSizeSmall,
-                                  color: AppDesignTokens.colorContentDisabled,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      valorStr,
-                      style: GoogleFonts.roboto(
-                        fontWeight: AppDesignTokens.fontWeightBold,
-                        fontSize: AppDesignTokens.fontSizeBody,
-                        color: isCredit
-                            ? AppDesignTokens.colorFeedbackSuccess
-                            : AppDesignTokens.colorFeedbackError,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: AppDesignTokens.colorContentDisabled,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          dateStr,
-                          style: GoogleFonts.roboto(
-                            fontSize: AppDesignTokens.fontSizeCaption,
-                            color: AppDesignTokens.colorContentDisabled,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
