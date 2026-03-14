@@ -24,71 +24,110 @@ class ProfilePage extends StatelessWidget {
           builder: (context, auth, _) {
             final user = auth.user;
             if (user == null) {
-              return Center(
-                child: Text(
-                  'Nenhum usuário autenticado',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppDesignTokens.colorContentDefault,
-                  ),
-                ),
-              );
+              return const Center(child: Text('Usuário não logado'));
             }
 
-            return AppCardContainer(
-              padding: EdgeInsets.zero,
-              child: Padding(
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
+              child: AppCardContainer(
                 padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
-                      child: Text(
-                        user.username.isNotEmpty
-                            ? user.username[0].toUpperCase()
-                            : '?',
-                        style: Theme.of(context).textTheme.headlineLarge
-                            ?.copyWith(
-                              color: AppDesignTokens.colorContentDefault,
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: AppDesignTokens.colorPrimary,
+                            child: Text(
+                              user.username.isNotEmpty
+                                  ? user.username[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                          ),
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          Text(
+                            user.username,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppDesignTokens.colorContentDefault,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppDesignTokens.spacingMd),
-                    Text(
-                      'Nome',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppDesignTokens.colorContentSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppDesignTokens.spacingXs),
-                    Text(
-                      user.username,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppDesignTokens.colorContentDefault,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: AppDesignTokens.spacingMd),
 
-                    Text(
-                      'Email',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppDesignTokens.colorContentSecondary,
+                    const SizedBox(height: AppDesignTokens.spacingXl),
+
+                    // Seção Bancária com fundo sutil para destaque
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppDesignTokens.spacingSm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppDesignTokens.colorBgPrimary.withValues(
+                          alpha: 0.1,
+                        ), // Fundo leve
+                        borderRadius: BorderRadius.circular(
+                          AppDesignTokens.borderRadiusDefault,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _infoTile(
+                              context,
+                              'AGÊNCIA',
+                              user.branchCode,
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 30,
+                            color: AppDesignTokens.colorBorderDefault
+                                .withValues(alpha: 0.2),
+                          ),
+                          Expanded(
+                            child: _infoTile(
+                              context,
+                              'CONTA',
+                              user.accountNumber,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppDesignTokens.spacingXs),
-                    Text(
-                      user.email,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppDesignTokens.colorContentDefault,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+
                     const SizedBox(height: AppDesignTokens.spacingLg),
 
-                    AppButton(
-                      label: 'Sair',
-                      onPressed: () => _onLogout(context),
-                      variant: ButtonVariant.outlined,
+                    // Dados Pessoais (Alinhados à esquerda)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _infoTile(context, 'NOME COMPLETO', user.username),
+                          _infoTile(context, 'E-MAIL', user.email),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: AppDesignTokens.spacingXl),
+
+                    // Ação de Logout
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: 'Sair da Conta',
+                        onPressed: () => _onLogout(context),
+                        variant: ButtonVariant.outlined,
+                      ),
                     ),
                   ],
                 ),
@@ -96,6 +135,31 @@ class ProfilePage extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _infoTile(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppDesignTokens.colorContentPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppDesignTokens.colorContentDefault,
+            ),
+          ),
+        ],
       ),
     );
   }
