@@ -3,11 +3,10 @@ import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 
-
 class AuthRepositoryImpl implements IAuthRepository {
-  AuthRepositoryImpl() : _remote = AuthDatasourceFirebase();
+  AuthRepositoryImpl() : _remote = AuthDataSourceFirebase();
 
-  final AuthDatasourceFirebase _remote;
+  final AuthDataSourceFirebase _remote;
 
   @override
   Future<Result<User>> signIn(String email, String password) async {
