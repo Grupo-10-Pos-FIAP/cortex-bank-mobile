@@ -1,5 +1,6 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
     show formatCentsToBRL, parseBRLMaskToCents, CurrencyBRLInputFormatter;
+import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
@@ -371,19 +372,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
                         ),
                       ),
                       const SizedBox(height: AppDesignTokens.spacingMd),
-                      DropdownButtonFormField<String>(
-                        initialValue: _tipoFiltro,
-                        decoration: InputDecoration(
-                          labelText: 'Tipo de Transação',
-                          filled: true,
-                          fillColor: AppDesignTokens.colorWhite,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                          ),
-                        ),
-                        items: const [
+                      AppDropdownField<String>(
+                        hintText: 'Selecione o tipo de transação',
+                        value: _tipoFiltro,
+                        items: [
                           DropdownMenuItem(
                             value: 'Todas',
                             child: Text('Todas'),
@@ -399,7 +391,21 @@ class _ExtratoPageState extends State<ExtratoPage> {
                         ],
                         onChanged: (v) =>
                             setState(() => _tipoFiltro = v ?? 'Todas'),
+                        validator: (value) =>
+                            value == null ? 'Campo obrigatório' : null,
+                        decoration: InputDecoration(
+                          labelText: 'Tipo de Transação',
+                          hintText: 'R\$ 0,00',
+                          filled: true,
+                          fillColor: AppDesignTokens.colorWhite,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
+                          ),
+                        ),
                       ),
+
                       const SizedBox(height: AppDesignTokens.spacingMd),
                       TextField(
                         controller: _minValueController,
