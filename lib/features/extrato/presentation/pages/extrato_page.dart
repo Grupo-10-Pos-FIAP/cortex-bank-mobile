@@ -31,7 +31,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
 
   DateTime? _dateStart;
   DateTime? _dateEnd;
-  String _tipoFiltro = 'Todas';
+  String _tipoFiltro = 'todas';
 
   /// Preset: 'last7' | 'last15' | 'last30' | 'last90' | 'custom' (intervalo no calendário).
   String _periodoPreset = 'last30';
@@ -90,7 +90,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _searchController.clear();
       _minValueController.text = 'R\$ 0,00';
       _maxValueController.text = 'R\$ 0,00';
-      _tipoFiltro = 'Todas';
+      _tipoFiltro = 'todas';
     });
     _applyPreset('last30');
   }
@@ -138,13 +138,17 @@ class _ExtratoPageState extends State<ExtratoPage> {
           .where((t) => t.date.isBefore(end) || t.date.isAtSameMomentAs(end))
           .toList();
     }
-    if (_tipoFiltro == 'Crédito') {
+    if (_tipoFiltro == 'credito') {
       result = result
           .where((t) => t.type == model.TransactionType.credit)
           .toList();
-    } else if ((_tipoFiltro == 'Débito') || (_tipoFiltro == "TED")) {
+    } else if (_tipoFiltro == 'debito') {
       result = result
           .where((t) => t.type == model.TransactionType.debit)
+          .toList();
+    } else if (_tipoFiltro == 'ted') {
+      result = result
+          .where((t) => t.type == model.TransactionType.ted)
           .toList();
     }
     final minCents = _parseValorBRL(_minValueController.text);
@@ -379,20 +383,24 @@ class _ExtratoPageState extends State<ExtratoPage> {
                         value: _tipoFiltro,
                         items: [
                           DropdownMenuItem(
-                            value: 'Todas',
+                            value: 'todas',
                             child: Text('Todas'),
                           ),
                           DropdownMenuItem(
-                            value: 'Crédito',
+                            value: 'credito',
                             child: Text('Crédito'),
                           ),
                           DropdownMenuItem(
-                            value: 'Débito',
+                            value: 'debito',
                             child: Text('Débito'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'ted',
+                            child: Text('TED/DOC'),
                           ),
                         ],
                         onChanged: (v) =>
-                            setState(() => _tipoFiltro = v ?? 'Todas'),
+                            setState(() => _tipoFiltro = v ?? 'todas'),
                         validator: (value) =>
                             value == null ? 'Campo obrigatório' : null,
                         decoration: InputDecoration(

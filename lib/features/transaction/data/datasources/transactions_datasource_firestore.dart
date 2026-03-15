@@ -24,7 +24,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   Future<String> add(model.Transaction transaction) async {
     final docRef = await _transactionsCol.add({
       'accountId': transaction.accountId,
-      'type': transaction.type.label,
+      'type': transaction.type.name,
       'category': transaction.category.name,
       'value': transaction.value,
       'date': Timestamp.fromDate(transaction.date),
@@ -50,7 +50,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   Future<void> update(model.Transaction transaction) async {
     await _transactionsCol.doc(transaction.id).update({
       'accountId': transaction.accountId,
-      'type': transaction.type.label,
+      'type': transaction.type.name,
       'category': transaction.category.name,
       'value': transaction.value,
       'date': Timestamp.fromDate(transaction.date),

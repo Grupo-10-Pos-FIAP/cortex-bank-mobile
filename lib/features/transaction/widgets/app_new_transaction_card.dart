@@ -61,19 +61,36 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       selectedContact = null;
     }
 
-    if (selectedValueType == 'transferencia' &&
+    if (selectedValueType == 'ted' &&
         selectedContact == null &&
         selectedTitularidade == null) {
       AppSnackBar.show(context, 'Selecione um destino para a transferência');
       return;
     }
 
+    String cleanValue = _valueController.text;
+
+    // 2. Remove pontos de milhar: "1250,50"
+    cleanValue = cleanValue.replaceAll('.', '');
+
+    // 3. Troca a vírgula decimal por ponto: "1250.50"
+    cleanValue = cleanValue.replaceAll(',', '.');
+
+    // 4. Converte para double
+    final valueToSave =
+        double.tryParse(
+          _valueController.text
+              .replaceAll(RegExp(r'[^0-9,]'), '')
+              .replaceAll(',', '.'),
+        ) ??
+        0.0;
+
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       accountId: '',
       type: TransactionTypeExtension.fromString(selectedValueType!),
       category: TransactionCategoryExtension.fromString(selectedValueCategory!),
-      value: double.tryParse(_valueController.text.replaceAll(',', '.')) ?? 0.0,
+      value: valueToSave,
       date: DateTime.now(),
       to:
           selectedContact?.name ??
@@ -205,10 +222,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               items: const [
                 DropdownMenuItem(value: 'credito', child: Text('Crédito')),
                 DropdownMenuItem(value: 'debito', child: Text('Débito')),
-                DropdownMenuItem(
-                  value: 'ted',
-                  child: Text('TED/DOC'),
-                ),
+                DropdownMenuItem(value: 'ted', child: Text('TED/DOC')),
               ],
               onChanged: (newValue) =>
                   setState(() => selectedValueType = newValue),

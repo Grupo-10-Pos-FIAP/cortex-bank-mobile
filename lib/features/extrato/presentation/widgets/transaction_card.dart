@@ -16,16 +16,27 @@ class TransactionCard extends StatelessWidget {
   final model.Transaction transaction;
   final VoidCallback onDelete;
 
-  @override
+ @override
   Widget build(BuildContext context) {
-    final isCredit = transaction.type == model.TransactionType.credit;
-    final transactionTypeLabel = isCredit
-        ? 'Transferência recebida'
-        : 'Transferência efetuada';
+    // 1. Define se é uma entrada de dinheiro
+    final isIncome = transaction.type == model.TransactionType.credit;
+
+    // 2. Define o texto baseado no tipo exato
+    String transactionTypeLabel;
+    if (transaction.type == model.TransactionType.credit) {
+      transactionTypeLabel = 'Transferência recebida';
+    } else if (transaction.type == model.TransactionType.ted) {
+      transactionTypeLabel = 'TED efetuada';
+    } else {
+      transactionTypeLabel = 'Transferência efetuada'; // Para Debit
+    }
+
+    // 3. Define o sinal do valor (+ ou -)
     final valueCents = (transaction.value.abs() * 100).round();
-    final valorStr = isCredit
+    final valorStr = isIncome
         ? '+${formatCentsToBRL(valueCents)}'
         : '-${formatCentsToBRL(valueCents)}';
+
     final dateStr =
         '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
     final statusLabel = transaction.status == 'Pending'
@@ -45,7 +56,7 @@ class TransactionCard extends StatelessWidget {
       if (transaction.to != null && transaction.to!.isNotEmpty)
         'Para ${transaction.to}',
     ].join();
-
+print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
     return Card(
       margin: const EdgeInsets.only(bottom: AppDesignTokens.spacingSm),
       shape: RoundedRectangleBorder(
@@ -78,7 +89,7 @@ class TransactionCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isCredit
+                        color: isIncome
                             ? AppDesignTokens.colorFeedbackSuccess.withValues(
                                 alpha: 0.15,
                               )
@@ -88,8 +99,8 @@ class TransactionCard extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-                        color: isCredit
+                        isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                        color: isIncome
                             ? AppDesignTokens.colorFeedbackSuccess
                             : AppDesignTokens.colorFeedbackWarning,
                         size: 22,
@@ -181,7 +192,7 @@ class TransactionCard extends StatelessWidget {
                           style: GoogleFonts.roboto(
                             fontWeight: AppDesignTokens.fontWeightBold,
                             fontSize: AppDesignTokens.fontSizeBody,
-                            color: isCredit
+                            color: isIncome
                                 ? AppDesignTokens.colorFeedbackSuccess
                                 : AppDesignTokens.colorFeedbackError,
                           ),

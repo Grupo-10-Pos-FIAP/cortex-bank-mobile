@@ -46,12 +46,17 @@ class Transaction {
 extension TransactionTypeExtension on TransactionType {
   /* Converte de String do Dropdown/UI para o Enum */
   static TransactionType fromString(String value) {
-    switch (value.toLowerCase()) {
+    switch (value.toLowerCase().trim()) {
+      case 'credit':
       case 'credito':
+      case 'crédito':
         return TransactionType.credit;
       case 'ted':
         return TransactionType.ted;
+      case 'debit':
       case 'debito':
+      case 'débito':
+        return TransactionType.debit;
       default:
         return TransactionType.debit;
     }
