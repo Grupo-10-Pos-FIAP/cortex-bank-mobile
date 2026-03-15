@@ -1,4 +1,5 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/get_transaction_type.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
@@ -6,6 +7,7 @@ import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_co
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contact_list_item.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart'; // Importe o Provider
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
@@ -70,9 +72,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       accountId: '',
-      type: selectedValue == 'credito'
-          ? TransactionType.credit
-          : TransactionType.debit,
+      type: TransactionTypeExtension.fromString(selectedValue!),
       value: double.tryParse(_valueController.text.replaceAll(',', '.')) ?? 0.0,
       date: DateTime.now(),
       to:

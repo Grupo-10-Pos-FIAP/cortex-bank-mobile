@@ -8,10 +8,7 @@ import 'package:provider/provider.dart';
 class AppBalanceCard extends StatefulWidget {
   final bool mostrarSaldoInicial;
 
-  const AppBalanceCard({
-    super.key,
-    this.mostrarSaldoInicial = false,
-  });
+  const AppBalanceCard({super.key, this.mostrarSaldoInicial = false});
 
   @override
   State<AppBalanceCard> createState() => _AppBalanceCardState();
@@ -49,7 +46,9 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(_exibir ? Icons.visibility : Icons.visibility_off),
+                    icon: Icon(
+                      _exibir ? Icons.visibility : Icons.visibility_off,
+                    ),
                     onPressed: () => setState(() => _exibir = !_exibir),
                   ),
                 ],
@@ -64,11 +63,21 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
                     style: GoogleFonts.roboto(
                       fontSize: AppDesignTokens.fontSizeH1,
                       fontWeight: AppDesignTokens.fontWeightSemibold,
-                      color: AppDesignTokens.colorContentDefault,
+                      color: saldoReal < 0
+                          ? AppDesignTokens.colorFeedbackAlert
+                          : AppDesignTokens.colorContentDefault,
                     ),
                   ),
+
                   const SizedBox(width: 8),
-                  if (_exibir) const Icon(Icons.north_east, size: 20),
+                  if (_exibir)
+                    Icon(
+                      Icons.north_east,
+                      size: 20,
+                      color: saldoReal < 0
+                          ? AppDesignTokens.colorFeedbackAlert
+                          : AppDesignTokens.colorContentDefault,
+                    ),
                 ],
               ),
             ],
@@ -84,4 +93,3 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
     );
   }
 }
-

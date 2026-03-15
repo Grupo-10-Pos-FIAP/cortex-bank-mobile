@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cortex_bank_mobile/core/utils/get_transaction_type.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
@@ -18,13 +19,13 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .collection('transactions');
   }
 
+  
+
   @override
   Future<String> add(model.Transaction transaction) async {
     final docRef = await _transactionsCol.add({
       'accountId': transaction.accountId,
-      'type': transaction.type == model.TransactionType.credit
-          ? 'Credit'
-          : 'Debit',
+      'type': transaction.type.label,
       'value': transaction.value,
       'date': Timestamp.fromDate(transaction.date),
       'createdAt': FieldValue.serverTimestamp(),
@@ -49,9 +50,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   Future<void> update(model.Transaction transaction) async {
     await _transactionsCol.doc(transaction.id).update({
       'accountId': transaction.accountId,
-      'type': transaction.type == model.TransactionType.credit
-          ? 'Credit'
-          : 'Debit',
+      'type': transaction.type.label,
       'value': transaction.value,
       'date': Timestamp.fromDate(transaction.date),
       'to': transaction.to,
@@ -60,7 +59,6 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
-
 
   @override
   Future<void> delete(String id) async =>
@@ -77,7 +75,8 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
 
       if (t.type == model.TransactionType.credit) {
         incomeCents += cents;
-      } else {
+      } else if (t.type == model.TransactionType.debit ||
+          t.type == model.TransactionType.ted) {
         expenseCents += cents;
       }
     }

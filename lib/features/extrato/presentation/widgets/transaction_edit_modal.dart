@@ -133,6 +133,10 @@ Future<void> _handleSave() async {
               value: _selectedType,
               items: const [
                 DropdownMenuItem(
+                  value: model.TransactionType.ted,
+                  child: Text('TED/DOC'),
+                ),
+                DropdownMenuItem(
                   value: model.TransactionType.credit,
                   child: Text('Crédito'),
                 ),

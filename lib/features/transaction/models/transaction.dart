@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cortex_bank_mobile/core/utils/get_transaction_type.dart';
 
-enum TransactionType { credit, debit }
+enum TransactionType { credit, debit, ted }
 
 class Transaction {
   final String id;
@@ -27,9 +28,7 @@ class Transaction {
     return Transaction(
       id: docId,
       accountId: data['accountId'] ?? '',
-      type: data['type'] == 'Debit'
-          ? TransactionType.debit
-          : TransactionType.credit,
+      type: TransactionTypeExtension.fromString(data['type']),
       value: (data['value'] as num?)?.toDouble() ?? 0.0,
       date: (data['date'] as Timestamp).toDate(),
       to: data['to'],

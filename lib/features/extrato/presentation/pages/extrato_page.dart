@@ -142,7 +142,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       result = result
           .where((t) => t.type == model.TransactionType.credit)
           .toList();
-    } else if (_tipoFiltro == 'Débito') {
+    } else if ((_tipoFiltro == 'Débito') || (_tipoFiltro == "TED")) {
       result = result
           .where((t) => t.type == model.TransactionType.debit)
           .toList();
