@@ -212,7 +212,7 @@ lib/
 │   │   ├── models/                # Transaction, BalanceSummary
 │   │   ├── state/                 # TransactionsProvider
 │   │   └── presentation/
-│   │       └── pages/             # TransactionFormPage, TransactionNewFormPage
+│   │       └── pages/             # TransactionFormPage
 │   ├── extrato/
 │   │   └── presentation/
 │   │       └── pages/             # ExtratoPage
