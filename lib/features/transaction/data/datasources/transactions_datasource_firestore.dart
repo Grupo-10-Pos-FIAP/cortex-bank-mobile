@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cortex_bank_mobile/core/utils/get_transaction_type.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
@@ -26,6 +25,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     final docRef = await _transactionsCol.add({
       'accountId': transaction.accountId,
       'type': transaction.type.label,
+      'category': transaction.category.name,
       'value': transaction.value,
       'date': Timestamp.fromDate(transaction.date),
       'createdAt': FieldValue.serverTimestamp(),
@@ -51,6 +51,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     await _transactionsCol.doc(transaction.id).update({
       'accountId': transaction.accountId,
       'type': transaction.type.label,
+      'category': transaction.category.name,
       'value': transaction.value,
       'date': Timestamp.fromDate(transaction.date),
       'to': transaction.to,

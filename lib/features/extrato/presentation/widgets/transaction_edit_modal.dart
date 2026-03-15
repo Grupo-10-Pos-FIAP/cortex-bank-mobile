@@ -22,7 +22,8 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
   late model.TransactionType _selectedType;
   late String _selectedTo;
   late String _selectedFrom;
-  late String _selectedCategory;
+  late String _selectedStatus;
+  late model.TransactionCategory _selectedCategory;
   bool _isLoading = false;
 
   @override
@@ -31,14 +32,16 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     _valueController = TextEditingController(
       text: widget.data.value.toString(),
     );
-    _selectedType = widget.data.type;
 
-    // VALORES INICIAIS
+    _selectedType = widget.data.type;
     _selectedTo = widget.data.to ?? 'Mesma Titularidade';
     _selectedFrom = widget.data.from ?? 'Conta Principal';
-    _selectedCategory = widget.data.status ?? 'Geral';
+    _selectedStatus = widget.data.status;
 
-    // DISPARA O CARREGAMENTO DOS CONTATOS (read não ouve, apenas executa)
+    // AJUSTE AQUI: Use o valor que vem do model diretamente.
+    // Se o widget.data.category for nulo, use um valor padrão do Enum.
+    _selectedCategory = widget.data.category;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ContactsProvider>().loadContacts();
     });
@@ -50,7 +53,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     super.dispose();
   }
 
-Future<void> _handleSave() async {
+  Future<void> _handleSave() async {
     setState(() => _isLoading = true);
 
     // 1. Pega o texto (ex: "R$ 1.250,50") e limpa tudo que não for número
@@ -66,9 +69,10 @@ Future<void> _handleSave() async {
       id: widget.data.id,
       accountId: widget.data.accountId,
       type: _selectedType,
+      category: _selectedCategory,
       value: valueToSave,
       date: DateTime.now(),
-      status: _selectedCategory,
+      status: _selectedStatus,
       to: _selectedTo,
       from: _selectedFrom,
     );
@@ -82,7 +86,6 @@ Future<void> _handleSave() async {
       if (success) Navigator.pop(context, true);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +175,23 @@ Future<void> _handleSave() async {
             ),
 
             const SizedBox(height: 24),
+            // Dropdown de Categorias
+            _buildDropdown<model.TransactionCategory>(
+              label: 'Categoria',
+              value:
+                  _selectedCategory,
+              items: model.TransactionCategory.values.map((cat) {
+                return DropdownMenuItem<model.TransactionCategory>(
+                  value: cat,
+                  child: Text(
+                    cat.label,
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() => _selectedCategory = val!),
+            ),
 
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

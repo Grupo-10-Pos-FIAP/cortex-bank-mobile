@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cortex_bank_mobile/core/utils/get_transaction_type.dart';
 
 enum TransactionType { credit, debit, ted }
-
+enum TransactionCategory { food, transport, salary, ted, others }
 class Transaction {
   final String id;
   final String accountId;
@@ -12,6 +11,7 @@ class Transaction {
   final String? to;
   final String? from;
   final String status;
+   final TransactionCategory category;
 
   Transaction({
     this.id = '',
@@ -22,6 +22,7 @@ class Transaction {
     this.to,
     this.from,
     this.status = 'Completed',
+    required this.category,
   });
 
   factory Transaction.fromFirestore(Map<String, dynamic> data, String docId) {
@@ -34,6 +35,78 @@ class Transaction {
       to: data['to'],
       from: data['from'],
       status: data['status'] ?? 'Completed',
+      category: TransactionCategoryExtension.fromString(
+        data['category'] ?? 'others',
+      ), 
     );
   }
 }
+
+
+extension TransactionTypeExtension on TransactionType {
+  /* Converte de String do Dropdown/UI para o Enum */
+  static TransactionType fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'credito':
+        return TransactionType.credit;
+      case 'ted':
+        return TransactionType.ted;
+      case 'debito':
+      default:
+        return TransactionType.debit;
+    }
+  }
+
+  /* Converte do Enum para String da UI (se precisar exibir o nome) */
+  String get label {
+    switch (this) {
+      case TransactionType.credit:
+        return 'Crédito';
+      case TransactionType.debit:
+        return 'Débito';
+      case TransactionType.ted:
+        return 'TED';
+    }
+  }
+}
+
+
+extension TransactionCategoryExtension on TransactionCategory {
+  /* Converte de String (Banco/API) para o Enum */
+  static TransactionCategory fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'food':
+      case 'alimentação':
+        return TransactionCategory.food;
+      case 'transport':
+      case 'transporte':
+        return TransactionCategory.transport;
+      case 'ted':
+        return TransactionCategory.ted;
+      case 'salary':
+      case 'salário':
+        return TransactionCategory.salary;
+      default:
+        return TransactionCategory.others;
+    }
+  }
+
+  /* Nome amigável para mostrar na tela */
+  String get label {
+    switch (this) {
+      case TransactionCategory.food:
+        return 'Alimentação';
+      case TransactionCategory.transport:
+        return 'Transporte';
+      case TransactionCategory.ted:
+        return 'TED';
+      case TransactionCategory.salary:
+        return 'Salário';
+      case TransactionCategory.others:
+        return 'Outros';
+    }
+  }
+}
+
+
+

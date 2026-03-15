@@ -1,13 +1,11 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
-import 'package:cortex_bank_mobile/core/utils/get_transaction_type.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_contact_dialog_widget.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contact_list_item.dart';
-import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart'; // Importe o Provider
+import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
@@ -30,7 +28,8 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _valueController = TextEditingController();
 
-  String? selectedValue;
+  String? selectedValueType;
+  String? selectedValueCategory;
   int? selectedTitularidade;
 
   @override
@@ -62,17 +61,18 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       selectedContact = null;
     }
 
-    if (selectedValue == 'transferencia' &&
+    if (selectedValueType == 'transferencia' &&
         selectedContact == null &&
         selectedTitularidade == null) {
-        AppSnackBar.show(context, 'Selecione um destino para a transferência');
+      AppSnackBar.show(context, 'Selecione um destino para a transferência');
       return;
     }
 
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       accountId: '',
-      type: TransactionTypeExtension.fromString(selectedValue!),
+      type: TransactionTypeExtension.fromString(selectedValueType!),
+      category: TransactionCategoryExtension.fromString(selectedValueCategory!),
       value: double.tryParse(_valueController.text.replaceAll(',', '.')) ?? 0.0,
       date: DateTime.now(),
       to:
@@ -88,7 +88,8 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     if (success && mounted) {
       _valueController.clear();
       setState(() {
-        selectedValue = null;
+        selectedValueType = null;
+        selectedValueCategory = null;
         selectedTitularidade = null;
         for (var c in contactsProvider.contacts) {
           c.isSelected = false;
@@ -97,7 +98,10 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
 
       AppSnackBar.success(context, 'Transação realizada com sucesso!');
     } else if (mounted) {
-      AppSnackBar.error(context, txProvider.errorMessage ?? 'Erro desconhecido');
+      AppSnackBar.error(
+        context,
+        txProvider.errorMessage ?? 'Erro desconhecido',
+      );
     }
   }
 
@@ -197,18 +201,17 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
             AppDropdownField<String>(
               label: 'Selecione o tipo de transação',
               hintText: 'Selecione o tipo de transação',
-              value: selectedValue,
+              value: selectedValueType,
               items: const [
                 DropdownMenuItem(value: 'credito', child: Text('Crédito')),
                 DropdownMenuItem(value: 'debito', child: Text('Débito')),
                 DropdownMenuItem(
-                  value: 'transferencia',
-                  child: Text('Transferência'),
+                  value: 'ted',
+                  child: Text('TED/DOC'),
                 ),
               ],
-              onChanged: (newValue) => setState(() => selectedValue = newValue),
-              showRequiredIndicator: true,
-              validator: (value) => value == null ? 'Campo obrigatório' : null,
+              onChanged: (newValue) =>
+                  setState(() => selectedValueType = newValue),
             ),
             AppTabs(
               height: 160,
@@ -241,6 +244,22 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                 FilteringTextInputFormatter.digitsOnly,
                 CurrencyBRLInputFormatter(),
               ],
+              showRequiredIndicator: true,
+            ),
+            const SizedBox(height: 24),
+            AppDropdownField<String>(
+              label: 'Selecione a categoria',
+              hintText: 'Selecione a categoria',
+              value: selectedValueCategory,
+              items: TransactionCategory.values.map((category) {
+                return DropdownMenuItem<String>(
+                  value: category.name,
+                  child: Text(category.label),
+                );
+              }).toList(),
+              onChanged: (newValue) =>
+                  setState(() => selectedValueCategory = newValue),
+              validator: (value) => value == null ? 'Campo obrigatório' : null,
             ),
             const SizedBox(height: 24),
             Consumer<TransactionsProvider>(

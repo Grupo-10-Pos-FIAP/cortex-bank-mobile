@@ -4,7 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+    as model;
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
@@ -26,6 +27,7 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
 
   DateTime _date = DateTime.now();
   model.TransactionType _type = model.TransactionType.debit;
+  model.TransactionCategory _category = model.TransactionCategory.others;
 
   @override
   void dispose() {
@@ -62,6 +64,7 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
       id: '',
       accountId: user.uid,
       type: _type,
+      category: _category,
       value: value,
       date: _date,
       from: _fromController.text.trim().isEmpty
@@ -139,6 +142,35 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
                     selected: {_type},
                     onSelectionChanged: (s) => setState(() => _type = s.first),
                   ),
+
+                  SegmentedButton<model.TransactionType>(
+                    segments: const [
+                      ButtonSegment(
+                        value: model.TransactionType.credit,
+                        label: Text('Crédito'),
+                        icon: Icon(
+                          Icons.add_circle_outline,
+                        ), // Opcional: ícone de entrada
+                      ),
+                      ButtonSegment(
+                        value: model.TransactionType.debit,
+                        label: Text('Débito'),
+                        icon: Icon(
+                          Icons.remove_circle_outline,
+                        ), // Opcional: ícone de saída
+                      ),
+                      ButtonSegment(
+                        value: model.TransactionType.ted,
+                        label: Text('TED'),
+                        icon: Icon(
+                          Icons.sync_alt,
+                        ), // Opcional: ícone de transferência
+                      ),
+                    ],
+                    selected: {_type},
+                    onSelectionChanged: (s) => setState(() => _type = s.first),
+                  ),
+
 
                   const SizedBox(height: AppDesignTokens.spacingMd),
 
