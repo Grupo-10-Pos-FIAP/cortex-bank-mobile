@@ -63,9 +63,11 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
                     style: GoogleFonts.roboto(
                       fontSize: AppDesignTokens.fontSizeH1,
                       fontWeight: AppDesignTokens.fontWeightSemibold,
-                      color: saldoReal < 0
-                          ? AppDesignTokens.colorFeedbackAlert
-                          : AppDesignTokens.colorContentDefault,
+                      color: !_exibir
+                          ? AppDesignTokens.colorContentDefault
+                          : (saldoReal < 0
+                                ? AppDesignTokens.colorFeedbackAlert
+                                : AppDesignTokens.colorContentDefault),
                     ),
                   ),
 
