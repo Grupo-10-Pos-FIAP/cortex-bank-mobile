@@ -33,6 +33,18 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
   }
 
   @override
+  Future<Result<void>> update(Transaction transaction) async {
+    try {
+      await _dataSource.update(transaction); // Chama o Data Source
+      return const Success(null);
+    } catch (e) {
+      safeLogError('Erro ao editar transação', e);
+      return FailureResult(Failure(message: 'Erro ao salvar alterações'));
+    }
+  }
+
+
+  @override
   Future<Result<void>> delete(String id) async {
     try {
       await _dataSource.delete(id);

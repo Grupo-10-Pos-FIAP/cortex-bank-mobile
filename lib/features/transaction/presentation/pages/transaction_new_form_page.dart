@@ -1,6 +1,8 @@
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart' as model;
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
@@ -97,6 +99,10 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
                     label: 'Valor (R\$)',
                     controller: _amountController,
                     hintText: '0,00',
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      CurrencyBRLInputFormatter(),
+                    ],
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),

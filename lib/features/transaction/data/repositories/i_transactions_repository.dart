@@ -5,6 +5,7 @@ import 'package:cortex_bank_mobile/core/utils/result.dart';
 abstract class ITransactionsRepository {
   Future<Result<String>> add(Transaction transaction);
   Future<Result<List<Transaction>>> getAll();
+  Future<Result<void>> update(Transaction transaction); 
   Future<Result<void>> delete(String id);
   Future<Result<BalanceSummary>> getBalanceSummary();
 }

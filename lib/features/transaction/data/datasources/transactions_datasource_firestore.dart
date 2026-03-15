@@ -46,6 +46,23 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   }
 
   @override
+  Future<void> update(model.Transaction transaction) async {
+    await _transactionsCol.doc(transaction.id).update({
+      'accountId': transaction.accountId,
+      'type': transaction.type == model.TransactionType.credit
+          ? 'Credit'
+          : 'Debit',
+      'value': transaction.value,
+      'date': Timestamp.fromDate(transaction.date),
+      'to': transaction.to,
+      'from': transaction.from,
+      'status': transaction.status,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+
+  @override
   Future<void> delete(String id) async =>
       await _transactionsCol.doc(id).delete();
 

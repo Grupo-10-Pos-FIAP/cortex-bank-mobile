@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+import 'package:flutter/services.dart';
 
 class AppTextField extends StatelessWidget {
   const AppTextField({
@@ -23,6 +24,7 @@ class AppTextField extends StatelessWidget {
     this.labelStyle,
     this.formFieldKey,
     this.fillColor,
+    this.inputFormatters,
   });
 
   final String label;
@@ -44,6 +46,7 @@ class AppTextField extends StatelessWidget {
   final TextStyle? labelStyle;
   final Key? formFieldKey;
   final Color? fillColor;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -51,23 +54,27 @@ class AppTextField extends StatelessWidget {
     final inputTheme = theme.inputDecorationTheme;
     final textTheme = theme.textTheme;
 
-    final defaultLabelStyle = textTheme.bodyMedium?.copyWith(
-      color: theme.colorScheme.onSurface,
-      fontWeight: AppDesignTokens.fontWeightMedium,
-      fontSize: AppDesignTokens.fontSizeSmall,
-    ) ?? TextStyle(
-      color: theme.colorScheme.onSurface,
-      fontWeight: AppDesignTokens.fontWeightMedium,
-      fontSize: AppDesignTokens.fontSizeSmall,
-    );
+    final defaultLabelStyle =
+        textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurface,
+          fontWeight: AppDesignTokens.fontWeightMedium,
+          fontSize: AppDesignTokens.fontSizeSmall,
+        ) ??
+        TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontWeight: AppDesignTokens.fontWeightMedium,
+          fontSize: AppDesignTokens.fontSizeSmall,
+        );
 
-    final requiredIndicatorStyle = textTheme.bodyMedium?.copyWith(
-      color: AppDesignTokens.colorFeedbackError,
-      fontSize: AppDesignTokens.fontSizeSmall,
-    ) ?? const TextStyle(
-      color: AppDesignTokens.colorFeedbackError,
-      fontSize: AppDesignTokens.fontSizeSmall,
-    );
+    final requiredIndicatorStyle =
+        textTheme.bodyMedium?.copyWith(
+          color: AppDesignTokens.colorFeedbackError,
+          fontSize: AppDesignTokens.fontSizeSmall,
+        ) ??
+        const TextStyle(
+          color: AppDesignTokens.colorFeedbackError,
+          fontSize: AppDesignTokens.fontSizeSmall,
+        );
 
     final decoration = InputDecoration(
       hintText: hintText,
@@ -88,17 +95,11 @@ class AppTextField extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(
-              label,
-              style: labelStyle ?? defaultLabelStyle,
-            ),
+            Text(label, style: labelStyle ?? defaultLabelStyle),
             if (showRequiredIndicator)
               Padding(
                 padding: const EdgeInsets.only(left: AppDesignTokens.spacingXs),
-                child: Text(
-                  '*',
-                  style: requiredIndicatorStyle,
-                ),
+                child: Text('*', style: requiredIndicatorStyle),
               ),
           ],
         ),
@@ -114,9 +115,12 @@ class AppTextField extends StatelessWidget {
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
           autofocus: autofocus,
-          style: style ?? textTheme.bodyLarge?.copyWith(
-            color: AppDesignTokens.colorContentDefault,
-          ),
+          style:
+              style ??
+              textTheme.bodyLarge?.copyWith(
+                color: AppDesignTokens.colorContentDefault,
+              ),
+          inputFormatters: inputFormatters,
           decoration: decoration,
         ),
       ],

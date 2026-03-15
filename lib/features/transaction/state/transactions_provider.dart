@@ -67,6 +67,35 @@ class TransactionsProvider extends ChangeNotifier {
     return isSuccess;
   }
 
+  Future<bool> updateTransaction(Transaction transaction) async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    final result = await _repository.update(transaction);
+
+    final isSuccess = result.fold(
+      (_) {
+        // Atualiza a lista localmente para refletir na UI imediatamente
+        final index = _transactions.indexWhere((t) => t.id == transaction.id);
+        if (index != -1) {
+          _transactions[index] = transaction;
+        }
+
+        // Recarrega o resumo do saldo, caso o valor tenha mudado
+        loadBalanceSummary();
+        return true;
+      },
+      (failure) {
+        _errorMessage = failure.message;
+        return false;
+      },
+    );
+
+    _setLoading(false);
+    notifyListeners();
+    return isSuccess;
+  }
+
   // Deletar transação
   Future<void> deleteTransaction(String id) async {
     _setLoading(true);

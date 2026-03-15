@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
@@ -13,6 +14,7 @@ import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class AppNewTransactionCard extends StatefulWidget {
@@ -235,6 +237,10 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                 decimal: true,
               ),
               hintText: '0,00',
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                CurrencyBRLInputFormatter(),
+              ],
             ),
             const SizedBox(height: 24),
             Consumer<TransactionsProvider>(
