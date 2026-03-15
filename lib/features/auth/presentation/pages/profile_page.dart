@@ -28,9 +28,7 @@ class ProfilePage extends StatelessWidget {
             }
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
               child: AppCardContainer(
-                padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
                 child: Column(
                   children: [
                     Center(

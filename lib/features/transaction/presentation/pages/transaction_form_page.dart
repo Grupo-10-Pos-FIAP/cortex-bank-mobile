@@ -28,7 +28,6 @@ class _TransactionFormPageState extends State<TransactionFormPage> {
       backgroundColor: AppDesignTokens.colorBgDefault,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
           child: Column(
             children: [
               const AppBalanceCard(),

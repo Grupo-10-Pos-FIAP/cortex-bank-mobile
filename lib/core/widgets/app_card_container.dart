@@ -20,7 +20,7 @@ class AppCardContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: margin ?? const EdgeInsets.all(16),
-      padding: padding ?? const EdgeInsets.all(24),
+      padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppDesignTokens.colorWhite,
         borderRadius: BorderRadius.circular(16),

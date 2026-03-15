@@ -27,7 +27,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
       child: Column(
         children: [
           AppBalanceCard(

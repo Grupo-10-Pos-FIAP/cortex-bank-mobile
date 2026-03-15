@@ -91,7 +91,6 @@ class _TransactionNewFormPageState extends State<TransactionNewFormPage> {
       backgroundColor: AppDesignTokens.colorBgDefault,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
           child: AppCardContainer(
             child: Form(
               key: _formKey,
