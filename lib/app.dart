@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_connectivity.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
@@ -10,16 +15,30 @@ import 'package:cortex_bank_mobile/features/transaction/presentation/pages/trans
 import 'package:cortex_bank_mobile/core/constants/app_routes.dart';
 import 'package:provider/provider.dart';
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({super.key});
 
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Cortex Bank Mobile',
       theme: AppTheme.lightTheme,
+      builder: (context, child) {
+        return Overlay(
+          initialEntries: [
+            OverlayEntry(
+              builder: (context) => ConnectivityWrapper(child: child!),
+            ),
+          ],
+        );
+      },
+
       initialRoute: '/',
-      // Com login obrigatório: initialRoute: '/login',
       routes: {
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.register: (_) => const RegisterPage(),
@@ -34,9 +53,7 @@ class App extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          return auth.isAuthenticated
-              ? const HomePage()
-              : const LoginPage();
+          return auth.isAuthenticated ? const HomePage() : const LoginPage();
         },
       ),
     );
