@@ -2,7 +2,6 @@ import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -28,7 +27,15 @@ class ProfilePage extends StatelessWidget {
             }
 
             return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDesignTokens.spacingMd,
+                vertical: AppDesignTokens.spacingSm,
+              ),
               child: AppCardContainer(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDesignTokens.spacingLg,
+                  vertical: AppDesignTokens.spacingXl,
+                ),
                 child: Column(
                   children: [
                     Center(
@@ -36,24 +43,25 @@ class ProfilePage extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 40,
-                            backgroundColor: AppDesignTokens.colorPrimary,
+                            backgroundColor: AppDesignTokens.colorBgAvatar,
                             child: Text(
                               user.username.isNotEmpty
                                   ? user.username[0].toUpperCase()
                                   : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppDesignTokens.colorContentPrimary,
                                 fontSize: 32,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: AppDesignTokens.fontWeightBold,
                               ),
                             ),
                           ),
                           const SizedBox(height: AppDesignTokens.spacingMd),
                           Text(
-                            user.username,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                            user.username.isNotEmpty
+                                ? user.username
+                                : 'Usuário',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: AppDesignTokens.fontWeightBold,
                                   color: AppDesignTokens.colorContentDefault,
                                 ),
                           ),
@@ -63,68 +71,78 @@ class ProfilePage extends StatelessWidget {
 
                     const SizedBox(height: AppDesignTokens.spacingXl),
 
-                    // Seção Bancária com fundo sutil para destaque
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppDesignTokens.spacingSm,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppDesignTokens.colorBgPrimary.withValues(
-                          alpha: 0.1,
-                        ), // Fundo leve
-                        borderRadius: BorderRadius.circular(
-                          AppDesignTokens.borderRadiusDefault,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _infoBlock(
+                            context,
+                            'Agência',
+                            user.branchCode,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _infoTile(
-                              context,
-                              'AGÊNCIA',
-                              user.branchCode,
-                            ),
+                        Expanded(
+                          child: _infoBlock(
+                            context,
+                            'Conta',
+                            user.accountNumber,
                           ),
-                          Container(
-                            width: 1,
-                            height: 30,
-                            color: AppDesignTokens.colorBorderDefault
-                                .withValues(alpha: 0.2),
-                          ),
-                          Expanded(
-                            child: _infoTile(
-                              context,
-                              'CONTA',
-                              user.accountNumber,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: AppDesignTokens.spacingLg),
 
-                    // Dados Pessoais (Alinhados à esquerda)
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _infoTile(context, 'NOME COMPLETO', user.username),
-                          _infoTile(context, 'E-MAIL', user.email),
+                          _infoBlock(
+                            context,
+                            'Nome completo',
+                            user.username,
+                          ),
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          _infoBlock(
+                            context,
+                            'Email',
+                            user.email,
+                          ),
                         ],
                       ),
                     ),
 
                     const SizedBox(height: AppDesignTokens.spacingXl),
 
-                    // Ação de Logout
                     SizedBox(
                       width: double.infinity,
-                      child: AppButton(
-                        label: 'Sair da Conta',
+                      height: 48,
+                      child: OutlinedButton.icon(
                         onPressed: () => _onLogout(context),
-                        variant: ButtonVariant.outlined,
+                        icon: Icon(
+                          Icons.logout,
+                          size: 20,
+                          color: AppDesignTokens.colorContentDefault,
+                        ),
+                        label: Text(
+                          'Sair da conta',
+                          style: TextStyle(
+                            fontSize: AppDesignTokens.fontSizeBody,
+                            fontWeight: AppDesignTokens.fontWeightMedium,
+                            color: AppDesignTokens.colorContentDefault,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppDesignTokens.colorWhite,
+                          side: BorderSide(
+                            color: AppDesignTokens.colorBorderDefault,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -137,28 +155,26 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _infoTile(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppDesignTokens.colorContentPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppDesignTokens.colorContentDefault,
-            ),
-          ),
-        ],
-      ),
+  Widget _infoBlock(BuildContext context, String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppDesignTokens.colorContentMuted,
+                fontSize: AppDesignTokens.fontSizeSmall,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: AppDesignTokens.fontWeightBold,
+                color: AppDesignTokens.colorContentDefault,
+              ),
+        ),
+      ],
     );
   }
 }

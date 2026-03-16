@@ -91,6 +91,7 @@ class AppDesignTokens {
   static const Color colorBgHovered = colorSoft;
   static const Color colorBgOverlay = Color(0xCCFFFFFF);
   static const Color colorBgFullscreen = Color(0xE6FFFFFF);
+  static const Color colorBgAvatar = Color(0xFFEDF2FE);
 
   // ---------------------------------------------------------------------------
   // Content
@@ -100,6 +101,7 @@ class AppDesignTokens {
   static const Color colorContentSecondary = colorSecondary;
   static const Color colorContentInverse = colorWhite;
   static const Color colorContentDisabled = colorGray500;
+  static const Color colorContentMuted = Color(0xFF555555);
 
   // ---------------------------------------------------------------------------
   // Borders
