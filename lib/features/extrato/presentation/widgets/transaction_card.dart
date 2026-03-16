@@ -56,7 +56,7 @@ class TransactionCard extends StatelessWidget {
       if (transaction.to != null && transaction.to!.isNotEmpty)
         'Para ${transaction.to}',
     ].join();
-print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
+
     return Card(
       margin: const EdgeInsets.only(bottom: AppDesignTokens.spacingSm),
       shape: RoundedRectangleBorder(

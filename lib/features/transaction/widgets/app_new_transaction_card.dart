@@ -1,5 +1,12 @@
+import 'dart:async';
+
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_contact_dialog_widget.dart';
@@ -8,11 +15,6 @@ import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dar
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
-import 'package:cortex_bank_mobile/core/utils/validators.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +28,9 @@ class AppNewTransactionCard extends StatefulWidget {
 
 class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   final _formKey = GlobalKey<FormState>();
+  final _valueFieldKey = GlobalKey<FormFieldState<String>>();
   final TextEditingController _valueController = TextEditingController();
+  Timer? _valueValidationTimer;
 
   String? selectedValueType;
   String? selectedValueCategory;
@@ -38,10 +42,22 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ContactsProvider>().loadContacts();
     });
+    _valueController.addListener(_validateValueAfterTyping);
+  }
+
+  void _validateValueAfterTyping() {
+    _valueValidationTimer?.cancel();
+    _valueValidationTimer = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      _valueFieldKey.currentState?.validate();
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _valueValidationTimer?.cancel();
+    _valueController.removeListener(_validateValueAfterTyping);
     _valueController.dispose();
     super.dispose();
   }
@@ -51,6 +67,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
 
     final contactsProvider = context.read<ContactsProvider>();
     final txProvider = context.read<TransactionsProvider>();
+
+    final cents = parseBRLMaskToCents(_valueController.text);
+    final valueToSave = cents / 100.0;
 
     Contact? selectedContact;
     try {
@@ -67,23 +86,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       AppSnackBar.show(context, 'Selecione um destino para a transferência');
       return;
     }
-
-    String cleanValue = _valueController.text;
-
-    // 2. Remove pontos de milhar: "1250,50"
-    cleanValue = cleanValue.replaceAll('.', '');
-
-    // 3. Troca a vírgula decimal por ponto: "1250.50"
-    cleanValue = cleanValue.replaceAll(',', '.');
-
-    // 4. Converte para double
-    final valueToSave =
-        double.tryParse(
-          _valueController.text
-              .replaceAll(RegExp(r'[^0-9,]'), '')
-              .replaceAll(',', '.'),
-        ) ??
-        0.0;
 
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -247,9 +249,10 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
             const Divider(height: 1, color: AppDesignTokens.colorNeutral),
             const SizedBox(height: 24),
             AppTextField(
+              formFieldKey: _valueFieldKey,
               label: 'Valor a ser transferido',
               controller: _valueController,
-              validator: requiredField,
+              validator: validateMinTransferValueBRL,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),

@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -79,6 +80,10 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
             dataSource: chartData,
             xValueMapper: (_BalanceEvolutionData balance, _) => balance.month,
             yValueMapper: (_BalanceEvolutionData balance, _) => balance.amount,
+            dataLabelMapper: (_BalanceEvolutionData balance, _) =>
+                formatCentsToBRLWithThousands(
+                  (balance.amount * 100).round(),
+                ),
             name: 'Saldo',
             color: AppDesignTokens.colorPrimary,
             dataLabelSettings: DataLabelSettings(isVisible: true),
