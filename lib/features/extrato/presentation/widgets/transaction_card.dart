@@ -1,6 +1,7 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/download_comprovante.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/data/comprovante_content.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_detail_modal.dart';
@@ -27,22 +28,12 @@ Future<void> _downloadComprovante(
     await downloadComprovante(filename, content);
     if (context.mounted) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Comprovante baixado com sucesso.'),
-          backgroundColor: AppDesignTokens.colorPrimary,
-        ),
-      );
+      AppSnackBar.success(context, 'Comprovante baixado com sucesso.');
     }
   } on UnsupportedError catch (_) {
     if (context.mounted) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Comprovante disponível em breve.'),
-          backgroundColor: AppDesignTokens.colorPrimary,
-        ),
-      );
+      AppSnackBar.warning(context, 'Comprovante disponível em breve.');
     }
   }
 }
@@ -50,14 +41,7 @@ Future<void> _downloadComprovante(
 /// Upload de recibos desabilitado temporariamente.
 Future<model.Transaction?> _uploadReceiptDisabled(BuildContext context) async {
   if (!context.mounted) return null;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: const Text(
-        'Upload de recibos temporariamente desabilitado.',
-      ),
-      backgroundColor: AppDesignTokens.colorPrimary,
-    ),
-  );
+  AppSnackBar.error(context, 'Upload de recibos temporariamente desabilitado.');
   return null;
 }
 
@@ -149,16 +133,6 @@ class TransactionCard extends StatelessWidget {
               context: context,
               builder: (ctx) => TransactionDetailModal(
                 transaction: transaction,
-                onEdit: transaction.status == model.TransactionStatus.pending
-                    ? () {
-                        showDialog<void>(
-                          context: context,
-                          builder: (ctx) => TransactionEditModal(
-                            data: transaction,
-                          ),
-                        );
-                      }
-                    : null,
                 onDownloadComprovante:
                     transaction.status != model.TransactionStatus.pending
                         ? () => _downloadComprovante(context, transaction)
@@ -283,42 +257,45 @@ class TransactionCard extends StatelessWidget {
                       ),
                     ),
                     Flexible(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            valorStr,
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontWeight: AppDesignTokens.fontWeightBold,
-                              fontSize: AppDesignTokens.fontSizeBody,
-                              color: isIncome
-                                  ? AppDesignTokens.colorFeedbackSuccess
-                                  : AppDesignTokens.colorFeedbackError,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 14,
-                                color: AppDesignTokens.colorContentDisabled,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              valorStr,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontWeight: AppDesignTokens.fontWeightBold,
+                                fontSize: AppDesignTokens.fontSizeBody,
+                                color: isIncome
+                                    ? AppDesignTokens.colorFeedbackSuccess
+                                    : AppDesignTokens.colorFeedbackError,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                dateStr,
-                                style: textTheme.bodySmall?.copyWith(
-                                  fontSize: AppDesignTokens.fontSizeCaption,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 14,
                                   color: AppDesignTokens.colorContentDisabled,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  dateStr,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    fontSize: AppDesignTokens.fontSizeCaption,
+                                    color: AppDesignTokens.colorContentDisabled,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

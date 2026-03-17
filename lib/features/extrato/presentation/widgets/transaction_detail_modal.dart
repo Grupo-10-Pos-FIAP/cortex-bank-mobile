@@ -1,6 +1,8 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_edit_modal.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
@@ -14,13 +16,11 @@ class TransactionDetailModal extends StatefulWidget {
   const TransactionDetailModal({
     super.key,
     required this.transaction,
-    this.onEdit,
     this.onDownloadComprovante,
     this.onUploadReceipt,
   });
 
   final model.Transaction transaction;
-  final VoidCallback? onEdit;
   final VoidCallback? onDownloadComprovante;
   final Future<model.Transaction?> Function()? onUploadReceipt;
 
@@ -48,7 +48,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
 
   static const String _bankName = 'CortexBank';
 
-  bool get _isPending => _transaction.status == model.TransactionStatus.pending;
+  bool get _isCompleted => _transaction.status == model.TransactionStatus.completed;
   bool get _canDownloadComprovante =>
       _transaction.status != model.TransactionStatus.pending;
 
@@ -60,6 +60,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
     final cents = (t.value.abs() * 100).round();
     return formatCentsToBRL(cents);
   }
+
   String _tipoLabel(model.Transaction t) {
     if (t.type == model.TransactionType.ted) return 'DOC/TED';
     return t.type.label;
@@ -76,12 +77,8 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
           _transaction = updated;
           _isUploadingReceipt = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Recibo anexado com sucesso.'),
-            backgroundColor: AppDesignTokens.colorPrimary,
-          ),
-        );
+
+        AppSnackBar.success(context, 'Recibo anexado com sucesso.');
       } else if (mounted) {
         setState(() => _isUploadingReceipt = false);
       }
@@ -138,22 +135,14 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
               ],
             ),
             const SizedBox(height: AppDesignTokens.spacingMd),
-            _DetailRow(
-              icon: Icons.arrow_back,
-              label: 'De',
-              value: deValue,
-            ),
+            _DetailRow(icon: Icons.arrow_back, label: 'De', value: deValue),
             _DetailRow(
               icon: Icons.arrow_forward,
               label: 'Para',
               value: _transaction.to ?? '—',
             ),
             const Divider(height: 1, color: Color(0xFFD9D9E0)),
-            _DetailRow(
-              icon: MdiIcons.bank,
-              label: 'Banco',
-              value: _bankName,
-            ),
+            _DetailRow(icon: MdiIcons.bank, label: 'Banco', value: _bankName),
             _DetailRow(
               icon: MdiIcons.fileDocumentOutline,
               label: 'Tipo',
@@ -175,34 +164,38 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                 ),
               ),
               const SizedBox(height: AppDesignTokens.spacingXs),
-              ..._transaction.receiptUrls.map((url) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppDesignTokens.spacingXs),
-                    child: InkWell(
-                      onTap: () => launchUrl(
-                        Uri.parse(url),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.receipt_long,
-                            size: 18,
-                            color: AppDesignTokens.colorPrimary,
-                          ),
-                          const SizedBox(width: AppDesignTokens.spacingSm),
-                          Expanded(
-                            child: Text(
-                              'Abrir recibo',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: AppDesignTokens.colorPrimary,
-                                decoration: TextDecoration.underline,
-                              ),
+              ..._transaction.receiptUrls.map(
+                (url) => Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: AppDesignTokens.spacingXs,
+                  ),
+                  child: InkWell(
+                    onTap: () => launchUrl(
+                      Uri.parse(url),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.receipt_long,
+                          size: 18,
+                          color: AppDesignTokens.colorPrimary,
+                        ),
+                        const SizedBox(width: AppDesignTokens.spacingSm),
+                        Expanded(
+                          child: Text(
+                            'Abrir recibo',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: AppDesignTokens.colorPrimary,
+                              decoration: TextDecoration.underline,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  )),
+                  ),
+                ),
+              ),
               const SizedBox(height: AppDesignTokens.spacingSm),
             ],
             const SizedBox(height: AppDesignTokens.spacingMd),
@@ -212,58 +205,64 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                 final isSmall =
                     width < AppDesignTokens.breakpointDetailModalActions;
 
-                if (_isPending && widget.onEdit != null) {
-                  final button = TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      widget.onEdit!();
-                    },
-                    child: Text(
-                      'Editar',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: AppDesignTokens.colorContentDisabled,
+                // Criamos uma lista para armazenar os botões que devem aparecer
+                final List<Widget> buttons = [];
+
+                if (_isCompleted) {
+                  buttons.add(
+                    TextButton(
+                      onPressed: () async {
+                        await showDialog<void>(
+                          context: context,
+                          builder: (ctx) => TransactionEditModal(
+                            data: _transaction,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Editar',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: AppDesignTokens.colorContentDisabled,
+                        ),
                       ),
                     ),
-                  );
-
-                  return Align(
-                    alignment: isSmall
-                        ? Alignment.center
-                        : Alignment.centerRight,
-                    child: button,
                   );
                 }
 
                 if (_canDownloadComprovante) {
-                  final button = TextButton(
-                    onPressed: widget.onDownloadComprovante ??
-                        () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'Comprovante disponível em breve.',
-                              ),
-                              backgroundColor: AppDesignTokens.colorPrimary,
-                            ),
-                          );
-                        },
-                    child: Text(
-                      'Baixar comprovante',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: AppDesignTokens.colorPrimary,
+                  buttons.add(
+                    TextButton(
+                      onPressed:
+                          widget.onDownloadComprovante ??
+                          () {
+                                  AppSnackBar.warning(
+                              context,
+                              'Comprovante disponível em breve.',
+                            );
+                          },
+                      child: Text(
+                        'Baixar comprovante',
+                        style: textTheme.labelLarge?.copyWith(
+                          color: AppDesignTokens.colorPrimary,
+                        ),
                       ),
                     ),
                   );
-
-                  return Align(
-                    alignment: isSmall
-                        ? Alignment.center
-                        : Alignment.centerRight,
-                    child: button,
-                  );
                 }
 
-                return const SizedBox.shrink();
+                // Se não houver botões, retorna vazio
+                if (buttons.isEmpty) return const SizedBox.shrink();
+
+                // Retorna os botões alinhados
+                return Align(
+                  alignment: isSmall ? Alignment.center : Alignment.centerRight,
+                  child: isSmall
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: buttons,
+                        )
+                      : Row(mainAxisSize: MainAxisSize.min, children: buttons),
+                );
               },
             ),
           ],
@@ -294,27 +293,18 @@ class _DetailRow extends StatelessWidget {
       color: AppDesignTokens.colorContentDisabled,
     );
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: AppDesignTokens.spacingMd,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.spacingMd),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: AppDesignTokens.colorContentDisabled,
-          ),
+          Icon(icon, size: 20, color: AppDesignTokens.colorContentDisabled),
           const SizedBox(width: AppDesignTokens.spacingMd),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  label,
-                  style: labelStyle,
-                ),
+                Text(label, style: labelStyle),
                 const SizedBox(height: AppDesignTokens.spacingXs),
                 Text(
                   value,

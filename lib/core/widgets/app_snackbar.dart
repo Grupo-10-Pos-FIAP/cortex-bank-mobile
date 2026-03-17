@@ -67,6 +67,22 @@ class AppSnackBar {
       duration,
     );
   }
+  
+  static void warning(
+    BuildContext context,
+    String message, {
+    Duration? duration = const Duration(seconds: 3),
+  }) {
+    _showOverlay(
+      context,
+      _SnackContent(
+        backgroundColor: AppDesignTokens.colorFeedbackWarning,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+        message: message,
+      ),
+      duration,
+    );
+  }
 
   static void error(
     BuildContext context,
