@@ -1,3 +1,5 @@
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+
 /// Returns error message if value is null or empty, otherwise null.
 String? requiredField(String? value) {
   if (value == null || value.trim().isEmpty) {
@@ -58,6 +60,18 @@ String? confirmPassword(String? value, String? password) {
   }
   if (value != password) {
     return 'As senhas não coincidem';
+  }
+  return null;
+}
+
+/// Returns error message if value is empty or less than R$ 1,00 (BRL masked), otherwise null.
+String? validateMinTransferValueBRL(String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return 'Campo obrigatório';
+  }
+  final cents = parseBRLMaskToCents(value);
+  if (cents < 100) {
+    return 'O valor mínimo é R\$ 1,00';
   }
   return null;
 }

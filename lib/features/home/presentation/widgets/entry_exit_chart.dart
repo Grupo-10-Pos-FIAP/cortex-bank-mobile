@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -85,6 +86,10 @@ class _EntryExitChartState extends State<EntryExitChart> {
             dataSource: chartData,
             xValueMapper: (_EntryExitData item, _) => item.month,
             yValueMapper: (_EntryExitData item, _) => item.entry,
+            dataLabelMapper: (_EntryExitData item, _) =>
+                formatCentsToBRLWithThousands(
+                  (item.entry * 100).round(),
+                ),
             name: 'Entrada',
             color: AppDesignTokens.colorFeedbackSuccess,
             dataLabelSettings: DataLabelSettings(isVisible: true),
@@ -93,6 +98,10 @@ class _EntryExitChartState extends State<EntryExitChart> {
             dataSource: chartData,
             xValueMapper: (_EntryExitData item, _) => item.month,
             yValueMapper: (_EntryExitData item, _) => item.exit,
+            dataLabelMapper: (_EntryExitData item, _) =>
+                formatCentsToBRLWithThousands(
+                  (item.exit * 100).round(),
+                ),
             name: 'Saída',
             color: AppDesignTokens.colorFeedbackError,
             dataLabelSettings: DataLabelSettings(isVisible: true),
