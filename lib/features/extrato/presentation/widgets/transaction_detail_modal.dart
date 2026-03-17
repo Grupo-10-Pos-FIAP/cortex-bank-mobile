@@ -1,0 +1,331 @@
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
+import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+    as model;
+import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+/// Modal de detalhamento da transação (Extrato). Editar, comprovante e anexos.
+class TransactionDetailModal extends StatefulWidget {
+  const TransactionDetailModal({
+    super.key,
+    required this.transaction,
+    this.onEdit,
+    this.onDownloadComprovante,
+    this.onUploadReceipt,
+  });
+
+  final model.Transaction transaction;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDownloadComprovante;
+  final Future<model.Transaction?> Function()? onUploadReceipt;
+
+  @override
+  State<TransactionDetailModal> createState() => _TransactionDetailModalState();
+}
+
+class _TransactionDetailModalState extends State<TransactionDetailModal> {
+  late model.Transaction _transaction;
+  bool _isUploadingReceipt = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _transaction = widget.transaction;
+  }
+
+  @override
+  void didUpdateWidget(TransactionDetailModal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.transaction.id != widget.transaction.id) {
+      _transaction = widget.transaction;
+    }
+  }
+
+  static const String _bankName = 'CortexBank';
+
+  bool get _isPending => _transaction.status == model.TransactionStatus.pending;
+  bool get _canDownloadComprovante =>
+      _transaction.status != model.TransactionStatus.pending;
+
+  String _dateFormatted(model.Transaction t) =>
+      DateFormatter.formatDate(t.date);
+  String _timeFormatted(model.Transaction t) =>
+      DateFormatter.formatTime(t.date);
+  String _valueFormatted(model.Transaction t) {
+    final cents = (t.value.abs() * 100).round();
+    return formatCentsToBRL(cents);
+  }
+  String _tipoLabel(model.Transaction t) {
+    if (t.type == model.TransactionType.ted) return 'DOC/TED';
+    return t.type.label;
+  }
+
+  Future<void> _handleUploadReceipt() async {
+    final onUpload = widget.onUploadReceipt;
+    if (onUpload == null) return;
+    setState(() => _isUploadingReceipt = true);
+    try {
+      final updated = await onUpload();
+      if (updated != null && mounted) {
+        setState(() {
+          _transaction = updated;
+          _isUploadingReceipt = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Recibo anexado com sucesso.'),
+            backgroundColor: AppDesignTokens.colorPrimary,
+          ),
+        );
+      } else if (mounted) {
+        setState(() => _isUploadingReceipt = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isUploadingReceipt = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final titularName = context.read<AuthProvider>().user?.username;
+    final deValue = (titularName != null && titularName.isNotEmpty)
+        ? titularName
+        : (_transaction.from ?? '—');
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDesignTokens.spacingLg),
+      ),
+      backgroundColor: AppDesignTokens.colorWhite,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDesignTokens.spacingLg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Detalhamento',
+              textAlign: TextAlign.left,
+              style: textTheme.titleLarge?.copyWith(
+                fontSize: 24,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: AppDesignTokens.spacingMd),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _dateFormatted(_transaction),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppDesignTokens.colorContentDisabled,
+                  ),
+                ),
+                Text(
+                  _timeFormatted(_transaction),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppDesignTokens.colorContentDisabled,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDesignTokens.spacingMd),
+            _DetailRow(
+              icon: Icons.arrow_back,
+              label: 'De',
+              value: deValue,
+            ),
+            _DetailRow(
+              icon: Icons.arrow_forward,
+              label: 'Para',
+              value: _transaction.to ?? '—',
+            ),
+            const Divider(height: 1, color: Color(0xFFD9D9E0)),
+            _DetailRow(
+              icon: MdiIcons.bank,
+              label: 'Banco',
+              value: _bankName,
+            ),
+            _DetailRow(
+              icon: MdiIcons.fileDocumentOutline,
+              label: 'Tipo',
+              value: _tipoLabel(_transaction),
+            ),
+            _DetailRow(
+              icon: Icons.attach_money,
+              label: 'Valor',
+              value: _valueFormatted(_transaction),
+              valueStyle: textTheme.labelLarge,
+            ),
+            const Divider(height: 1, color: Color(0xFFD9D9E0)),
+            if (_transaction.receiptUrls.isNotEmpty) ...[
+              const SizedBox(height: AppDesignTokens.spacingMd),
+              Text(
+                'Recibos anexados',
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppDesignTokens.colorContentDisabled,
+                ),
+              ),
+              const SizedBox(height: AppDesignTokens.spacingXs),
+              ..._transaction.receiptUrls.map((url) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppDesignTokens.spacingXs),
+                    child: InkWell(
+                      onTap: () => launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.receipt_long,
+                            size: 18,
+                            color: AppDesignTokens.colorPrimary,
+                          ),
+                          const SizedBox(width: AppDesignTokens.spacingSm),
+                          Expanded(
+                            child: Text(
+                              'Abrir recibo',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AppDesignTokens.colorPrimary,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+              const SizedBox(height: AppDesignTokens.spacingSm),
+            ],
+            const SizedBox(height: AppDesignTokens.spacingMd),
+            Builder(
+              builder: (context) {
+                final width = MediaQuery.sizeOf(context).width;
+                final isSmall =
+                    width < AppDesignTokens.breakpointDetailModalActions;
+
+                if (_isPending && widget.onEdit != null) {
+                  final button = TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      widget.onEdit!();
+                    },
+                    child: Text(
+                      'Editar',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: AppDesignTokens.colorContentDisabled,
+                      ),
+                    ),
+                  );
+
+                  return Align(
+                    alignment: isSmall
+                        ? Alignment.center
+                        : Alignment.centerRight,
+                    child: button,
+                  );
+                }
+
+                if (_canDownloadComprovante) {
+                  final button = TextButton(
+                    onPressed: widget.onDownloadComprovante ??
+                        () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Comprovante disponível em breve.',
+                              ),
+                              backgroundColor: AppDesignTokens.colorPrimary,
+                            ),
+                          );
+                        },
+                    child: Text(
+                      'Baixar comprovante',
+                      style: textTheme.labelLarge?.copyWith(
+                        color: AppDesignTokens.colorPrimary,
+                      ),
+                    ),
+                  );
+
+                  return Align(
+                    alignment: isSmall
+                        ? Alignment.center
+                        : Alignment.centerRight,
+                    child: button,
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueStyle,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final TextStyle? valueStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final defaultValueStyle = textTheme.bodyLarge;
+    final labelStyle = textTheme.bodySmall?.copyWith(
+      color: AppDesignTokens.colorContentDisabled,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppDesignTokens.spacingMd,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: AppDesignTokens.colorContentDisabled,
+          ),
+          const SizedBox(width: AppDesignTokens.spacingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: labelStyle,
+                ),
+                const SizedBox(height: AppDesignTokens.spacingXs),
+                Text(
+                  value,
+                  style: valueStyle ?? defaultValueStyle ?? textTheme.bodyLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

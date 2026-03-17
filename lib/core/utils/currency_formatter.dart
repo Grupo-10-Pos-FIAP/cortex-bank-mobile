@@ -1,13 +1,13 @@
 import 'package:flutter/services.dart';
 
+/// Formata valor em centavos para Real brasileiro (R$ 1.234,56).
+/// Convenção BRL: vírgula para decimais, ponto para milhares.
 String formatCentsToBRL(int amountCents) {
-  final reais = amountCents ~/ 100;
-  final centavos = (amountCents.abs() % 100).toString().padLeft(2, '0');
-  final signal = amountCents < 0 ? '-' : '';
-  return 'R\$ $signal${reais.abs()},$centavos';
+  return formatCentsToBRLWithThousands(amountCents);
 }
 
-/// Formata centavos em BRL com separador de milhares (ex.: 1234567 -> "R\$ 12.345,67").
+/// Formata centavos em Real brasileiro com convenção BRL:
+/// vírgula para decimais, ponto para milhares (ex.: 1234567 -> "R\$ 12.345,67").
 String formatCentsToBRLWithThousands(int amountCents) {
   final abs = amountCents.abs();
   final reais = abs ~/ 100;

@@ -151,6 +151,7 @@ class AppDesignTokens {
   // Breakpoints (logical pixels)
   // ---------------------------------------------------------------------------
   static const double breakpointMobile = 480;
+  static const double breakpointDetailModalActions = 425;
   static const double breakpointTablet = 768;
   static const double breakpointDesktop = 1024;
   static const double breakpointWidescreen = 1200;

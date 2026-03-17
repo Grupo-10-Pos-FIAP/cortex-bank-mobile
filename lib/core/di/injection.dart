@@ -8,6 +8,8 @@ import 'package:cortex_bank_mobile/features/contacts/data/repositories/i_contact
 import 'package:get_it/get_it.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/datasources/receipt_storage_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource_firestore.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
@@ -33,7 +35,13 @@ void configureDependencies() {
   getIt.registerLazySingleton<TransactionsDataSource>(
     () => TransactionsDataSourceFirestore(FirebaseFirestore.instance),
   );
+  getIt.registerLazySingleton<ReceiptStorageDataSource>(
+    () => ReceiptStorageDataSourceFirebase(FirebaseStorage.instance),
+  );
   getIt.registerLazySingleton<ITransactionsRepository>(
-    () => TransactionsRepositoryImpl(getIt()),
+    () => TransactionsRepositoryImpl(
+      getIt<TransactionsDataSource>(),
+      getIt<ReceiptStorageDataSource>(),
+    ),
   );
 }

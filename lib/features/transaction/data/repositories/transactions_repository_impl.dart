@@ -1,14 +1,17 @@
-import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
+import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/datasources/receipt_storage_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 
 class TransactionsRepositoryImpl implements ITransactionsRepository {
+  TransactionsRepositoryImpl(this._dataSource, this._receiptStorage);
+
   final TransactionsDataSource _dataSource;
-  TransactionsRepositoryImpl(this._dataSource);
+  final ReceiptStorageDataSource _receiptStorage;
 
   @override
   Future<Result<String>> add(Transaction transaction) async {
@@ -43,7 +46,6 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
     }
   }
 
-
   @override
   Future<Result<void>> delete(String id) async {
     try {
@@ -55,7 +57,7 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
     }
   }
 
-    @override
+  @override
   Future<Result<BalanceSummary>> getBalanceSummary() async {
     try {
       final summary = await _dataSource.getBalanceSummary();
@@ -66,4 +68,28 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
     }
   }
 
+  @override
+  Future<Result<Transaction>> uploadReceipt(
+    Transaction transaction,
+    List<int> fileBytes,
+    String fileName,
+  ) async {
+    try {
+      final url = await _receiptStorage.uploadReceipt(
+        transaction.id,
+        fileBytes,
+        fileName,
+      );
+      final updated = transaction.copyWith(
+        receiptUrls: [...transaction.receiptUrls, url],
+      );
+      await _dataSource.update(updated);
+      return Success(updated);
+    } catch (e) {
+      safeLogError('Erro ao enviar recibo', e);
+      return FailureResult(
+        Failure(message: 'Não foi possível enviar o recibo. Tente novamente.'),
+      );
+    }
+  }
 }

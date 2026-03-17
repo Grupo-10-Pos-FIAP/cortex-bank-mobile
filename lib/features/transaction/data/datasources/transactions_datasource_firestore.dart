@@ -32,6 +32,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       'to': transaction.to,
       'from': transaction.from,
       'status': transaction.status,
+      'receiptUrls': transaction.receiptUrls,
     });
     return docRef.id;
   }
@@ -57,6 +58,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       'to': transaction.to,
       'from': transaction.from,
       'status': transaction.status,
+      'receiptUrls': transaction.receiptUrls,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

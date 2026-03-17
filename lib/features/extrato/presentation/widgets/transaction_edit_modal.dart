@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
+import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class TransactionEditModal extends StatefulWidget {
   final model.Transaction data;
@@ -21,7 +23,6 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
   late TextEditingController _valueController;
   late model.TransactionType _selectedType;
   late String _selectedTo;
-  late String _selectedFrom;
   late String _selectedStatus;
   late model.TransactionCategory _selectedCategory;
   bool _isLoading = false;
@@ -29,13 +30,13 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
   @override
   void initState() {
     super.initState();
+    final valueCents = (widget.data.value * 100).round();
     _valueController = TextEditingController(
-      text: widget.data.value.toString(),
+      text: formatCentsToBRL(valueCents),
     );
 
     _selectedType = widget.data.type;
     _selectedTo = widget.data.to ?? 'Mesma Titularidade';
-    _selectedFrom = widget.data.from ?? 'Conta Principal';
     _selectedStatus = widget.data.status;
 
     // AJUSTE AQUI: Use o valor que vem do model diretamente.
@@ -65,6 +66,9 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     // 3. Se o valor for 0 (campo vazio ou erro), decide se usa o original ou 0
     double valueToSave = newValue > 0 ? newValue : widget.data.value;
 
+    final fromTitular =
+        context.read<AuthProvider>().user?.username ?? widget.data.from;
+
     final updated = model.Transaction(
       id: widget.data.id,
       accountId: widget.data.accountId,
@@ -74,7 +78,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       date: DateTime.now(),
       status: _selectedStatus,
       to: _selectedTo,
-      from: _selectedFrom,
+      from: fromTitular,
     );
 
     final success = await context

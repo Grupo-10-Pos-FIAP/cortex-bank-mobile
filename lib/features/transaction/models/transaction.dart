@@ -2,6 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum TransactionType { credit, debit, ted }
 enum TransactionCategory { food, transport, salary, ted, others }
+
+/// Status de transação (Firestore/UI).
+abstract class TransactionStatus {
+  TransactionStatus._();
+  static const String pending = 'Pending';
+  static const String completed = 'Completed';
+}
+
 class Transaction {
   final String id;
   final String accountId;
@@ -11,7 +19,8 @@ class Transaction {
   final String? to;
   final String? from;
   final String status;
-   final TransactionCategory category;
+  final TransactionCategory category;
+  final List<String> receiptUrls;
 
   Transaction({
     this.id = '',
@@ -21,11 +30,18 @@ class Transaction {
     required this.date,
     this.to,
     this.from,
-    this.status = 'Completed',
+    this.status = TransactionStatus.completed,
     required this.category,
-  });
+    List<String>? receiptUrls,
+  }) : receiptUrls = receiptUrls ?? const [];
 
   factory Transaction.fromFirestore(Map<String, dynamic> data, String docId) {
+    final receipts = data['receiptUrls'];
+    final list = receipts is List
+        ? (receipts)
+            .map((e) => e is String ? e : e.toString())
+            .toList()
+        : <String>[];
     return Transaction(
       id: docId,
       accountId: data['accountId'] ?? '',
@@ -34,17 +50,43 @@ class Transaction {
       date: (data['date'] as Timestamp).toDate(),
       to: data['to'],
       from: data['from'],
-      status: data['status'] ?? 'Completed',
+      status: data['status'] ?? TransactionStatus.completed,
       category: TransactionCategoryExtension.fromString(
         data['category'] ?? 'others',
-      ), 
+      ),
+      receiptUrls: list,
+    );
+  }
+
+  Transaction copyWith({
+    String? id,
+    String? accountId,
+    TransactionType? type,
+    double? value,
+    DateTime? date,
+    String? to,
+    String? from,
+    String? status,
+    TransactionCategory? category,
+    List<String>? receiptUrls,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
+      type: type ?? this.type,
+      value: value ?? this.value,
+      date: date ?? this.date,
+      to: to ?? this.to,
+      from: from ?? this.from,
+      status: status ?? this.status,
+      category: category ?? this.category,
+      receiptUrls: receiptUrls ?? this.receiptUrls,
     );
   }
 }
 
 
 extension TransactionTypeExtension on TransactionType {
-  /* Converte de String do Dropdown/UI para o Enum */
   static TransactionType fromString(String value) {
     switch (value.toLowerCase().trim()) {
       case 'credit':
@@ -62,7 +104,6 @@ extension TransactionTypeExtension on TransactionType {
     }
   }
 
-  /* Converte do Enum para String da UI (se precisar exibir o nome) */
   String get label {
     switch (this) {
       case TransactionType.credit:
@@ -77,7 +118,6 @@ extension TransactionTypeExtension on TransactionType {
 
 
 extension TransactionCategoryExtension on TransactionCategory {
-  /* Converte de String (Banco/API) para o Enum */
   static TransactionCategory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'food':
@@ -96,7 +136,6 @@ extension TransactionCategoryExtension on TransactionCategory {
     }
   }
 
-  /* Nome amigável para mostrar na tela */
   String get label {
     switch (this) {
       case TransactionCategory.food:

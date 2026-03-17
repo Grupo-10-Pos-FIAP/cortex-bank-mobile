@@ -13,13 +13,11 @@ class TransactionsProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Getters públicos (Essenciais para a UI enxergar os dados)
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   BalanceSummary? get balanceSummary => _balanceSummary;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Carregar lista de transações
   Future<void> loadTransactions() async {
     _setLoading(true);
     _errorMessage = null;
@@ -43,28 +41,27 @@ class TransactionsProvider extends ChangeNotifier {
     }, (failure) => _errorMessage = failure.message);
   }
 
-  Future<bool> addTransaction(Transaction transaction) async {
+  /// Adiciona a transação. Retorna a transação criada (com id do Firestore) ou null em caso de erro.
+  Future<Transaction?> addTransaction(Transaction transaction) async {
     _setLoading(true);
     _errorMessage = null;
 
     final result = await _repository.add(transaction);
 
-    final isSuccess = result.fold(
+    Transaction? created;
+    result.fold(
       (id) {
-        // Adiciona localmente para feedback instantâneo
-        _transactions = [transaction, ..._transactions];
-        // Atualiza o saldo automaticamente
+        created = transaction.copyWith(id: id);
+        _transactions = [created!, ..._transactions];
         loadBalanceSummary();
-        return true;
       },
       (failure) {
         _errorMessage = failure.message;
-        return false;
       },
     );
 
     _setLoading(false);
-    return isSuccess;
+    return created;
   }
 
   Future<bool> updateTransaction(Transaction transaction) async {
@@ -75,13 +72,10 @@ class TransactionsProvider extends ChangeNotifier {
 
     final isSuccess = result.fold(
       (_) {
-        // Atualiza a lista localmente para refletir na UI imediatamente
         final index = _transactions.indexWhere((t) => t.id == transaction.id);
         if (index != -1) {
           _transactions[index] = transaction;
         }
-
-        // Recarrega o resumo do saldo, caso o valor tenha mudado
         loadBalanceSummary();
         return true;
       },
@@ -96,7 +90,32 @@ class TransactionsProvider extends ChangeNotifier {
     return isSuccess;
   }
 
-  // Deletar transação
+  /// Faz upload de um recibo e atualiza a transação. Retorna a transação atualizada ou null em caso de erro.
+  Future<Transaction?> uploadReceipt(
+    Transaction transaction,
+    List<int> fileBytes,
+    String fileName,
+  ) async {
+    final result = await _repository.uploadReceipt(
+      transaction,
+      fileBytes,
+      fileName,
+    );
+    return result.fold(
+      (updated) {
+        final index = _transactions.indexWhere((t) => t.id == updated.id);
+        if (index != -1) _transactions[index] = updated;
+        notifyListeners();
+        return updated;
+      },
+      (_) {
+        _errorMessage = 'Não foi possível anexar o recibo.';
+        notifyListeners();
+        return null;
+      },
+    );
+  }
+
   Future<void> deleteTransaction(String id) async {
     _setLoading(true);
     final result = await _repository.delete(id);
@@ -109,7 +128,6 @@ class TransactionsProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  // Métodos auxiliares de estado
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

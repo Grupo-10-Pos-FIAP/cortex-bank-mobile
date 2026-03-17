@@ -1,10 +1,85 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/download_comprovante.dart';
+import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/extrato/data/comprovante_content.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_detail_modal.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_edit_modal.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/attachment_constants.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
+import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+Future<void> _downloadComprovante(
+  BuildContext context,
+  model.Transaction transaction,
+) async {
+  final deValue = context.read<AuthProvider>().user?.username ??
+      transaction.from ??
+      '—';
+  final content = ComprovanteContent.build(transaction, deValue);
+  final filename = 'comprovante-${transaction.id}.txt';
+  try {
+    await downloadComprovante(filename, content);
+    if (context.mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Comprovante baixado com sucesso.'),
+          backgroundColor: AppDesignTokens.colorPrimary,
+        ),
+      );
+    }
+  } on UnsupportedError catch (_) {
+    if (context.mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Comprovante disponível em breve.'),
+          backgroundColor: AppDesignTokens.colorPrimary,
+        ),
+      );
+    }
+  }
+}
+
+/// Upload de recibos desabilitado temporariamente.
+Future<model.Transaction?> _uploadReceiptDisabled(BuildContext context) async {
+  if (!context.mounted) return null;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: const Text(
+        'Upload de recibos temporariamente desabilitado.',
+      ),
+      backgroundColor: AppDesignTokens.colorPrimary,
+    ),
+  );
+  return null;
+}
+
+Future<model.Transaction?> _uploadReceipt(
+  BuildContext context,
+  model.Transaction transaction,
+) async {
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: AttachmentConstants.allowedExtensions,
+    withData: true,
+  );
+  if (result == null || result.files.isEmpty || !context.mounted) {
+    return null;
+  }
+  final file = result.files.single;
+  final bytes = file.bytes;
+  final name = file.name;
+  if (bytes == null || name.isEmpty) return null;
+  final provider = context.read<TransactionsProvider>();
+  return provider.uploadReceipt(transaction, bytes, name);
+}
 
 class TransactionCard extends StatelessWidget {
   const TransactionCard({
@@ -16,47 +91,49 @@ class TransactionCard extends StatelessWidget {
   final model.Transaction transaction;
   final VoidCallback onDelete;
 
- @override
+  @override
   Widget build(BuildContext context) {
-    // 1. Define se é uma entrada de dinheiro
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
     final isIncome = transaction.type == model.TransactionType.credit;
 
-    // 2. Define o texto baseado no tipo exato
     String transactionTypeLabel;
     if (transaction.type == model.TransactionType.credit) {
       transactionTypeLabel = 'Transferência recebida';
     } else if (transaction.type == model.TransactionType.ted) {
       transactionTypeLabel = 'TED efetuada';
     } else {
-      transactionTypeLabel = 'Transferência efetuada'; // Para Debit
+      transactionTypeLabel = 'Transferência efetuada';
     }
 
-    // 3. Define o sinal do valor (+ ou -)
     final valueCents = (transaction.value.abs() * 100).round();
     final valorStr = isIncome
         ? '+${formatCentsToBRL(valueCents)}'
         : '-${formatCentsToBRL(valueCents)}';
 
-    final dateStr =
-        '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
-    final statusLabel = transaction.status == 'Pending'
+    final dateStr = DateFormatter.formatDate(transaction.date);
+    final statusLabel = transaction.status == model.TransactionStatus.pending
         ? 'Pendente'
         : transaction.status;
+    final titularName = context.read<AuthProvider>().user?.username;
+    final deLabel = (titularName != null && titularName.isNotEmpty)
+        ? titularName
+        : transaction.from;
     final hasFromTo =
-        (transaction.from != null && transaction.from!.isNotEmpty) ||
+        (deLabel != null && deLabel.isNotEmpty) ||
         (transaction.to != null && transaction.to!.isNotEmpty);
     final fromToText = [
-      if (transaction.from != null && transaction.from!.isNotEmpty)
-        'De ${transaction.from}',
-      if (transaction.from != null &&
-          transaction.from!.isNotEmpty &&
+      if (deLabel != null && deLabel.isNotEmpty) 'De $deLabel',
+      if (deLabel != null &&
+          deLabel.isNotEmpty &&
           transaction.to != null &&
           transaction.to!.isNotEmpty)
         ' • ',
       if (transaction.to != null && transaction.to!.isNotEmpty)
         'Para ${transaction.to}',
     ].join();
-print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
+
     return Card(
       margin: const EdgeInsets.only(bottom: AppDesignTokens.spacingSm),
       shape: RoundedRectangleBorder(
@@ -67,12 +144,29 @@ print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
       child: Padding(
         padding: EdgeInsets.zero,
         child: InkWell(
-          // Dentro do seu InkWell no TransactionCard
           onTap: () async {
-            await showDialog(
+            await showDialog<void>(
               context: context,
-              builder: (context) => TransactionEditModal(
-                data: transaction,
+              builder: (ctx) => TransactionDetailModal(
+                transaction: transaction,
+                onEdit: transaction.status == model.TransactionStatus.pending
+                    ? () {
+                        showDialog<void>(
+                          context: context,
+                          builder: (ctx) => TransactionEditModal(
+                            data: transaction,
+                          ),
+                        );
+                      }
+                    : null,
+                onDownloadComprovante:
+                    transaction.status != model.TransactionStatus.pending
+                        ? () => _downloadComprovante(context, transaction)
+                        : null,
+                onUploadReceipt:
+                    transaction.status == model.TransactionStatus.pending
+                        ? () => _uploadReceiptDisabled(context)
+                        : null,
               ),
             );
           },
@@ -113,14 +207,16 @@ print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
                         children: [
                           Text(
                             transactionTypeLabel,
-                            style: GoogleFonts.roboto(
+                            style: textTheme.bodyMedium?.copyWith(
                               fontWeight: AppDesignTokens.fontWeightSemibold,
                               fontSize: AppDesignTokens.fontSizeBody,
                               color: AppDesignTokens.colorContentDefault,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          if (transaction.status == 'Pending')
+                          if (transaction.status ==
+                              model.TransactionStatus.pending)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -133,13 +229,14 @@ print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
                               ),
                               child: Text(
                                 statusLabel,
-                                style: GoogleFonts.roboto(
+                                style: textTheme.bodySmall?.copyWith(
                                   fontSize: AppDesignTokens.fontSizeCaption,
                                   color: AppDesignTokens.colorContentDefault,
                                 ),
                               ),
                             ),
-                          if (transaction.status != 'Pending' &&
+                          if (transaction.status !=
+                                  model.TransactionStatus.pending &&
                               transaction.status.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -152,7 +249,7 @@ print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
                               ),
                               child: Text(
                                 statusLabel,
-                                style: GoogleFonts.roboto(
+                                style: textTheme.bodySmall?.copyWith(
                                   fontSize: AppDesignTokens.fontSizeCaption,
                                   color: AppDesignTokens.colorContentDefault,
                                 ),
@@ -171,11 +268,12 @@ print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
                                 Expanded(
                                   child: Text(
                                     fromToText,
-                                    style: GoogleFonts.roboto(
+                                    style: textTheme.bodySmall?.copyWith(
                                       fontSize: AppDesignTokens.fontSizeSmall,
                                       color:
                                           AppDesignTokens.colorContentDisabled,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -184,39 +282,44 @@ print('ID: ${transaction.id} | Tipo no Model: ${transaction.type}');
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          valorStr,
-                          style: GoogleFonts.roboto(
-                            fontWeight: AppDesignTokens.fontWeightBold,
-                            fontSize: AppDesignTokens.fontSizeBody,
-                            color: isIncome
-                                ? AppDesignTokens.colorFeedbackSuccess
-                                : AppDesignTokens.colorFeedbackError,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: AppDesignTokens.colorContentDisabled,
+                    Flexible(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            valorStr,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: AppDesignTokens.fontWeightBold,
+                              fontSize: AppDesignTokens.fontSizeBody,
+                              color: isIncome
+                                  ? AppDesignTokens.colorFeedbackSuccess
+                                  : AppDesignTokens.colorFeedbackError,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              dateStr,
-                              style: GoogleFonts.roboto(
-                                fontSize: AppDesignTokens.fontSizeCaption,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
                                 color: AppDesignTokens.colorContentDisabled,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 4),
+                              Text(
+                                dateStr,
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontSize: AppDesignTokens.fontSizeCaption,
+                                  color: AppDesignTokens.colorContentDisabled,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
