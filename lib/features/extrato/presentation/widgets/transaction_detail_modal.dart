@@ -48,7 +48,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
 
   static const String _bankName = 'CortexBank';
 
-  bool get _isCompleted => _transaction.status == model.TransactionStatus.completed;
+  bool get _isPending => _transaction.status == model.TransactionStatus.pending;
   bool get _canDownloadComprovante =>
       _transaction.status != model.TransactionStatus.pending;
 
@@ -208,7 +208,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                 // Criamos uma lista para armazenar os botões que devem aparecer
                 final List<Widget> buttons = [];
 
-                if (_isCompleted) {
+                if (_isPending) {
                   buttons.add(
                     TextButton(
                       onPressed: () async {
