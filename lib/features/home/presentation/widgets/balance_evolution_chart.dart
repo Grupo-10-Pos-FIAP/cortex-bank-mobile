@@ -35,11 +35,9 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
   ) {
     if (transactions.isEmpty) return [];
 
-    // Sort transactions by date
     final sorted = List<model.Transaction>.from(transactions)
       ..sort((a, b) => a.date.compareTo(b.date));
 
-    // Compute cumulative balance
     double balance = 0;
     Map<String, double> monthlyBalance = {};
 
@@ -52,7 +50,6 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
       monthlyBalance[monthKey] = balance;
     }
 
-    // Convert to chart data (last 5 months or all)
     final entries = monthlyBalance.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 

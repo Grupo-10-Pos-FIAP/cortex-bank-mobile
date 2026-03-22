@@ -12,7 +12,6 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Modal de detalhamento da transação (Extrato). Editar, comprovante e anexos.
 class TransactionDetailModal extends StatefulWidget {
   const TransactionDetailModal({
     super.key,
@@ -109,14 +108,32 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Detalhamento',
-              textAlign: TextAlign.left,
-              style: textTheme.titleLarge?.copyWith(
-                fontSize: 24,
-                fontWeight: FontWeight.w400,
-                color: const Color(0xFF1A1A1A),
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Detalhamento',
+                    textAlign: TextAlign.left,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Fechar',
+                  style: IconButton.styleFrom(
+                    foregroundColor: AppDesignTokens.colorContentDisabled,
+                    padding: const EdgeInsets.all(4),
+                    minimumSize: const Size(36, 36),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppDesignTokens.spacingMd),
             Row(
@@ -257,7 +274,6 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                 final isSmall =
                     width < AppDesignTokens.breakpointDetailModalActions;
 
-                // Criamos uma lista para armazenar os botões que devem aparecer
                 final List<Widget> buttons = [];
 
                 if (_isPending) {
@@ -326,10 +342,8 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                   );
                 }
 
-                // Se não houver botões, retorna vazio
                 if (buttons.isEmpty) return const SizedBox.shrink();
 
-                // Retorna os botões alinhados
                 return Align(
                   alignment: isSmall ? Alignment.center : Alignment.centerRight,
                   child: isSmall

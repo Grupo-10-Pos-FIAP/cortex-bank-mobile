@@ -3,7 +3,6 @@ import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 
-/// Gera o texto do comprovante a partir da transação.
 class ComprovanteContent {
   ComprovanteContent._();
 

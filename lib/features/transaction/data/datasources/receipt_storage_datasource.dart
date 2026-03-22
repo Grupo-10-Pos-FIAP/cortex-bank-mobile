@@ -3,13 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image/image.dart' as im;
 import 'package:uuid/uuid.dart';
 
-/// Contrato para upload de recibos/documentos da transação no Firebase Storage.
 abstract class ReceiptStorageDataSource {
-  /// Faz upload do arquivo e retorna a URL de download.
-  /// [transactionId] identifica a transação.
-  /// [bytes] conteúdo do arquivo; [fileName] nome original (ex: recibo.pdf).
   Future<String> uploadReceipt(
     String transactionId,
     List<int> bytes,
@@ -17,11 +14,26 @@ abstract class ReceiptStorageDataSource {
   );
 }
 
+class _PreparedReceipt {
+  const _PreparedReceipt({
+    required this.bytes,
+    required this.extension,
+    required this.contentType,
+  });
+
+  final List<int> bytes;
+  final String extension;
+  final String contentType;
+}
+
 class ReceiptStorageDataSourceFirebase implements ReceiptStorageDataSource {
   ReceiptStorageDataSourceFirebase(this._storage);
 
   final FirebaseStorage _storage;
   static const _uuid = Uuid();
+
+  static const int _maxImageSide = 1920;
+  static const int _jpegQuality = 80;
 
   String get _uid {
     final user = fa.FirebaseAuth.instance.currentUser;
@@ -37,22 +49,21 @@ class ReceiptStorageDataSourceFirebase implements ReceiptStorageDataSource {
   ) async {
     _validateFile(bytes, fileName);
 
-    final processedBytes = await _compressIfImage(bytes, fileName);
-    final ext = fileName.split('.').last.toLowerCase();
-    final uniqueName = '${_uuid.v4()}.$ext';
+    final prepared = await _prepareReceiptBytes(bytes, fileName);
+    final uniqueName = '${_uuid.v4()}.${prepared.extension}';
     final path = 'receipts/$_uid/$transactionId/$uniqueName';
 
     final ref = _storage.ref().child(path);
+    final data = prepared.bytes is Uint8List
+        ? prepared.bytes as Uint8List
+        : Uint8List.fromList(prepared.bytes);
     await ref.putData(
-      processedBytes is Uint8List
-          ? processedBytes
-          : Uint8List.fromList(processedBytes),
-      SettableMetadata(contentType: _contentTypeFromFileName(fileName)),
+      data,
+      SettableMetadata(contentType: prepared.contentType),
     );
     return ref.getDownloadURL();
   }
 
-  /// Valida extensão e tamanho do arquivo antes do upload.
   static void _validateFile(List<int> bytes, String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
     if (!AttachmentConstants.allowedExtensions.contains(ext)) {
@@ -68,29 +79,92 @@ class ReceiptStorageDataSourceFirebase implements ReceiptStorageDataSource {
     }
   }
 
-  /// Comprime imagens (jpg/png) para reduzir o tamanho do upload.
-  /// PDFs são retornados sem modificação.
-  static Future<List<int>> _compressIfImage(
+  static Future<_PreparedReceipt> _prepareReceiptBytes(
     List<int> bytes,
     String fileName,
   ) async {
     final ext = fileName.split('.').last.toLowerCase();
-    final isImage = ext == 'jpg' || ext == 'jpeg' || ext == 'png';
-    if (!isImage) return bytes;
 
-    if (kIsWeb) return bytes;
+    if (ext == 'pdf') {
+      return _PreparedReceipt(
+        bytes: bytes,
+        extension: 'pdf',
+        contentType: 'application/pdf',
+      );
+    }
+
+    final isRaster = ext == 'jpg' || ext == 'jpeg' || ext == 'png';
+    if (!isRaster) {
+      return _PreparedReceipt(
+        bytes: bytes,
+        extension: ext,
+        contentType: _contentTypeFromFileName(fileName),
+      );
+    }
+
+    if (kIsWeb) {
+      final optimized = _optimizeRasterForWeb(bytes);
+      if (optimized != null) {
+        return _PreparedReceipt(
+          bytes: optimized,
+          extension: 'jpg',
+          contentType: 'image/jpeg',
+        );
+      }
+      return _PreparedReceipt(
+        bytes: bytes,
+        extension: ext,
+        contentType: _contentTypeFromFileName(fileName),
+      );
+    }
 
     try {
       final compressed = await FlutterImageCompress.compressWithList(
         bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
-        minWidth: 1920,
-        minHeight: 1920,
-        quality: 80,
+        minWidth: _maxImageSide,
+        minHeight: _maxImageSide,
+        quality: _jpegQuality,
         format: ext == 'png' ? CompressFormat.png : CompressFormat.jpeg,
       );
-      return compressed;
+      return _PreparedReceipt(
+        bytes: compressed,
+        extension: ext,
+        contentType: _contentTypeFromFileName(fileName),
+      );
     } catch (_) {
-      return bytes;
+      return _PreparedReceipt(
+        bytes: bytes,
+        extension: ext,
+        contentType: _contentTypeFromFileName(fileName),
+      );
+    }
+  }
+
+  static List<int>? _optimizeRasterForWeb(List<int> bytes) {
+    try {
+      final decoded = im.decodeImage(Uint8List.fromList(bytes));
+      if (decoded == null) return null;
+
+      im.Image work = decoded;
+      if (work.width > _maxImageSide || work.height > _maxImageSide) {
+        if (work.width >= work.height) {
+          work = im.copyResize(
+            work,
+            width: _maxImageSide,
+            interpolation: im.Interpolation.average,
+          );
+        } else {
+          work = im.copyResize(
+            work,
+            height: _maxImageSide,
+            interpolation: im.Interpolation.average,
+          );
+        }
+      }
+
+      return im.encodeJpg(work, quality: _jpegQuality);
+    } catch (_) {
+      return null;
     }
   }
 

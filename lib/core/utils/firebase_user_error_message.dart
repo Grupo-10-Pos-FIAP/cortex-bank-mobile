@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 
-/// Mensagens em português para erros comuns do Firebase (Firestore, Storage, Auth).
 String firebaseErrorUserMessage(
   Object error, {
   required String fallback,

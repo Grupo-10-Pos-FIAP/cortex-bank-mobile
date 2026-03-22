@@ -25,7 +25,6 @@ class TransactionsProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
 
-  /// Carrega todas as transações (sem paginação). Usado pelo dashboard e charts.
   Future<void> loadTransactions() async {
     _setLoading(true);
     _errorMessage = null;
@@ -40,7 +39,6 @@ class TransactionsProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  /// Carrega a primeira página de transações com paginação.
   Future<void> loadTransactionsPaginated() async {
     _setLoading(true);
     _errorMessage = null;
@@ -61,7 +59,6 @@ class TransactionsProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  /// Carrega mais transações (próxima página).
   Future<void> loadMoreTransactions() async {
     if (_isLoadingMore || !_hasMore) return;
 
@@ -95,8 +92,10 @@ class TransactionsProvider extends ChangeNotifier {
     }, (failure) => _errorMessage = failure.message);
   }
 
-  /// Adiciona a transação. Retorna a transação criada (com id do Firestore) ou null em caso de erro.
-  Future<Transaction?> addTransaction(Transaction transaction) async {
+  Future<Transaction?> addTransaction(
+    Transaction transaction, {
+    bool skipBalanceRefresh = false,
+  }) async {
     _setLoading(true);
     _errorMessage = null;
 
@@ -107,7 +106,9 @@ class TransactionsProvider extends ChangeNotifier {
       (id) {
         created = transaction.copyWith(id: id);
         _transactions = [created!, ..._transactions];
-        loadBalanceSummary();
+        if (!skipBalanceRefresh) {
+          loadBalanceSummary();
+        }
       },
       (failure) {
         _errorMessage = failure.message;
@@ -144,7 +145,6 @@ class TransactionsProvider extends ChangeNotifier {
     return isSuccess;
   }
 
-  /// Faz upload de um recibo e atualiza a transação. Retorna a transação atualizada ou null em caso de erro.
   Future<Transaction?> uploadReceipt(
     Transaction transaction,
     List<int> fileBytes,
@@ -155,6 +155,27 @@ class TransactionsProvider extends ChangeNotifier {
       fileBytes,
       fileName,
     );
+    return result.fold(
+      (updated) {
+        final index = _transactions.indexWhere((t) => t.id == updated.id);
+        if (index != -1) _transactions[index] = updated;
+        notifyListeners();
+        return updated;
+      },
+      (failure) {
+        _errorMessage = failure.message;
+        notifyListeners();
+        return null;
+      },
+    );
+  }
+
+  Future<Transaction?> uploadReceipts(
+    Transaction transaction,
+    List<({List<int> bytes, String name})> attachments,
+  ) async {
+    if (attachments.isEmpty) return transaction;
+    final result = await _repository.uploadReceipts(transaction, attachments);
     return result.fold(
       (updated) {
         final index = _transactions.indexWhere((t) => t.id == updated.id);

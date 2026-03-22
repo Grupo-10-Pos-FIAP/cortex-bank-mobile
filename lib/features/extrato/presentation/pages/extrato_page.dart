@@ -34,7 +34,6 @@ class _ExtratoPageState extends State<ExtratoPage> {
   DateTime? _dateEnd;
   String _tipoFiltro = 'todas';
 
-  /// Preset: 'last7' | 'last15' | 'last30' | 'last90' | 'custom' (intervalo no calendário).
   String _periodoPreset = 'last30';
 
   @override
@@ -109,12 +108,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
     _applyPreset('last30');
   }
 
-  /// Converte o texto com máscara BRL (ex.: "R\$ 12.345,67") para centavos.
   int _parseValorBRL(String text) {
     return parseBRLMaskToCents(text);
   }
 
-  /// Filtros alinhados ao statement (front): busca por from, to, id, value; faixa por valor absoluto em reais.
   List<model.Transaction> _filtrar(List<model.Transaction> list) {
     var result = list;
     final query = _searchController.text.trim().toLowerCase();

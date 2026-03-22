@@ -74,14 +74,9 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
     setState(() => _isLoading = true);
 
-    // 1. Pega o texto (ex: "R$ 1.250,50") e limpa tudo que não for número
-    String text = _valueController.text.replaceAll(RegExp(r'[^0-9]'), '');
-
-    // 2. Converte para double (dividindo por 100 para considerar os centavos)
-    double newValue = (double.tryParse(text) ?? 0.0) / 100;
-
-    // 3. Se o valor for 0 (campo vazio ou erro), decide se usa o original ou 0
-    double valueToSave = newValue > 0 ? newValue : widget.data.value;
+    final text = _valueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final newValue = (double.tryParse(text) ?? 0.0) / 100;
+    final valueToSave = newValue > 0 ? newValue : widget.data.value;
 
     final fromTitular =
         context.read<AuthProvider>().user?.username ?? widget.data.from;
@@ -120,29 +115,17 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
   @override
   Widget build(BuildContext context) {
-    final List<dynamic> fetchedContacts = context
-        .watch<ContactsProvider>()
-        .contacts;
+    final fetchedContacts = context.watch<ContactsProvider>().contacts;
 
-    // 2. Transforma a lista de objetos em uma lista de STRINGS (ex: pegando o nome)
-    final List<String> contactNames = fetchedContacts.map((contact) {
-      return contact.name
-          .toString(); // Substitua '.name' pela propriedade correta do seu objeto
-    }).toList();
+    final contactNames = fetchedContacts.map((c) => c.name).toList();
 
-    // 3. Opções fixas
-    final List<String> fixedOptions = [
+    const fixedOptions = [
       'Mesma Titularidade',
       'Outra Titularidade',
     ];
 
-    // 4. Une tudo em uma lista de Strings
-    final List<String> allToOptions = {
-      ...fixedOptions,
-      ...contactNames,
-    }.toList();
+    final allToOptions = {...fixedOptions, ...contactNames}.toList();
 
-    // 5. Segurança: garante que o valor selecionado existe na lista de Strings
     if (!allToOptions.contains(_selectedTo)) {
       _selectedTo = allToOptions.first;
     }
@@ -242,7 +225,6 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
             const SizedBox(height: 16),
 
-            // Dropdown unificado: Opções Fixas + Contatos
             _buildDropdown<String>(
               label: 'Destino (Para)',
               value: _selectedTo,
@@ -256,7 +238,6 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
             ),
 
             const SizedBox(height: 24),
-            // Dropdown de Categorias
             _buildDropdown<model.TransactionCategory>(
               label: 'Categoria',
               value:

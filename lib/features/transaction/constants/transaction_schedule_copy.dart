@@ -1,10 +1,7 @@
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 
-/// Textos do fluxo de criação: **mesmo dia** (transação imediata) vs **data futura** (agendamento).
 abstract class TransactionScheduleCopy {
   TransactionScheduleCopy._();
-
-  // --- Transação para hoje (textos originais) ---
 
   static const String cardSectionTitle = 'Nova transação';
 
@@ -36,8 +33,6 @@ abstract class TransactionScheduleCopy {
 
   static const String errorSubmitFallbackImmediate =
       'Não foi possível registrar a transação. Verifique sua conexão e tente novamente.';
-
-  // --- Agendamento (data futura) ---
 
   static const String primaryButtonLabelScheduled = 'Confirmar agendamento';
 
@@ -74,8 +69,6 @@ abstract class TransactionScheduleCopy {
 
   static const String hintFutureDate =
       'Data futura: a transação será agendada e ficará pendente até o dia selecionado.';
-
-  // --- Seleção por tipo de fluxo ---
 
   static String primaryButtonLabel({required bool isScheduled}) =>
       isScheduled ? primaryButtonLabelScheduled : primaryButtonLabelImmediate;

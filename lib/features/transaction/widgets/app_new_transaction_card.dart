@@ -53,7 +53,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   final List<({List<int> bytes, String name})> _attachments = [];
   bool _debugCreatePending = false;
 
-  /// Cobre criação da transação + uploads de recibo (o provider só carrega em `addTransaction`).
   bool _isSubmitting = false;
 
   @override
@@ -71,7 +70,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       if (!mounted) return;
       final field = _valueFieldKey.currentState;
       if (field == null) return;
-      // Evita erro em campo vazio após reset programático ou antes de qualquer interação.
       if (_valueController.text.trim().isEmpty && !field.hasInteractedByUser) {
         return;
       }
@@ -103,9 +101,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     return '$n | Ag.: $b | Cc.: $a';
   }
 
-  /// No web, `TextEditingController.clear()` durante o mesmo frame em que o
-  /// `TextFormField` some da árvore pode gerar TypeError (engine acessa nó
-  /// já desmontado). Limpamos no frame seguinte, só com `value`.
   void _clearOtherTitularidadeFields() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -115,7 +110,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     });
   }
 
-  /// Primeiro erro encontrado (ordem dos campos no formulário). `null` = OK.
   String? _firstValidationError() {
     if (selectedValueType == null) {
       return 'Tipo de transação é obrigatório.';
@@ -177,8 +171,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     return null;
   }
 
-  /// Valida a regra de negócio e SnackBar se faltar algo.
-  /// Não chama [FormState.validate], para não marcar campos não tocados com erro.
   bool _validateFormAndShowFeedback() {
     final msg = _firstValidationError();
     if (msg != null) {
@@ -287,25 +279,24 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
         description: descriptionText.isNotEmpty ? descriptionText : null,
       );
 
-      final created = await txProvider.addTransaction(transaction);
+      final hasAttachments = _attachments.isNotEmpty;
+      final created = await txProvider.addTransaction(
+        transaction,
+        skipBalanceRefresh: hasAttachments,
+      );
 
       if (created != null && mounted) {
         final failedReceiptNames = <String>[];
-        var txForReceipts = created;
 
-        if (_attachments.isNotEmpty) {
-          for (final attachment in _attachments) {
-            final updated = await txProvider.uploadReceipt(
-              txForReceipts,
-              attachment.bytes,
-              attachment.name,
-            );
-            if (updated != null) {
-              txForReceipts = updated;
-            } else {
-              failedReceiptNames.add(attachment.name);
-            }
+        if (hasAttachments) {
+          final updated = await txProvider.uploadReceipts(
+            created,
+            _attachments,
+          );
+          if (updated == null) {
+            failedReceiptNames.addAll(_attachments.map((a) => a.name));
           }
+          await txProvider.loadBalanceSummary();
         }
 
         if (!mounted) return;
@@ -325,7 +316,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
           }
         });
 
-        // Limpa erros de validação e o estado "já interagiu" após envio bem-sucedido.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           _formKey.currentState?.reset();
@@ -671,14 +661,13 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                       final name = file.name;
                       if (bytes == null || name.isEmpty) return;
                       if (bytes.length > AttachmentConstants.maxFileSizeBytes) {
-                        if (mounted) {
-                          final maxMb = AttachmentConstants.maxFileSizeBytes /
-                              (1024 * 1024);
-                          AppSnackBar.error(
-                            context,
-                            'Arquivo excede o limite de ${maxMb.toStringAsFixed(0)}MB.',
-                          );
-                        }
+                        if (!context.mounted) return;
+                        final maxMb = AttachmentConstants.maxFileSizeBytes /
+                            (1024 * 1024);
+                        AppSnackBar.error(
+                          context,
+                          'Arquivo excede o limite de ${maxMb.toStringAsFixed(0)}MB.',
+                        );
                         return;
                       }
                       if (_attachments.length <

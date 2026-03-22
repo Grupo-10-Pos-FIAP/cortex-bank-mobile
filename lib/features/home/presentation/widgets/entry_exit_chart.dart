@@ -33,7 +33,6 @@ class _EntryExitChartState extends State<EntryExitChart> {
   List<_EntryExitData> _computeEntryExit(List<model.Transaction> transactions) {
     if (transactions.isEmpty) return [];
 
-    // Group by month: YYYY-MM
     Map<String, Map<String, double>> monthlyData = {};
 
     for (final t in transactions) {
@@ -54,7 +53,6 @@ class _EntryExitChartState extends State<EntryExitChart> {
       }
     }
 
-    // Convert to list, sort by month, take last 12
     final entries = monthlyData.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 

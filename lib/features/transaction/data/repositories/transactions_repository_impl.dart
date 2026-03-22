@@ -125,4 +125,41 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       );
     }
   }
+
+  @override
+  Future<Result<Transaction>> uploadReceipts(
+    Transaction transaction,
+    List<({List<int> bytes, String name})> attachments,
+  ) async {
+    if (attachments.isEmpty) {
+      return Success(transaction);
+    }
+    try {
+      final urls = await Future.wait(
+        attachments.map(
+          (a) => _receiptStorage.uploadReceipt(
+            transaction.id,
+            a.bytes,
+            a.name,
+          ),
+        ),
+      );
+      final updated = transaction.copyWith(
+        receiptUrls: [...transaction.receiptUrls, ...urls],
+      );
+      await _dataSource.update(updated);
+      return Success(updated);
+    } catch (e) {
+      safeLogError('Erro ao enviar recibos', e);
+      return FailureResult(
+        Failure(
+          message: firebaseErrorUserMessage(
+            e,
+            fallback:
+                'Não foi possível enviar os recibos. Tente novamente ou anexe pelo extrato.',
+          ),
+        ),
+      );
+    }
+  }
 }

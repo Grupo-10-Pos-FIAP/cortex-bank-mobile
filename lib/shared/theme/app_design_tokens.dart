@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens aligned with the web design system.
-/// Use these constants in theme and widgets for consistency.
 class AppDesignTokens {
   AppDesignTokens._();
 
-  // ---------------------------------------------------------------------------
-  // Typography - Font sizes (logical pixels)
-  // ---------------------------------------------------------------------------
   static const double fontSizeCaption = 12;
   static const double fontSizeSmall = 14;
   static const double fontSizeBody = 16;
@@ -19,17 +14,11 @@ class AppDesignTokens {
   static const double fontSizeH1 = 28;
   static const double fontSizeH5 = 30;
 
-  // ---------------------------------------------------------------------------
-  // Typography - Font weights
-  // ---------------------------------------------------------------------------
   static const FontWeight fontWeightRegular = FontWeight.w400;
   static const FontWeight fontWeightMedium = FontWeight.w500;
   static const FontWeight fontWeightSemibold = FontWeight.w600;
   static const FontWeight fontWeightBold = FontWeight.w700;
 
-  // ---------------------------------------------------------------------------
-  // Typography - Line heights (multiplier)
-  // ---------------------------------------------------------------------------
   static const double lineHeightCaption = 1.4;
   static const double lineHeightBody = 1.5;
   static const double lineHeightSubtitle = 1.4;
@@ -40,9 +29,6 @@ class AppDesignTokens {
   static const double lineHeightRelaxed = 1.625;
   static const double lineHeightLoose = 2;
 
-  // ---------------------------------------------------------------------------
-  // Typography - Letter spacing (logical pixels, approximate from em)
-  // ---------------------------------------------------------------------------
   static double letterSpacingTightest(double fontSize) => fontSize * -0.015;
   static double letterSpacingTight(double fontSize) => fontSize * -0.005;
   static const double letterSpacingNormal = 0;
@@ -50,15 +36,9 @@ class AppDesignTokens {
   static double letterSpacingWide(double fontSize) => fontSize * 0.03;
   static double letterSpacingWider(double fontSize) => fontSize * 0.05;
 
-  // ---------------------------------------------------------------------------
-  // Absolute colors
-  // ---------------------------------------------------------------------------
   static const Color colorWhite = Color(0xFFFFFFFF);
   static const Color colorBlack = Color(0xFF000000);
 
-  // ---------------------------------------------------------------------------
-  // Gray scale
-  // ---------------------------------------------------------------------------
   static const Color colorGray100 = Color(0xFFF8F9FA);
   static const Color colorGray200 = Color(0xFFE0E0E0);
   static const Color colorGray300 = Color(0xFFC0C0C0);
@@ -69,19 +49,12 @@ class AppDesignTokens {
   static const Color colorGray800 = Color(0xFF202020);
   static const Color colorGray900 = Color(0xFF101010);
 
-  // ---------------------------------------------------------------------------
-  // Brand palette
-  // ---------------------------------------------------------------------------
   static const Color colorBase = Color(0xFF1A1A1A);
   static const Color colorPrimary = Color(0xFF1C6EA4);
   static const Color colorSecondary = Color(0xFF658864);
   static const Color colorNeutral = colorGray300;
   static const Color colorSoft = Color(0xFFE1F0FB);
 
-  // ---------------------------------------------------------------------------
-  // Backgrounds
-  // ---------------------------------------------------------------------------
-  /// Background padrão do app. Sempre esta escala.
   static const Color colorBgDefault = Color(0xFFF5F5F5);
   static const Color colorBgDefaultDark = Color(0xFF374151);
   static const Color colorBgLight = colorWhite;
@@ -93,9 +66,6 @@ class AppDesignTokens {
   static const Color colorBgFullscreen = Color(0xE6FFFFFF);
   static const Color colorBgAvatar = Color(0xFFEDF2FE);
 
-  // ---------------------------------------------------------------------------
-  // Content
-  // ---------------------------------------------------------------------------
   static const Color colorContentDefault = colorBase;
   static const Color colorContentPrimary = colorPrimary;
   static const Color colorContentSecondary = colorSecondary;
@@ -103,24 +73,15 @@ class AppDesignTokens {
   static const Color colorContentDisabled = colorGray500;
   static const Color colorContentMuted = Color(0xFF555555);
 
-  // ---------------------------------------------------------------------------
-  // Borders
-  // ---------------------------------------------------------------------------
   static const Color colorBorderDefault = colorNeutral;
   static const Color colorBorderDisabled = Color(0x00FFFFFF);
   static const Color colorBorderFocused = colorPrimary;
   static const Color colorBorderHovered = colorNeutral;
 
-  // ---------------------------------------------------------------------------
-  // Links
-  // ---------------------------------------------------------------------------
   static const Color colorLink = Color(0xFF1C6EA4);
   static const Color colorLinkHover = Color(0xFF144B70);
   static const Color colorLinkVisited = Color(0xFF0F3C5C);
 
-  // ---------------------------------------------------------------------------
-  // System feedback
-  // ---------------------------------------------------------------------------
   static const Color colorFeedbackSuccess = Color(0xFF81BE7F);
   static const Color colorFeedbackWarning = Color(0xFFDEBB51);
   static const Color colorFeedbackError = Color(0xFFE53935);
@@ -129,9 +90,6 @@ class AppDesignTokens {
   static const Color colorFeedbackFavorite = Colors.red;
   static const Color colorFeedbackMuted = colorGray100;
 
-  // ---------------------------------------------------------------------------
-  // Spacing
-  // ---------------------------------------------------------------------------
   static const double spacingXs = 4;
   static const double spacingSm = 8;
   static const double spacingMd = 16;
@@ -140,27 +98,18 @@ class AppDesignTokens {
   static const double spacing2xl = 48;
   static const double spacing3xl = 64;
 
-  // ---------------------------------------------------------------------------
-  // Border radius & width
-  // ---------------------------------------------------------------------------
   static const double borderRadiusDefault = spacingSm;
   static const double borderWidthDefault = 1;
   static const double borderWidthSmall = 2;
   static const double borderWidthMedium = 3;
   static const double borderWidthLarge = spacingXs;
 
-  // ---------------------------------------------------------------------------
-  // Breakpoints (logical pixels)
-  // ---------------------------------------------------------------------------
   static const double breakpointMobile = 480;
   static const double breakpointDetailModalActions = 425;
   static const double breakpointTablet = 768;
   static const double breakpointDesktop = 1024;
   static const double breakpointWidescreen = 1200;
 
-  // ---------------------------------------------------------------------------
-  // Z-index
-  // ---------------------------------------------------------------------------
   static const int zIndexDropdown = 1000;
   static const int zIndexSticky = 1020;
   static const int zIndexFixed = 1030;
@@ -170,9 +119,6 @@ class AppDesignTokens {
   static const int zIndexTooltip = 1070;
   static const int zIndexLoading = 9999;
 
-  // ---------------------------------------------------------------------------
-  // Button - Brand
-  // ---------------------------------------------------------------------------
   static const Color buttonBrandBgDefault = Color(0xFF1C6EA4);
   static const Color buttonBrandBgHovered = Color(0xFF2395DF);
   static const Color buttonBrandBgPressed = Color(0xFF0C4165);
@@ -180,9 +126,6 @@ class AppDesignTokens {
   static const Color buttonBrandContentDefault = colorWhite;
   static const Color buttonBrandContentDisabled = colorWhite;
 
-  // ---------------------------------------------------------------------------
-  // Button - Secondary
-  // ---------------------------------------------------------------------------
   static const Color buttonSecondaryBgDefault = Color(0xFF658864);
   static const Color buttonSecondaryBgHovered = Color(0xFF81BE7F);
   static const Color buttonSecondaryBgPressed = Color(0xFF2C4D2B);
@@ -190,9 +133,6 @@ class AppDesignTokens {
   static const Color buttonSecondaryContentDefault = colorWhite;
   static const Color buttonSecondaryContentDisabled = colorWhite;
 
-  // ---------------------------------------------------------------------------
-  // Button - Outlined
-  // ---------------------------------------------------------------------------
   static const Color buttonOutlinedBgDefault = Colors.transparent;
   static const Color buttonOutlinedBgHovered = Color(0xFFFAFAFA);
   static const Color buttonOutlinedBgPressed = Color(0xFF3A3C3C);
@@ -206,9 +146,6 @@ class AppDesignTokens {
   static const Color buttonOutlinedContentPressed = colorWhite;
   static const Color buttonOutlinedContentDisabled = Color(0xFFC2C2C2);
 
-  // ---------------------------------------------------------------------------
-  // Button - Negative (e.g. on dark background)
-  // ---------------------------------------------------------------------------
   static const Color buttonNegativeBgDefault = Colors.transparent;
   static const Color buttonNegativeBgHovered = colorBase;
   static const Color buttonNegativeBgPressed = colorBlack;
@@ -220,9 +157,6 @@ class AppDesignTokens {
   static const Color buttonNegativeContentDefault = colorWhite;
   static const Color buttonNegativeContentDisabled = colorWhite;
 
-  // ---------------------------------------------------------------------------
-  // List item
-  // ---------------------------------------------------------------------------
   static const Color listItemContentActived = Color(0xFF2563EB);
   static const Color listItemBgHovered = Color(0xFFF3F4F6);
 }

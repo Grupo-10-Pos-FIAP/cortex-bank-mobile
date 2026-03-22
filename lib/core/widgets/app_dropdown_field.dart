@@ -19,7 +19,6 @@ class AppDropdownField<T> extends StatelessWidget {
   final Key? formFieldKey;
   final Color? fillColor;
   final bool enabled;
-  // Nova prop decoration
   final InputDecoration? decoration;
   final AutovalidateMode autovalidateMode;
 
@@ -57,7 +56,6 @@ class AppDropdownField<T> extends StatelessWidget {
       fontSize: AppDesignTokens.fontSizeSmall,
     );
 
-    // Estilo que replica o TextField solicitado
     final defaultDecoration = InputDecoration(
       hintText: hintText,
       hintStyle:
@@ -132,11 +130,9 @@ class AppDropdownField<T> extends StatelessWidget {
               textTheme.bodyLarge?.copyWith(
                 color: AppDesignTokens.colorContentDefault,
               ),
-          // Prioriza a prop decoration, senão usa o estilo padrão ajustado
           decoration: decoration ?? defaultDecoration,
           icon: const Icon(Icons.arrow_drop_down),
           isExpanded: true,
-          // Garante que o menu suspenso também tenha bordas arredondadas se o Flutter suportar
           borderRadius: BorderRadius.circular(
             AppDesignTokens.borderRadiusDefault,
           ),

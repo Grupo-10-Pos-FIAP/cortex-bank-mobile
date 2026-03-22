@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum TransactionType { credit, debit, ted }
 enum TransactionCategory { food, transport, salary, ted, others }
 
-/// Status de transação (Firestore/UI).
 abstract class TransactionStatus {
   TransactionStatus._();
   static const String pending = 'Pending';

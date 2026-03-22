@@ -1,4 +1,3 @@
-/// Constantes para anexos de transação.
 abstract class AttachmentConstants {
   AttachmentConstants._();
 
@@ -12,6 +11,5 @@ abstract class AttachmentConstants {
 
   static const int maxAttachments = 2;
 
-  /// 5 MB
   static const int maxFileSizeBytes = 5 * 1024 * 1024;
 }
