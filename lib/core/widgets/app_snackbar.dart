@@ -17,7 +17,7 @@ class AppSnackBar {
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) {
-        return _TopSnackBar(entry: entry, child: child, duration: duration);
+        return _TopSnackBar(entry: entry, duration: duration, child: child);
       },
     );
 
@@ -104,8 +104,8 @@ class AppSnackBar {
 class _TopSnackBar extends StatefulWidget {
   const _TopSnackBar({
     required this.entry,
+    this.duration,
     required this.child,
-    this.duration, // Nova prop recebida aqui
   });
 
   final OverlayEntry entry;

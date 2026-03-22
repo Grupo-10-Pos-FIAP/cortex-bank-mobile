@@ -1,4 +1,3 @@
-import 'package:cortex_bank_mobile/core/widgets/app_connectivity.dart';
 import 'package:cortex_bank_mobile/features/contacts/data/repositories/i_contacts_repository.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';

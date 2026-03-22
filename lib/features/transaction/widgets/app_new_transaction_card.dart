@@ -178,8 +178,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                 context: context,
                 builder: (ctx) => const AddContactDialogWidget(),
               );
-              if (name != null && name.isNotEmpty)
+              if (name != null && name.isNotEmpty) {
                 await provider.addContact(name);
+              }
             },
           ),
         ),
@@ -205,8 +206,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                                   c.isSelected = false;
                                 }
                                 contact.isSelected = value ?? false;
-                                if (contact.isSelected)
+                                if (contact.isSelected) {
                                   selectedTitularidade = null;
+                                }
                               });
                             },
                           ),
@@ -243,6 +245,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                   setState(() => selectedValueType = newValue),
             ),
             AppTabs(
+              marginTop: 16,
               height: 160,
               titles: const ['Nova conta', 'Contatos', 'Favoritos'],
               children: [
@@ -322,7 +325,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                       );
                       if (result == null ||
                           result.files.isEmpty ||
-                          !mounted) return;
+                          !mounted) {
+                        return;
+                      }
                       final file = result.files.single;
                       final bytes = file.bytes;
                       final name = file.name;

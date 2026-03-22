@@ -1,5 +1,5 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
-    show formatCentsToBRL, parseBRLMaskToCents, CurrencyBRLInputFormatter;
+    show parseBRLMaskToCents;
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';

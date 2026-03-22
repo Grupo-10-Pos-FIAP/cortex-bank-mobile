@@ -91,6 +91,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final isUploadingReceipt = _isUploadingReceipt;
     final titularName = context.read<AuthProvider>().user?.username;
     final deValue = (titularName != null && titularName.isNotEmpty)
         ? titularName
@@ -246,6 +247,30 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                           color: AppDesignTokens.colorPrimary,
                         ),
                       ),
+                    ),
+                  );
+                }
+
+                if (widget.onUploadReceipt != null) {
+                  buttons.add(
+                    TextButton(
+                      onPressed: isUploadingReceipt
+                          ? null
+                          : () {
+                              _handleUploadReceipt();
+                            },
+                      child: isUploadingReceipt
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              'Anexar recibo',
+                              style: textTheme.labelLarge?.copyWith(
+                                color: AppDesignTokens.colorPrimary,
+                              ),
+                            ),
                     ),
                   );
                 }

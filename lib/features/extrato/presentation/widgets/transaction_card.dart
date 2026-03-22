@@ -5,7 +5,6 @@ import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/data/comprovante_content.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_detail_modal.dart';
-import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_edit_modal.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/attachment_constants.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
