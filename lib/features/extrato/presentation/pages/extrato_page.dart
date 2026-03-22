@@ -21,6 +21,8 @@ class ExtratoPage extends StatefulWidget {
 }
 
 class _ExtratoPageState extends State<ExtratoPage> {
+  TransactionsProvider? _transactionsProvider;
+
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _minValueController = TextEditingController(
     text: 'R\$ 0,00',
@@ -37,6 +39,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
   String _periodoPreset = 'last30';
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _transactionsProvider ??= context.read<TransactionsProvider>();
+  }
+
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -47,14 +55,46 @@ class _ExtratoPageState extends State<ExtratoPage> {
     _scrollController.addListener(_onScroll);
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      final tx = context.read<TransactionsProvider>();
-      if (!tx.isLoadingMore && tx.hasMore) {
-        tx.loadMoreTransactions();
-      }
+  /// Dispara após layout e quando os filtros/provider atualizam o [Consumer].
+  void _scheduleCheckLoadMore() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _checkLoadMore();
+    });
+  }
+
+  /// Distância do fim do conteúdo abaixo da viewport; prefetch antes do usuário
+  /// colar no fim (evita falhas após anexar itens, onde [pixels] fica “no meio”).
+  static const double _loadMoreScrollThreshold = 520;
+
+  /// Carrega mais quando: perto do fim do scroll, lista não preenche a tela,
+  /// ou filtros excluem tudo que já veio do Firestore (ainda há [hasMore]).
+  void _checkLoadMore() {
+    final tx = context.read<TransactionsProvider>();
+    if (!tx.hasMore || tx.isLoadingMore) return;
+    if (tx.isLoading && tx.transactions.isEmpty) return;
+
+    final filtered = _filtrar(tx.transactions);
+
+    if (filtered.isEmpty && tx.transactions.isNotEmpty) {
+      tx.loadMoreTransactions();
+      return;
     }
+    if (filtered.isEmpty) return;
+
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (!pos.hasViewportDimension) return;
+
+    final extentAfter = pos.extentAfter;
+    final shortViewport = pos.maxScrollExtent <= _loadMoreScrollThreshold;
+    if (shortViewport || extentAfter <= _loadMoreScrollThreshold) {
+      tx.loadMoreTransactions();
+    }
+  }
+
+  void _onScroll() {
+    _checkLoadMore();
   }
 
   void _applyPreset(String preset) {
@@ -95,6 +135,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
     _searchController.dispose();
     _minValueController.dispose();
     _maxValueController.dispose();
+    final provider = _transactionsProvider;
+    if (provider != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        provider.loadTransactions();
+      });
+    }
     super.dispose();
   }
 
@@ -327,9 +373,24 @@ class _ExtratoPageState extends State<ExtratoPage> {
             return const AppLoading();
           }
           final filtered = _filtrar(tx.transactions);
-          return CustomScrollView(
-            controller: _scrollController,
-            slivers: [
+          _scheduleCheckLoadMore();
+          return NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification n) {
+              if (n is ScrollUpdateNotification ||
+                  n is ScrollEndNotification ||
+                  n is OverscrollNotification) {
+                _checkLoadMore();
+              }
+              return false;
+            },
+            child: NotificationListener<ScrollMetricsNotification>(
+              onNotification: (_) {
+                _scheduleCheckLoadMore();
+                return false;
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -467,13 +528,15 @@ class _ExtratoPageState extends State<ExtratoPage> {
               if (filtered.isEmpty)
                 SliverFillRemaining(
                   child: Center(
-                    child: Text(
-                      tx.errorMessage ?? 'Nenhuma transação encontrada',
-                      style: GoogleFonts.roboto(
-                        fontSize: AppDesignTokens.fontSizeBody,
-                        color: AppDesignTokens.colorContentDisabled,
-                      ),
-                    ),
+                    child: tx.isLoadingMore && tx.transactions.isNotEmpty
+                        ? const CircularProgressIndicator(strokeWidth: 2)
+                        : Text(
+                            tx.errorMessage ?? 'Nenhuma transação encontrada',
+                            style: GoogleFonts.roboto(
+                              fontSize: AppDesignTokens.fontSizeBody,
+                              color: AppDesignTokens.colorContentDisabled,
+                            ),
+                          ),
                   ),
                 )
               else ...[
@@ -518,6 +581,8 @@ class _ExtratoPageState extends State<ExtratoPage> {
                   ),
               ],
             ],
+              ),
+            ),
           );
         },
       ),

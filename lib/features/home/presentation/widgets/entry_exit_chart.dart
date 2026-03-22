@@ -1,4 +1,5 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/month_chart_label.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -36,31 +37,36 @@ class _EntryExitChartState extends State<EntryExitChart> {
     Map<String, Map<String, double>> monthlyData = {};
 
     for (final t in transactions) {
+      final affects = TransactionDatePolicy.transactionAffectsBalanceNow(
+        t,
+        asOf: t.date,
+      );
+      if (!affects) continue;
+
       final monthKey =
           '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
       monthlyData.putIfAbsent(monthKey, () => {'entry': 0, 'exit': 0});
 
       if (t.type == model.TransactionType.credit) {
-        if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
-          monthlyData[monthKey]!['entry'] =
-              (monthlyData[monthKey]!['entry'] ?? 0) + t.value;
-        }
+        monthlyData[monthKey]!['entry'] =
+            (monthlyData[monthKey]!['entry'] ?? 0) + t.value;
       } else {
-        if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
-          monthlyData[monthKey]!['exit'] =
-              (monthlyData[monthKey]!['exit'] ?? 0) + t.value;
-        }
+        monthlyData[monthKey]!['exit'] =
+            (monthlyData[monthKey]!['exit'] ?? 0) + t.value;
       }
     }
 
     final entries = monthlyData.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
-    return entries
-        .take(12)
+    final lastTwelve = entries.length <= 12
+        ? entries
+        : entries.sublist(entries.length - 12);
+
+    return lastTwelve
         .map(
           (e) => _EntryExitData(
-            e.key,
+            monthKeyToShortLabel(e.key),
             e.value['entry'] ?? 0,
             e.value['exit'] ?? 0,
           ),

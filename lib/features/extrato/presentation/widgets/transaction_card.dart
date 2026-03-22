@@ -101,9 +101,7 @@ class TransactionCard extends StatelessWidget {
         : '-${formatCentsToBRL(valueCents)}';
 
     final dateStr = DateFormatter.formatDate(transaction.date);
-    final statusLabel = transaction.status == model.TransactionStatus.pending
-        ? 'Pendente'
-        : transaction.status;
+    final statusLabel = model.TransactionStatus.labelPt(transaction.status);
     final titularName = context.read<AuthProvider>().user?.username;
     final deLabel = (titularName != null && titularName.isNotEmpty)
         ? titularName
@@ -210,7 +208,8 @@ class TransactionCard extends StatelessWidget {
                                 statusLabel,
                                 style: textTheme.bodySmall?.copyWith(
                                   fontSize: AppDesignTokens.fontSizeCaption,
-                                  color: AppDesignTokens.colorContentDefault,
+                                  fontWeight: AppDesignTokens.fontWeightMedium,
+                                  color: const Color(0xFFE65100),
                                 ),
                               ),
                             ),
@@ -223,14 +222,16 @@ class TransactionCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppDesignTokens.colorGray200,
+                                color: AppDesignTokens.colorFeedbackSuccess
+                                    .withValues(alpha: 0.22),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 statusLabel,
                                 style: textTheme.bodySmall?.copyWith(
                                   fontSize: AppDesignTokens.fontSizeCaption,
-                                  color: AppDesignTokens.colorContentDefault,
+                                  fontWeight: AppDesignTokens.fontWeightMedium,
+                                  color: AppDesignTokens.colorFeedbackSuccess,
                                 ),
                               ),
                             ),

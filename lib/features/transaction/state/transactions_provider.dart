@@ -18,6 +18,15 @@ class TransactionsProvider extends ChangeNotifier {
   bool _isLoadingMore = false;
   static const int _pageSize = 20;
 
+  /// Mais recente primeiro; empate por id (mesma regra do índice Firestore).
+  void _sortTransactionsNewestFirst() {
+    _transactions.sort((a, b) {
+      final byDate = b.date.compareTo(a.date);
+      if (byDate != 0) return byDate;
+      return b.id.compareTo(a.id);
+    });
+  }
+
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   BalanceSummary? get balanceSummary => _balanceSummary;
   bool get isLoading => _isLoading;
@@ -32,7 +41,10 @@ class TransactionsProvider extends ChangeNotifier {
     final result = await _repository.getAll();
 
     result.fold(
-      (success) => _transactions = success,
+      (success) {
+        _transactions = success;
+        _sortTransactionsNewestFirst();
+      },
       (failure) => _errorMessage = failure.message,
     );
 
@@ -50,6 +62,7 @@ class TransactionsProvider extends ChangeNotifier {
     result.fold(
       (page) {
         _transactions = page.items;
+        _sortTransactionsNewestFirst();
         _lastDocument = page.lastDocument;
         _hasMore = page.hasMore;
       },
@@ -72,7 +85,13 @@ class TransactionsProvider extends ChangeNotifier {
 
     result.fold(
       (page) {
-        _transactions = [..._transactions, ...page.items];
+        final existing = _transactions.map((t) => t.id).toSet();
+        final merged = [
+          ..._transactions,
+          ...page.items.where((t) => !existing.contains(t.id)),
+        ];
+        _transactions = merged;
+        _sortTransactionsNewestFirst();
         _lastDocument = page.lastDocument;
         _hasMore = page.hasMore;
       },
@@ -106,6 +125,7 @@ class TransactionsProvider extends ChangeNotifier {
       (id) {
         created = transaction.copyWith(id: id);
         _transactions = [created!, ..._transactions];
+        _sortTransactionsNewestFirst();
         if (!skipBalanceRefresh) {
           loadBalanceSummary();
         }
@@ -130,6 +150,7 @@ class TransactionsProvider extends ChangeNotifier {
         final index = _transactions.indexWhere((t) => t.id == transaction.id);
         if (index != -1) {
           _transactions[index] = transaction;
+          _sortTransactionsNewestFirst();
         }
         loadBalanceSummary();
         return true;

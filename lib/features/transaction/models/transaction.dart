@@ -7,6 +7,12 @@ abstract class TransactionStatus {
   TransactionStatus._();
   static const String pending = 'Pending';
   static const String completed = 'Completed';
+
+  static String labelPt(String status) {
+    if (status == pending) return 'Pendente';
+    if (status == completed) return 'Completa';
+    return status;
+  }
 }
 
 class Transaction {

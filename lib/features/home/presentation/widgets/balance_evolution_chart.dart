@@ -1,4 +1,6 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/month_chart_label.dart'
+    show monthKeyToShortLabel, prevMonthKey;
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +10,9 @@ import 'package:cortex_bank_mobile/features/transaction/state/transactions_provi
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
+import 'package:intl/intl.dart';
+
+final NumberFormat _balanceAxisFormat = NumberFormat.compact(locale: 'pt_BR');
 
 class BalanceEvolutionChart extends StatefulWidget {
   const BalanceEvolutionChart({super.key});
@@ -39,10 +44,13 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
       ..sort((a, b) => a.date.compareTo(b.date));
 
     double balance = 0;
-    Map<String, double> monthlyBalance = {};
+    final monthlyBalance = <String, double>{};
 
     for (final t in sorted) {
-      if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
+      if (TransactionDatePolicy.transactionAffectsBalanceNow(
+        t,
+        asOf: t.date,
+      )) {
         balance += t.type == model.TransactionType.credit ? t.value : -t.value;
       }
       final monthKey =
@@ -53,10 +61,63 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     final entries = monthlyBalance.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
-    return entries
-        .take(5)
-        .map((e) => _BalanceEvolutionData(e.key, e.value))
-        .toList();
+    final lastFive = entries.length <= 5
+        ? entries
+        : entries.sublist(entries.length - 5);
+
+    if (lastFive.isEmpty) return [];
+
+    final firstKey = lastFive.first.key;
+    final firstParts = firstKey.split('-');
+    if (firstParts.length != 2) {
+      return lastFive
+          .map(
+            (e) => _BalanceEvolutionData(
+              monthKeyToShortLabel(e.key),
+              e.value,
+            ),
+          )
+          .toList();
+    }
+    final firstY = int.tryParse(firstParts[0]);
+    final firstM = int.tryParse(firstParts[1]);
+    if (firstY == null || firstM == null) {
+      return lastFive
+          .map(
+            (e) => _BalanceEvolutionData(
+              monthKeyToShortLabel(e.key),
+              e.value,
+            ),
+          )
+          .toList();
+    }
+
+    final startOfFirstMonth = DateTime(firstY, firstM, 1);
+    double openingBalance = 0;
+    for (final t in sorted) {
+      final d = TransactionDatePolicy.dateOnly(t.date);
+      if (!d.isBefore(startOfFirstMonth)) break;
+      if (TransactionDatePolicy.transactionAffectsBalanceNow(
+        t,
+        asOf: t.date,
+      )) {
+        openingBalance +=
+            t.type == model.TransactionType.credit ? t.value : -t.value;
+      }
+    }
+
+    return [
+      _BalanceEvolutionData(
+        monthKeyToShortLabel(prevMonthKey(firstKey)),
+        openingBalance,
+      ),
+      ...lastFive.map(
+        (e) => _BalanceEvolutionData(
+          monthKeyToShortLabel(e.key),
+          e.value,
+        ),
+      ),
+    ];
   }
 
   @override
@@ -72,7 +133,18 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     return AppCardContainer(
       title: 'Evolução do Saldo',
       child: SfCartesianChart(
-        primaryXAxis: CategoryAxis(),
+        plotAreaBorderWidth: 0,
+        primaryXAxis: CategoryAxis(
+          majorGridLines: const MajorGridLines(width: 0),
+        ),
+        primaryYAxis: NumericAxis(
+          numberFormat: _balanceAxisFormat,
+          axisLine: const AxisLine(width: 0),
+          majorGridLines: MajorGridLines(
+            width: 1,
+            color: AppDesignTokens.colorGray200,
+          ),
+        ),
         legend: Legend(isVisible: false),
         tooltipBehavior: TooltipBehavior(enable: true),
         series: <CartesianSeries<_BalanceEvolutionData, String>>[
@@ -85,8 +157,18 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
                   (balance.amount * 100).round(),
                 ),
             name: 'Saldo',
+            width: 3,
             color: AppDesignTokens.colorPrimary,
-            dataLabelSettings: DataLabelSettings(isVisible: true),
+            markerSettings: const MarkerSettings(
+              isVisible: true,
+              height: 8,
+              width: 8,
+              borderWidth: 2,
+            ),
+            dataLabelSettings: const DataLabelSettings(
+              isVisible: true,
+              labelIntersectAction: LabelIntersectAction.shift,
+            ),
           ),
         ],
       ),

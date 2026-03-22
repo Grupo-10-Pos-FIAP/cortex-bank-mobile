@@ -43,6 +43,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   Future<List<model.Transaction>> getAll() async {
     final snapshot = await _transactionsCol
         .orderBy('date', descending: true)
+        .orderBy(FieldPath.documentId, descending: true)
         .get();
     return snapshot.docs
         .map((d) => model.Transaction.fromFirestore(d.data(), d.id))
@@ -75,8 +76,11 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     int limit, {
     dynamic startAfterDocument,
   }) async {
-    Query<Map<String, dynamic>> query =
-        _transactionsCol.orderBy('date', descending: true).limit(limit);
+    final fetchLimit = limit + 1;
+    Query<Map<String, dynamic>> query = _transactionsCol
+        .orderBy('date', descending: true)
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(fetchLimit);
 
     if (startAfterDocument != null) {
       query = query.startAfterDocument(
@@ -85,14 +89,17 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     }
 
     final snapshot = await query.get();
-    final items = snapshot.docs
+    final allDocs = snapshot.docs;
+    final hasMore = allDocs.length > limit;
+    final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
+    final items = pageDocs
         .map((d) => model.Transaction.fromFirestore(d.data(), d.id))
         .toList();
 
     return TransactionPage(
       items: items,
-      hasMore: snapshot.docs.length == limit,
-      lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+      hasMore: hasMore,
+      lastDocument: pageDocs.isNotEmpty ? pageDocs.last : null,
     );
   }
 
