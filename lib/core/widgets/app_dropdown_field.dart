@@ -21,6 +21,7 @@ class AppDropdownField<T> extends StatelessWidget {
   final bool enabled;
   // Nova prop decoration
   final InputDecoration? decoration;
+  final AutovalidateMode autovalidateMode;
 
   const AppDropdownField({
     super.key,
@@ -42,6 +43,7 @@ class AppDropdownField<T> extends StatelessWidget {
     this.fillColor,
     this.enabled = true,
     this.decoration,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
 
   @override
@@ -121,6 +123,7 @@ class AppDropdownField<T> extends StatelessWidget {
           initialValue: value,
           items: items,
           onChanged: enabled ? onChanged : null,
+          autovalidateMode: autovalidateMode,
           validator: validator,
           focusNode: focusNode,
           autofocus: autofocus,

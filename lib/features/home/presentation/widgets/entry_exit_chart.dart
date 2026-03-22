@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 
@@ -41,11 +42,15 @@ class _EntryExitChartState extends State<EntryExitChart> {
       monthlyData.putIfAbsent(monthKey, () => {'entry': 0, 'exit': 0});
 
       if (t.type == model.TransactionType.credit) {
-        monthlyData[monthKey]!['entry'] =
-            (monthlyData[monthKey]!['entry'] ?? 0) + t.value;
+        if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
+          monthlyData[monthKey]!['entry'] =
+              (monthlyData[monthKey]!['entry'] ?? 0) + t.value;
+        }
       } else {
-        monthlyData[monthKey]!['exit'] =
-            (monthlyData[monthKey]!['exit'] ?? 0) + t.value;
+        if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
+          monthlyData[monthKey]!['exit'] =
+              (monthlyData[monthKey]!['exit'] ?? 0) + t.value;
+        }
       }
     }
 

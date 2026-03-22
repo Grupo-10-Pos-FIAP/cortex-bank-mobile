@@ -13,11 +13,19 @@ class TransactionsProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  dynamic _lastDocument;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  static const int _pageSize = 20;
+
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   BalanceSummary? get balanceSummary => _balanceSummary;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
 
+  /// Carrega todas as transações (sem paginação). Usado pelo dashboard e charts.
   Future<void> loadTransactions() async {
     _setLoading(true);
     _errorMessage = null;
@@ -30,6 +38,52 @@ class TransactionsProvider extends ChangeNotifier {
     );
 
     _setLoading(false);
+  }
+
+  /// Carrega a primeira página de transações com paginação.
+  Future<void> loadTransactionsPaginated() async {
+    _setLoading(true);
+    _errorMessage = null;
+    _lastDocument = null;
+    _hasMore = true;
+
+    final result = await _repository.getPage(_pageSize);
+
+    result.fold(
+      (page) {
+        _transactions = page.items;
+        _lastDocument = page.lastDocument;
+        _hasMore = page.hasMore;
+      },
+      (failure) => _errorMessage = failure.message,
+    );
+
+    _setLoading(false);
+  }
+
+  /// Carrega mais transações (próxima página).
+  Future<void> loadMoreTransactions() async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    final result = await _repository.getPage(
+      _pageSize,
+      startAfterDocument: _lastDocument,
+    );
+
+    result.fold(
+      (page) {
+        _transactions = [..._transactions, ...page.items];
+        _lastDocument = page.lastDocument;
+        _hasMore = page.hasMore;
+      },
+      (failure) => _errorMessage = failure.message,
+    );
+
+    _isLoadingMore = false;
+    notifyListeners();
   }
 
   Future<void> loadBalanceSummary() async {
@@ -108,8 +162,8 @@ class TransactionsProvider extends ChangeNotifier {
         notifyListeners();
         return updated;
       },
-      (_) {
-        _errorMessage = 'Não foi possível anexar o recibo.';
+      (failure) {
+        _errorMessage = failure.message;
         notifyListeners();
         return null;
       },

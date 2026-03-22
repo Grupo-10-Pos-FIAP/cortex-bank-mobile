@@ -28,6 +28,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   final TextEditingController _maxValueController = TextEditingController(
     text: 'R\$ 0,00',
   );
+  final ScrollController _scrollController = ScrollController();
 
   DateTime? _dateStart;
   DateTime? _dateEnd;
@@ -40,10 +41,21 @@ class _ExtratoPageState extends State<ExtratoPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionsProvider>().loadTransactions();
+      context.read<TransactionsProvider>().loadTransactionsPaginated();
       context.read<TransactionsProvider>().loadBalanceSummary();
     });
     _applyPreset('last30');
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final tx = context.read<TransactionsProvider>();
+      if (!tx.isLoadingMore && tx.hasMore) {
+        tx.loadMoreTransactions();
+      }
+    }
   }
 
   void _applyPreset(String preset) {
@@ -79,6 +91,8 @@ class _ExtratoPageState extends State<ExtratoPage> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     _minValueController.dispose();
     _maxValueController.dispose();
@@ -317,6 +331,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
           }
           final filtered = _filtrar(tx.transactions);
           return CustomScrollView(
+            controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
@@ -464,7 +479,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
                     ),
                   ),
                 )
-              else
+              else ...[
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDesignTokens.spacingMd,
@@ -480,6 +495,31 @@ class _ExtratoPageState extends State<ExtratoPage> {
                     }, childCount: filtered.length),
                   ),
                 ),
+                if (tx.isLoadingMore)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                if (!tx.hasMore && filtered.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: Text(
+                          'Todas as transações carregadas',
+                          style: GoogleFonts.roboto(
+                            fontSize: AppDesignTokens.fontSizeSmall,
+                            color: AppDesignTokens.colorContentDisabled,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           );
         },

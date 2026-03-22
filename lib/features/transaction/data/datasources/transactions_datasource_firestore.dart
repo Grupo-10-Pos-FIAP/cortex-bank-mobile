@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'transactions_datasource.dart';
@@ -32,6 +33,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       'to': transaction.to,
       'from': transaction.from,
       'status': transaction.status,
+      'description': transaction.description,
       'receiptUrls': transaction.receiptUrls,
     });
     return docRef.id;
@@ -58,6 +60,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       'to': transaction.to,
       'from': transaction.from,
       'status': transaction.status,
+      'description': transaction.description,
       'receiptUrls': transaction.receiptUrls,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -66,6 +69,32 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   @override
   Future<void> delete(String id) async =>
       await _transactionsCol.doc(id).delete();
+
+  @override
+  Future<TransactionPage> getPage(
+    int limit, {
+    dynamic startAfterDocument,
+  }) async {
+    Query<Map<String, dynamic>> query =
+        _transactionsCol.orderBy('date', descending: true).limit(limit);
+
+    if (startAfterDocument != null) {
+      query = query.startAfterDocument(
+        startAfterDocument as DocumentSnapshot,
+      );
+    }
+
+    final snapshot = await query.get();
+    final items = snapshot.docs
+        .map((d) => model.Transaction.fromFirestore(d.data(), d.id))
+        .toList();
+
+    return TransactionPage(
+      items: items,
+      hasMore: snapshot.docs.length == limit,
+      lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+    );
+  }
 
   @override
   Future<BalanceSummary> getBalanceSummary() async {
@@ -77,10 +106,14 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       final cents = (t.value.abs() * 100).round();
 
       if (t.type == model.TransactionType.credit) {
-        incomeCents += cents;
+        if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
+          incomeCents += cents;
+        }
       } else if (t.type == model.TransactionType.debit ||
           t.type == model.TransactionType.ted) {
-        expenseCents += cents;
+        if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
+          expenseCents += cents;
+        }
       }
     }
 

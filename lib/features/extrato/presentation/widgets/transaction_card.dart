@@ -37,13 +37,6 @@ Future<void> _downloadComprovante(
   }
 }
 
-/// Upload de recibos desabilitado temporariamente.
-Future<model.Transaction?> _uploadReceiptDisabled(BuildContext context) async {
-  if (!context.mounted) return null;
-  AppSnackBar.error(context, 'Upload de recibos temporariamente desabilitado.');
-  return null;
-}
-
 Future<model.Transaction?> _uploadReceipt(
   BuildContext context,
   model.Transaction transaction,
@@ -60,6 +53,18 @@ Future<model.Transaction?> _uploadReceipt(
   final bytes = file.bytes;
   final name = file.name;
   if (bytes == null || name.isEmpty) return null;
+
+  if (bytes.length > AttachmentConstants.maxFileSizeBytes) {
+    if (context.mounted) {
+      final maxMb = AttachmentConstants.maxFileSizeBytes / (1024 * 1024);
+      AppSnackBar.error(
+        context,
+        'Arquivo excede o limite de ${maxMb.toStringAsFixed(0)}MB.',
+      );
+    }
+    return null;
+  }
+
   final provider = context.read<TransactionsProvider>();
   return provider.uploadReceipt(transaction, bytes, name);
 }
@@ -137,8 +142,9 @@ class TransactionCard extends StatelessWidget {
                         ? () => _downloadComprovante(context, transaction)
                         : null,
                 onUploadReceipt:
-                    transaction.status == model.TransactionStatus.pending
-                        ? () => _uploadReceiptDisabled(context)
+                    transaction.receiptUrls.length <
+                            AttachmentConstants.maxAttachments
+                        ? () => _uploadReceipt(context, transaction)
                         : null,
               ),
             );
@@ -250,6 +256,20 @@ class TransactionCard extends StatelessWidget {
                                   ),
                                 ),
                               ],
+                            ),
+                          ],
+                          if (transaction.description != null &&
+                              transaction.description!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              transaction.description!,
+                              style: textTheme.bodySmall?.copyWith(
+                                fontSize: AppDesignTokens.fontSizeSmall,
+                                color: AppDesignTokens.colorContentDisabled,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ],

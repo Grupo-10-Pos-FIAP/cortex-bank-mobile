@@ -17,6 +17,10 @@ class ComprovanteContent {
         ? 'DOC/TED'
         : transaction.type.label;
     final paraValue = transaction.to ?? '—';
+    final descriptionLine =
+        (transaction.description != null && transaction.description!.isNotEmpty)
+            ? '\nDescrição: ${transaction.description}'
+            : '';
 
     return '''
 COMPROVANTE DE TRANSAÇÃO
@@ -29,7 +33,7 @@ De: $deValue
 Para: $paraValue
 Banco: $_bankName
 Tipo: $tipoStr
-Valor: $valueStr
+Valor: $valueStr$descriptionLine
 '''.trim();
   }
 

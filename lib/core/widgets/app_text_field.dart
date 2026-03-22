@@ -25,6 +25,8 @@ class AppTextField extends StatelessWidget {
     this.formFieldKey,
     this.fillColor,
     this.inputFormatters,
+    this.maxLines = 1,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
 
   final String label;
@@ -47,6 +49,8 @@ class AppTextField extends StatelessWidget {
   final Key? formFieldKey;
   final Color? fillColor;
   final List<TextInputFormatter>? inputFormatters;
+  final int maxLines;
+  final AutovalidateMode autovalidateMode;
 
   @override
   Widget build(BuildContext context) {
@@ -110,11 +114,13 @@ class AppTextField extends StatelessWidget {
           focusNode: focusNode,
           obscureText: obscureText,
           keyboardType: keyboardType,
+          autovalidateMode: autovalidateMode,
           validator: validator,
           onChanged: onChanged,
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
           autofocus: autofocus,
+          maxLines: maxLines,
           style:
               style ??
               textTheme.bodyLarge?.copyWith(

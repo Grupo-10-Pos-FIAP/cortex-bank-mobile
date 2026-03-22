@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
@@ -155,6 +156,13 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
               value: _valueFormatted(_transaction),
               valueStyle: textTheme.labelLarge,
             ),
+            if (_transaction.description != null &&
+                _transaction.description!.isNotEmpty)
+              _DetailRow(
+                icon: Icons.description_outlined,
+                label: 'Descrição',
+                value: _transaction.description!,
+              ),
             const Divider(height: 1, color: Color(0xFFD9D9E0)),
             if (_transaction.receiptUrls.isNotEmpty) ...[
               const SizedBox(height: AppDesignTokens.spacingMd),
@@ -165,37 +173,80 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                 ),
               ),
               const SizedBox(height: AppDesignTokens.spacingXs),
-              ..._transaction.receiptUrls.map(
-                (url) => Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: AppDesignTokens.spacingXs,
-                  ),
-                  child: InkWell(
-                    onTap: () => launchUrl(
-                      Uri.parse(url),
-                      mode: LaunchMode.externalApplication,
+              ..._transaction.receiptUrls.asMap().entries.map(
+                (entry) {
+                  final url = entry.value;
+                  final isImage = url.contains('.jpg') ||
+                      url.contains('.jpeg') ||
+                      url.contains('.png');
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: AppDesignTokens.spacingSm,
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.receipt_long,
-                          size: 18,
-                          color: AppDesignTokens.colorPrimary,
-                        ),
-                        const SizedBox(width: AppDesignTokens.spacingSm),
-                        Expanded(
-                          child: Text(
-                            'Abrir recibo',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: AppDesignTokens.colorPrimary,
-                              decoration: TextDecoration.underline,
+                        if (isImage)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              AppDesignTokens.borderRadiusDefault,
                             ),
+                            child: CachedNetworkImage(
+                              imageUrl: url,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              placeholder: (_, _) => const SizedBox(
+                                height: 120,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (_, _, _) => const SizedBox(
+                                height: 60,
+                                child: Center(
+                                  child: Icon(Icons.broken_image, size: 32),
+                                ),
+                              ),
+                            ),
+                          ),
+                        InkWell(
+                          onTap: () => launchUrl(
+                            Uri.parse(url),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isImage
+                                    ? Icons.image_outlined
+                                    : Icons.picture_as_pdf,
+                                size: 18,
+                                color: AppDesignTokens.colorPrimary,
+                              ),
+                              const SizedBox(
+                                width: AppDesignTokens.spacingSm,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  isImage
+                                      ? 'Abrir imagem'
+                                      : 'Abrir PDF',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AppDesignTokens.colorPrimary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: AppDesignTokens.spacingSm),
             ],

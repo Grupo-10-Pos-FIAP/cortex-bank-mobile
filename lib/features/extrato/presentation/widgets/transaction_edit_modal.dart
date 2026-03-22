@@ -1,5 +1,9 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
@@ -21,10 +25,11 @@ class TransactionEditModal extends StatefulWidget {
 
 class _TransactionEditModalState extends State<TransactionEditModal> {
   late TextEditingController _valueController;
+  late TextEditingController _descriptionController;
   late model.TransactionType _selectedType;
   late String _selectedTo;
-  late String _selectedStatus;
   late model.TransactionCategory _selectedCategory;
+  late DateTime _selectedDate;
   bool _isLoading = false;
 
   @override
@@ -34,14 +39,16 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     _valueController = TextEditingController(
       text: formatCentsToBRL(valueCents),
     );
+    _descriptionController = TextEditingController(
+      text: widget.data.description ?? '',
+    );
 
     _selectedType = widget.data.type;
     _selectedTo = widget.data.to ?? 'Mesma Titularidade';
-    _selectedStatus = widget.data.status;
-
-    // AJUSTE AQUI: Use o valor que vem do model diretamente.
-    // Se o widget.data.category for nulo, use um valor padrão do Enum.
     _selectedCategory = widget.data.category;
+    _selectedDate = TransactionDatePolicy.clampToAllowedRange(
+      widget.data.date,
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ContactsProvider>().loadContacts();
@@ -51,10 +58,20 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
   @override
   void dispose() {
     _valueController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   Future<void> _handleSave() async {
+    if (!TransactionDatePolicy.isAllowed(_selectedDate)) {
+      AppSnackBar.error(
+        context,
+        TransactionDatePolicy.validationMessage,
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     // 1. Pega o texto (ex: "R$ 1.250,50") e limpa tudo que não for número
@@ -69,16 +86,26 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     final fromTitular =
         context.read<AuthProvider>().user?.username ?? widget.data.from;
 
+    final descriptionText = _descriptionController.text.trim();
+
+    final resolvedStatus = TransactionDatePolicy.isStrictlyAfterToday(
+          _selectedDate,
+        )
+        ? model.TransactionStatus.pending
+        : model.TransactionStatus.completed;
+
     final updated = model.Transaction(
       id: widget.data.id,
       accountId: widget.data.accountId,
       type: _selectedType,
       category: _selectedCategory,
       value: valueToSave,
-      date: DateTime.now(),
-      status: _selectedStatus,
+      date: _selectedDate,
+      status: resolvedStatus,
       to: _selectedTo,
       from: fromTitular,
+      description: descriptionText.isNotEmpty ? descriptionText : null,
+      receiptUrls: widget.data.receiptUrls,
     );
 
     final success = await context
@@ -165,6 +192,56 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
             const SizedBox(height: 16),
 
+            InkWell(
+              onTap: () async {
+                final minD = TransactionDatePolicy.today;
+                final maxD = TransactionDatePolicy.maxSelectableDate;
+                final initial = TransactionDatePolicy.clampToAllowedRange(
+                  _selectedDate,
+                );
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: initial,
+                  firstDate: minD,
+                  lastDate: maxD,
+                  helpText:
+                      'Hoje até ${TransactionDatePolicy.futureDaysInclusive} dias à frente',
+                );
+                if (picked != null) {
+                  setState(() => _selectedDate = picked);
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Data da transação',
+                  filled: true,
+                  fillColor: AppDesignTokens.colorWhite,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppDesignTokens.borderRadiusDefault,
+                    ),
+                  ),
+                  suffixIcon: const Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  DateFormatter.formatDate(_selectedDate),
+                ),
+              ),
+            ),
+            if (TransactionDatePolicy.isStrictlyAfterToday(_selectedDate))
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  TransactionScheduleCopy.hintFutureDate,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppDesignTokens.colorContentDisabled,
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
             // Dropdown unificado: Opções Fixas + Contatos
             _buildDropdown<String>(
               label: 'Destino (Para)',
@@ -193,6 +270,14 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
                 );
               }).toList(),
               onChanged: (val) => setState(() => _selectedCategory = val!),
+            ),
+
+            const SizedBox(height: 16),
+
+            AppTextFieldDecorator(
+              label: 'Descrição (opcional)',
+              controller: _descriptionController,
+              onChanged: (value) {},
             ),
 
             const SizedBox(height: 24),

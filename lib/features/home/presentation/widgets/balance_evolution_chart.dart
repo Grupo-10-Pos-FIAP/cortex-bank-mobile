@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 
@@ -43,7 +44,9 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     Map<String, double> monthlyBalance = {};
 
     for (final t in sorted) {
-      balance += t.type == model.TransactionType.credit ? t.value : -t.value;
+      if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
+        balance += t.type == model.TransactionType.credit ? t.value : -t.value;
+      }
       final monthKey =
           '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
       monthlyBalance[monthKey] = balance;

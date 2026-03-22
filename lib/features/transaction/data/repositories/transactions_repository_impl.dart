@@ -1,8 +1,11 @@
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
+import 'package:cortex_bank_mobile/core/utils/firebase_user_error_message.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/receipt_storage_datasource.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart'
+    show TransactionsDataSource, TransactionPage;
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
@@ -20,7 +23,14 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
       return Success(id);
     } catch (e) {
       safeLogError('Erro ao adicionar transação', e);
-      return FailureResult(Failure(message: 'Erro ao processar transação'));
+      return FailureResult(
+        Failure(
+          message: firebaseErrorUserMessage(
+            e,
+            fallback: TransactionScheduleCopy.errorSubmitFallbackImmediate,
+          ),
+        ),
+      );
     }
   }
 
@@ -58,6 +68,23 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
   }
 
   @override
+  Future<Result<TransactionPage>> getPage(
+    int limit, {
+    dynamic startAfterDocument,
+  }) async {
+    try {
+      final page = await _dataSource.getPage(
+        limit,
+        startAfterDocument: startAfterDocument,
+      );
+      return Success(page);
+    } catch (e) {
+      safeLogError('Erro ao carregar página de transações', e);
+      return FailureResult(Failure(message: 'Erro ao carregar transações'));
+    }
+  }
+
+  @override
   Future<Result<BalanceSummary>> getBalanceSummary() async {
     try {
       final summary = await _dataSource.getBalanceSummary();
@@ -88,7 +115,13 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
     } catch (e) {
       safeLogError('Erro ao enviar recibo', e);
       return FailureResult(
-        Failure(message: 'Não foi possível enviar o recibo. Tente novamente.'),
+        Failure(
+          message: firebaseErrorUserMessage(
+            e,
+            fallback:
+                'Não foi possível enviar o recibo. Tente novamente ou anexe pelo extrato.',
+          ),
+        ),
       );
     }
   }

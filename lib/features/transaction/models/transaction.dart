@@ -20,6 +20,7 @@ class Transaction {
   final String? from;
   final String status;
   final TransactionCategory category;
+  final String? description;
   final List<String> receiptUrls;
 
   Transaction({
@@ -32,6 +33,7 @@ class Transaction {
     this.from,
     this.status = TransactionStatus.completed,
     required this.category,
+    this.description,
     List<String>? receiptUrls,
   }) : receiptUrls = receiptUrls ?? const [];
 
@@ -54,6 +56,7 @@ class Transaction {
       category: TransactionCategoryExtension.fromString(
         data['category'] ?? 'others',
       ),
+      description: data['description'],
       receiptUrls: list,
     );
   }
@@ -68,6 +71,7 @@ class Transaction {
     String? from,
     String? status,
     TransactionCategory? category,
+    String? description,
     List<String>? receiptUrls,
   }) {
     return Transaction(
@@ -80,6 +84,7 @@ class Transaction {
       from: from ?? this.from,
       status: status ?? this.status,
       category: category ?? this.category,
+      description: description ?? this.description,
       receiptUrls: receiptUrls ?? this.receiptUrls,
     );
   }
