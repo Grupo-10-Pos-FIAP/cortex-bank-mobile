@@ -89,7 +89,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     if (selectedValueType == 'ted' &&
         selectedContact == null &&
         selectedTitularidade == null) {
-      AppSnackBar.show(context, 'Selecione um destino para a transferência');
+      AppSnackBar.show(context, 'Selecione um destino para a transação');
       return;
     }
 
@@ -224,7 +224,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     final contactsProvider = context.watch<ContactsProvider>();
 
     return AppCardContainer(
-      title: 'Nova transferência',
+      title: 'Nova transação',
       child: Form(
         key: _formKey,
         child: Column(
@@ -344,7 +344,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                     : AppDesignTokens.colorPrimary,
               ),
               label: Text(
-                'Anexar arquivo',
+                'Anexar recibo',
                 style: TextStyle(
                   color: _attachments.length >=
                           AttachmentConstants.maxAttachments
@@ -405,7 +405,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
             Consumer<TransactionsProvider>(
               builder: (context, txProvider, child) {
                 return AppButton(
-                  label: 'Confirmar transferência',
+                  label: 'Confirmar transação',
                   loading: txProvider.isLoading,
                   onPressed: () async {
                     final confirmar = await showDialog<bool>(
@@ -414,7 +414,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                       builder: (ctx) => AlertDialog(
                         title: const Text('Confirmar Transação'),
                         content: const Text(
-                          'Deseja realmente realizar esta transferência?',
+                          'Deseja realmente realizar esta transação?',
                         ),
                         actions: [
                           TextButton(

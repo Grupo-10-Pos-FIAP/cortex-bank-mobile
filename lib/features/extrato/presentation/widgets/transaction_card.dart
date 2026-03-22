@@ -84,11 +84,11 @@ class TransactionCard extends StatelessWidget {
 
     String transactionTypeLabel;
     if (transaction.type == model.TransactionType.credit) {
-      transactionTypeLabel = 'Transferência recebida';
+      transactionTypeLabel = 'Transação recebida';
     } else if (transaction.type == model.TransactionType.ted) {
       transactionTypeLabel = 'TED efetuada';
     } else {
-      transactionTypeLabel = 'Transferência efetuada';
+      transactionTypeLabel = 'Transação efetuada';
     }
 
     final valueCents = (transaction.value.abs() * 100).round();
