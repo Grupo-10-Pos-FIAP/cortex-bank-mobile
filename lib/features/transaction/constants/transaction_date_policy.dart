@@ -39,6 +39,9 @@ abstract class TransactionDatePolicy {
   static String get validationMessage =>
       'A data deve ser hoje ou até $futureDaysInclusive dias no futuro (não é permitido data passada).';
 
+  /// Inclui a transação no saldo “agora”. Sem [asOf], usa [today] — mesma regra que
+  /// o resumo de saldo no Firestore (`getBalanceSummary`) e o card do dashboard.
+  /// Gráficos do início devem chamar sem [asOf] para alinhar ao saldo exibido.
   static bool transactionAffectsBalanceNow(
     Transaction transaction, {
     DateTime? asOf,

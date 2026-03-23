@@ -1,5 +1,6 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/month_chart_label.dart';
+import 'package:cortex_bank_mobile/core/utils/syncfusion_brl_tooltip.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -37,10 +38,7 @@ class _EntryExitChartState extends State<EntryExitChart> {
     Map<String, Map<String, double>> monthlyData = {};
 
     for (final t in transactions) {
-      final affects = TransactionDatePolicy.transactionAffectsBalanceNow(
-        t,
-        asOf: t.date,
-      );
+      final affects = TransactionDatePolicy.transactionAffectsBalanceNow(t);
       if (!affects) continue;
 
       final monthKey =
@@ -87,18 +85,28 @@ class _EntryExitChartState extends State<EntryExitChart> {
     return AppCardContainer(
       title: 'Entradas e Saídas',
       child: SfCartesianChart(
-        primaryXAxis: CategoryAxis(),
+        plotAreaBorderWidth: 0,
+        primaryXAxis: CategoryAxis(
+          majorGridLines: const MajorGridLines(width: 0),
+        ),
+        primaryYAxis: NumericAxis(
+          numberFormat: chartAxisBrlNumberFormat,
+          labelRotation: -45,
+          axisLine: const AxisLine(width: 0),
+          majorGridLines: MajorGridLines(
+            width: 1,
+            color: AppDesignTokens.colorGray200,
+          ),
+        ),
         legend: Legend(isVisible: true),
-        tooltipBehavior: TooltipBehavior(enable: true),
+        tooltipBehavior: brlCartesianTooltipBehavior(),
         series: <CartesianSeries<_EntryExitData, String>>[
           ColumnSeries<_EntryExitData, String>(
             dataSource: chartData,
             xValueMapper: (_EntryExitData item, _) => item.month,
             yValueMapper: (_EntryExitData item, _) => item.entry,
             dataLabelMapper: (_EntryExitData item, _) =>
-                formatCentsToBRLWithThousands(
-                  (item.entry * 100).round(),
-                ),
+                formatReaisToBRL(item.entry),
             name: 'Entrada',
             color: AppDesignTokens.colorFeedbackSuccess,
             dataLabelSettings: DataLabelSettings(isVisible: true),
@@ -108,9 +116,7 @@ class _EntryExitChartState extends State<EntryExitChart> {
             xValueMapper: (_EntryExitData item, _) => item.month,
             yValueMapper: (_EntryExitData item, _) => item.exit,
             dataLabelMapper: (_EntryExitData item, _) =>
-                formatCentsToBRLWithThousands(
-                  (item.exit * 100).round(),
-                ),
+                formatReaisToBRL(item.exit),
             name: 'Saída',
             color: AppDesignTokens.colorFeedbackError,
             dataLabelSettings: DataLabelSettings(isVisible: true),

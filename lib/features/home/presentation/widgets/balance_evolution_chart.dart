@@ -1,6 +1,7 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/month_chart_label.dart'
     show monthKeyToShortLabel, prevMonthKey;
+import 'package:cortex_bank_mobile/core/utils/syncfusion_brl_tooltip.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +11,6 @@ import 'package:cortex_bank_mobile/features/transaction/state/transactions_provi
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
-import 'package:intl/intl.dart';
-
-final NumberFormat _balanceAxisFormat = NumberFormat.compact(locale: 'pt_BR');
 
 class BalanceEvolutionChart extends StatefulWidget {
   const BalanceEvolutionChart({super.key});
@@ -47,10 +45,7 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     final monthlyBalance = <String, double>{};
 
     for (final t in sorted) {
-      if (TransactionDatePolicy.transactionAffectsBalanceNow(
-        t,
-        asOf: t.date,
-      )) {
+      if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
         balance += t.type == model.TransactionType.credit ? t.value : -t.value;
       }
       final monthKey =
@@ -97,10 +92,7 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     for (final t in sorted) {
       final d = TransactionDatePolicy.dateOnly(t.date);
       if (!d.isBefore(startOfFirstMonth)) break;
-      if (TransactionDatePolicy.transactionAffectsBalanceNow(
-        t,
-        asOf: t.date,
-      )) {
+      if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
         openingBalance +=
             t.type == model.TransactionType.credit ? t.value : -t.value;
       }
@@ -138,7 +130,8 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
           majorGridLines: const MajorGridLines(width: 0),
         ),
         primaryYAxis: NumericAxis(
-          numberFormat: _balanceAxisFormat,
+          numberFormat: chartAxisBrlNumberFormat,
+          labelRotation: -45,
           axisLine: const AxisLine(width: 0),
           majorGridLines: MajorGridLines(
             width: 1,
@@ -146,16 +139,14 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
           ),
         ),
         legend: Legend(isVisible: false),
-        tooltipBehavior: TooltipBehavior(enable: true),
+        tooltipBehavior: brlCartesianTooltipBehavior(),
         series: <CartesianSeries<_BalanceEvolutionData, String>>[
           LineSeries<_BalanceEvolutionData, String>(
             dataSource: chartData,
             xValueMapper: (_BalanceEvolutionData balance, _) => balance.month,
             yValueMapper: (_BalanceEvolutionData balance, _) => balance.amount,
             dataLabelMapper: (_BalanceEvolutionData balance, _) =>
-                formatCentsToBRLWithThousands(
-                  (balance.amount * 100).round(),
-                ),
+                formatReaisToBRL(balance.amount),
             name: 'Saldo',
             width: 3,
             color: AppDesignTokens.colorPrimary,

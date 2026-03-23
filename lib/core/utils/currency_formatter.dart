@@ -1,4 +1,18 @@
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+
+/// [NumberFormat] para eixos Y de gráficos (ex.: Syncfusion [NumericAxis]).
+/// Alinhado ao locale pt_BR; data labels podem usar [formatCentsToBRLWithThousands].
+final NumberFormat chartAxisBrlNumberFormat = NumberFormat.currency(
+  locale: 'pt_BR',
+  symbol: r'R$',
+  decimalDigits: 2,
+);
+
+/// Formata valor em reais (modelo Firestore: `double`) como BRL, igual aos data labels.
+String formatReaisToBRL(double reais) {
+  return formatCentsToBRLWithThousands((reais * 100).round());
+}
 
 /// Formata valor em centavos para Real brasileiro (R$ 1.234,56).
 /// Convenção BRL: vírgula para decimais, ponto para milhares.
