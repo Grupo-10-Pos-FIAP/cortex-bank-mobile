@@ -3,7 +3,6 @@ import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
-import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_edit_modal.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
@@ -18,11 +17,15 @@ class TransactionDetailModal extends StatefulWidget {
     required this.transaction,
     this.onDownloadComprovante,
     this.onUploadReceipt,
+    this.onEditTransaction,
   });
 
   final model.Transaction transaction;
   final VoidCallback? onDownloadComprovante;
   final Future<model.Transaction?> Function()? onUploadReceipt;
+
+  /// Chamado após fechar este modal; use para abrir edição sem dois diálogos sobrepostos.
+  final void Function(model.Transaction transaction)? onEditTransaction;
 
   @override
   State<TransactionDetailModal> createState() => _TransactionDetailModalState();
@@ -289,16 +292,17 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
 
                 final List<Widget> buttons = [];
 
-                if (_showEditForScheduledOrPending) {
+                if (_showEditForScheduledOrPending &&
+                    widget.onEditTransaction != null) {
                   buttons.add(
                     TextButton(
-                      onPressed: () async {
-                        await showDialog<void>(
-                          context: context,
-                          builder: (ctx) => TransactionEditModal(
-                            data: _transaction,
-                          ),
-                        );
+                      onPressed: () {
+                        final t = _transaction;
+                        final openEdit = widget.onEditTransaction!;
+                        Navigator.of(context).pop();
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          openEdit(t);
+                        });
                       },
                       child: Text(
                         'Editar',

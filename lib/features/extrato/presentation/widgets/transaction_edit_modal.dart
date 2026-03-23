@@ -113,14 +113,25 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       receiptUrls: widget.data.receiptUrls,
     );
 
-    final success = await context
-        .read<TransactionsProvider>()
-        .updateTransaction(updated);
+    final provider = context.read<TransactionsProvider>();
+    final success = await provider.updateTransaction(updated);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (success) Navigator.pop(context, true);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (success) {
+      AppSnackBar.success(
+        context,
+        'Transação atualizada com sucesso.',
+      );
+      Navigator.pop(context, true);
+      return;
     }
+
+    AppSnackBar.error(
+      context,
+      provider.errorMessage ?? 'Não foi possível atualizar a transação.',
+    );
   }
 
   @override
