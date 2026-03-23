@@ -36,6 +36,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   DateTime? _dateStart;
   DateTime? _dateEnd;
   String _tipoFiltro = 'todas';
+  String _statusFiltro = 'todas';
 
   String _periodoPreset = 'last30';
 
@@ -162,6 +163,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _minValueController.text = 'R\$ 0,00';
       _maxValueController.text = 'R\$ 0,00';
       _tipoFiltro = 'todas';
+      _statusFiltro = 'todas';
     });
     _applyPreset('last30');
   }
@@ -218,6 +220,19 @@ class _ExtratoPageState extends State<ExtratoPage> {
     } else if (_tipoFiltro == 'ted') {
       result = result
           .where((t) => t.type == model.TransactionType.ted)
+          .toList();
+    }
+    if (_statusFiltro == 'completa') {
+      result = result
+          .where((t) => t.status == model.TransactionStatus.completed)
+          .toList();
+    } else if (_statusFiltro == 'agendada') {
+      result = result
+          .where((t) => t.status == model.TransactionStatus.scheduled)
+          .toList();
+    } else if (_statusFiltro == 'pendente') {
+      result = result
+          .where((t) => t.status == model.TransactionStatus.pending)
           .toList();
     }
     final minCents = _parseValorBRL(_minValueController.text);
@@ -404,196 +419,237 @@ class _ExtratoPageState extends State<ExtratoPage> {
               child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDesignTokens.spacingMd,
-                    vertical: AppDesignTokens.spacingSm,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          hintText:
-                              'Buscar por origem, destino, ID ou valor...',
-                          prefixIcon: const Icon(Icons.search),
-                          filled: true,
-                          fillColor: AppDesignTokens.colorWhite,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingMd),
-                      InkWell(
-                        onTap: _showPeriodoOptions,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppDesignTokens.colorWhite,
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                            border: Border.all(
-                              color: AppDesignTokens.colorBorderDefault,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.calendar_today, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                _periodoTexto,
-                                style: GoogleFonts.roboto(
-                                  fontSize: AppDesignTokens.fontSizeBody,
-                                  color: AppDesignTokens.colorContentDefault,
-                                ),
-                              ),
-                              const Spacer(),
-                              const Icon(Icons.arrow_drop_down),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingMd),
-                      AppDropdownField<String>(
-                        hintText: 'Selecione o tipo de transação',
-                        value: _tipoFiltro,
-                        items: [
-                          DropdownMenuItem(
-                            value: 'todas',
-                            child: Text('Todas'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'credito',
-                            child: Text('Crédito'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'debito',
-                            child: Text('Débito'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'ted',
-                            child: Text('TED/DOC'),
-                          ),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _tipoFiltro = v ?? 'todas'),
-                        validator: (value) =>
-                            value == null ? 'Campo obrigatório' : null,
-                        decoration: InputDecoration(
-                          labelText: 'Tipo de Transação',
-                          hintText: 'R\$ 0,00',
-                          filled: true,
-                          fillColor: AppDesignTokens.colorWhite,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: AppDesignTokens.spacingMd),
-                      AppTextFieldDecorator(
-                        label: 'Valor Mínimo',
-                        controller: _minValueController,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingMd),
-                      AppTextFieldDecorator(
-                        label: 'Valor máximo',
-                        controller: _maxValueController,
-
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingLg),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _limparFiltros,
-                          icon: Icon(MdiIcons.eraser, size: 20),
-                          label: const Text('Limpar Filtros'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppDesignTokens.colorPrimary,
-                            foregroundColor: AppDesignTokens.colorWhite,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppDesignTokens.spacingMd,
-                              horizontal: AppDesignTokens.spacingLg,
-                            ),
-                            minimumSize: const Size.fromHeight(48),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppDesignTokens.spacingLg),
-                    ],
-                  ),
-                ),
-              ),
-              if (filtered.isEmpty)
-                SliverFillRemaining(
-                  child: Center(
-                    child: tx.isLoadingMore && tx.transactions.isNotEmpty
-                        ? const CircularProgressIndicator(strokeWidth: 2)
-                        : Text(
-                            tx.errorMessage ?? 'Nenhuma transação encontrada',
-                            style: GoogleFonts.roboto(
-                              fontSize: AppDesignTokens.fontSizeBody,
-                              color: AppDesignTokens.colorContentDisabled,
-                            ),
-                          ),
-                  ),
-                )
-              else ...[
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDesignTokens.spacingMd,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, i) {
-                      final t = filtered[i];
-                      return TransactionCard(
-                        key: ValueKey(t.id),
-                        transaction: t,
-                        onDelete: () => tx.deleteTransaction(t.id),
-                      );
-                    }, childCount: filtered.length),
-                  ),
-                ),
-                if (tx.isLoadingMore)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                if (!tx.hasMore && filtered.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: Text(
-                          'Todas as transações carregadas',
-                          style: GoogleFonts.roboto(
-                            fontSize: AppDesignTokens.fontSizeSmall,
-                            color: AppDesignTokens.colorContentDisabled,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDesignTokens.spacingMd,
+                        vertical: AppDesignTokens.spacingSm,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Buscar por origem, destino, ID ou valor...',
+                              prefixIcon: const Icon(Icons.search),
+                              filled: true,
+                              fillColor: AppDesignTokens.colorWhite,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppDesignTokens.borderRadiusDefault,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          InkWell(
+                            onTap: _showPeriodoOptions,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppDesignTokens.colorWhite,
+                                borderRadius: BorderRadius.circular(
+                                  AppDesignTokens.borderRadiusDefault,
+                                ),
+                                border: Border.all(
+                                  color: AppDesignTokens.colorBorderDefault,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_today, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _periodoTexto,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: AppDesignTokens.fontSizeBody,
+                                      color:
+                                          AppDesignTokens.colorContentDefault,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  const Icon(Icons.arrow_drop_down),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          AppDropdownField<String>(
+                            hintText: 'Selecione o tipo de transação',
+                            value: _tipoFiltro,
+                            items: [
+                              DropdownMenuItem(
+                                value: 'todas',
+                                child: Text('Todos'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'credito',
+                                child: Text('Crédito'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'debito',
+                                child: Text('Débito'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'ted',
+                                child: Text('TED/DOC'),
+                              ),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _tipoFiltro = v ?? 'todas'),
+                            validator: (value) =>
+                                value == null ? 'Campo obrigatório' : null,
+                            decoration: InputDecoration(
+                              labelText: 'Tipo de Transação',
+                              hintText: 'R\$ 0,00',
+                              filled: true,
+                              fillColor: AppDesignTokens.colorWhite,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppDesignTokens.borderRadiusDefault,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          AppDropdownField<String>(
+                            hintText: 'Selecione o status da transação',
+                            value: _statusFiltro,
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'todas',
+                                child: Text('Todos'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'completa',
+                                child: Text('Completa'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'agendada',
+                                child: Text('Agendada'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'pendente',
+                                child: Text('Pendente'),
+                              ),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _statusFiltro = v ?? 'todas'),
+                            validator: (value) =>
+                                value == null ? 'Campo obrigatório' : null,
+                            decoration: InputDecoration(
+                              labelText: 'Status da Transação',
+                              hintText: 'Selecione o status',
+                              filled: true,
+                              fillColor: AppDesignTokens.colorWhite,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppDesignTokens.borderRadiusDefault,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          AppTextFieldDecorator(
+                            label: 'Valor Mínimo',
+                            controller: _minValueController,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: AppDesignTokens.spacingMd),
+                          AppTextFieldDecorator(
+                            label: 'Valor máximo',
+                            controller: _maxValueController,
+
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: AppDesignTokens.spacingLg),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _limparFiltros,
+                              icon: Icon(MdiIcons.eraser, size: 20),
+                              label: const Text('Limpar Filtros'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppDesignTokens.colorPrimary,
+                                foregroundColor: AppDesignTokens.colorWhite,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppDesignTokens.spacingMd,
+                                  horizontal: AppDesignTokens.spacingLg,
+                                ),
+                                minimumSize: const Size.fromHeight(48),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppDesignTokens.spacingLg),
+                        ],
                       ),
                     ),
                   ),
-              ],
-            ],
+                  if (filtered.isEmpty)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: tx.isLoadingMore && tx.transactions.isNotEmpty
+                            ? const CircularProgressIndicator(strokeWidth: 2)
+                            : Text(
+                                tx.errorMessage ??
+                                    'Nenhuma transação encontrada',
+                                style: GoogleFonts.roboto(
+                                  fontSize: AppDesignTokens.fontSizeBody,
+                                  color: AppDesignTokens.colorContentDisabled,
+                                ),
+                              ),
+                      ),
+                    )
+                  else ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDesignTokens.spacingMd,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, i) {
+                          final t = filtered[i];
+                          return TransactionCard(
+                            key: ValueKey(t.id),
+                            transaction: t,
+                            onDelete: () => tx.deleteTransaction(t.id),
+                          );
+                        }, childCount: filtered.length),
+                      ),
+                    ),
+                    if (tx.isLoadingMore)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                    if (!tx.hasMore && filtered.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Center(
+                            child: Text(
+                              'Todas as transações carregadas',
+                              style: GoogleFonts.roboto(
+                                fontSize: AppDesignTokens.fontSizeSmall,
+                                color: AppDesignTokens.colorContentDisabled,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ],
               ),
             ),
           );
