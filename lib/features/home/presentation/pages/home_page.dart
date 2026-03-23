@@ -13,30 +13,55 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
-  final PageController _pageController = PageController();
-
-  final List<Widget> _screens = const [
-    DashboardPage(),
-    TransactionFormPage(),
-    ProfilePage(),
-  ];
+  int _lastPageIndex = 0;
+  int _dashboardEntranceVersion = 0;
+  late final AnimationController _tabSwitchController;
+  late final Animation<double> _tabContentOpacity;
 
   @override
   void initState() {
     super.initState();
+    _tabSwitchController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    );
+    _tabContentOpacity = Tween<double>(begin: 1, end: 0).animate(
+      CurvedAnimation(
+        parent: _tabSwitchController,
+        curve: Curves.easeOut,
+      ),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TransactionsProvider>().loadBalanceSummary();
       context.read<TransactionsProvider>().loadTransactions();
     });
   }
 
-
   @override
   void dispose() {
-    _pageController.dispose();
+    _tabSwitchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onTabSelected(int index) async {
+    if (_tabSwitchController.isAnimating) return;
+    if (index == 0 && _currentIndex == 0) {
+      setState(() => _dashboardEntranceVersion++);
+      return;
+    }
+    if (index == _currentIndex) return;
+    await _tabSwitchController.forward();
+    if (!mounted) return;
+    setState(() {
+      if (index == 0 && _lastPageIndex != 0) {
+        _dashboardEntranceVersion++;
+      }
+      _currentIndex = index;
+      _lastPageIndex = index;
+    });
+    await _tabSwitchController.reverse();
   }
 
   @override
@@ -55,25 +80,20 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         centerTitle: false,
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: _screens,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+      body: FadeTransition(
+        opacity: _tabContentOpacity,
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            DashboardPage(entranceVersion: _dashboardEntranceVersion),
+            const TransactionFormPage(),
+            const ProfilePage(),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          _pageController.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.ease,
-          );
-        },
+        onTap: _onTabSelected,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
