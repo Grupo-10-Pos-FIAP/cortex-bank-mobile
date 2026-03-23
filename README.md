@@ -6,9 +6,19 @@ em cloud.
 
 ## Como rodar o projeto (instalação do zero)
 
+Se você ainda não tem Flutter nem Android configurados, siga os passos abaixo. Os comandos do projeto (`flutter pub get`, `flutter doctor`, `flutter run`) são os mesmos em qualquer sistema.
+
+### Windows
+
+1. Instale o Flutter SDK seguindo o guia oficial: [Instalação no Windows](https://docs.flutter.dev/get-started/install/windows) (inclui Git for Windows e verificação com `flutter doctor`).
+2. Para desenvolvimento Android no Windows, use o **Android Studio** e o SDK Android como descrito na mesma documentação; aceite as licenças com `flutter doctor --android-licenses`.
+3. Na pasta do projeto: `flutter pub get`, configure o `.env` (veja **Configuração Firebase (.env)**) e rode `flutter run` (ou escolha o dispositivo com `flutter devices`).
+
+### macOS (passo a passo detalhado)
+
 Se você ainda não tem Flutter nem Android configurados, siga estes passos no **macOS**.
 
-### 1. Instalar o Flutter
+#### 1. Instalar o Flutter
 
 1. Baixe o Flutter SDK: [https://docs.flutter.dev/get-started/install/macos](https://docs.flutter.dev/get-started/install/macos)  
    Ou via terminal (usando Git):
@@ -32,7 +42,7 @@ Se você ainda não tem Flutter nem Android configurados, siga estes passos no *
 
    Esse comando mostra o que ainda falta instalar.
 
-### 2. Instalar o ambiente Android
+#### 2. Instalar o ambiente Android
 
 1. Instale o **Android Studio**: [https://developer.android.com/studio](https://developer.android.com/studio)
 
@@ -59,7 +69,7 @@ Se você ainda não tem Flutter nem Android configurados, siga estes passos no *
 
    Para Android, o ideal é aparecer algo como “Android toolchain - develop for Android devices” em verde.
 
-### 3. Configurar o projeto
+#### 3. Configurar o projeto
 
 1. Na pasta do projeto, instale as dependências:
 
@@ -70,7 +80,7 @@ Se você ainda não tem Flutter nem Android configurados, siga estes passos no *
 
 2. Configure o Firebase conforme a seção **Configuração Firebase (.env)** abaixo (copie `.env.example` para `.env` e preencha as variáveis para Android). Sem o `.env` correto, o app pode abrir mas exibir “Configuração incompleta”.
 
-### 4. Rodar no Android
+#### 4. Rodar no Android
 
 - **Emulador**: inicie o emulador pelo Android Studio (Device Manager → Play no dispositivo). Depois:
 
@@ -91,7 +101,7 @@ Se você ainda não tem Flutter nem Android configurados, siga estes passos no *
   flutter run
   ```
 
-### 5. Rodar no iOS (simulador)
+#### 5. Rodar no iOS (simulador)
 
 Para rodar no **simulador do iPhone** não é necessária conta paga da Apple; basta ter **Xcode** instalado no Mac.
 
