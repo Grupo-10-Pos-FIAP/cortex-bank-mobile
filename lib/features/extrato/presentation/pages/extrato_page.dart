@@ -1,18 +1,16 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
     show parseBRLMaskToCents;
-import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
-import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
+import 'package:cortex_bank_mobile/features/extrato/extrato_pagination.dart';
+import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/extrato_statement_filters_panel.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
+import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
-    as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class ExtratoPage extends StatefulWidget {
   const ExtratoPage({super.key});
@@ -57,7 +55,6 @@ class _ExtratoPageState extends State<ExtratoPage> {
     _scrollController.addListener(_onScroll);
   }
 
-  /// Dispara após layout e quando os filtros/provider atualizam o [Consumer].
   void _scheduleCheckLoadMore() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -65,38 +62,53 @@ class _ExtratoPageState extends State<ExtratoPage> {
     });
   }
 
-  /// Distância do fim do conteúdo abaixo da viewport; prefetch antes do usuário
-  /// colar no fim (evita falhas após anexar itens, onde [pixels] fica “no meio”).
-  static const double _loadMoreScrollThreshold = 520;
-
-  /// Carrega mais quando: perto do fim do scroll, lista não preenche a tela,
-  /// ou filtros excluem tudo que já veio do Firestore (ainda há [hasMore]).
   void _checkLoadMore() {
     final tx = context.read<TransactionsProvider>();
-    if (!tx.hasMore || tx.isLoadingMore) return;
-    if (tx.isLoading && tx.transactions.isEmpty) return;
+    final loaded = tx.transactions;
+    final filtered = applyStatementFilter(loaded, _currentCriteria());
 
-    final filtered = _filtrar(tx.transactions);
-
-    if (filtered.isEmpty && tx.transactions.isNotEmpty) {
-      tx.loadMoreTransactions();
-      return;
+    var scrollHasClients = false;
+    var hasViewportDimension = false;
+    var extentAfter = 0.0;
+    var maxScrollExtent = 0.0;
+    if (_scrollController.hasClients) {
+      scrollHasClients = true;
+      final pos = _scrollController.position;
+      hasViewportDimension = pos.hasViewportDimension;
+      extentAfter = pos.extentAfter;
+      maxScrollExtent = pos.maxScrollExtent;
     }
-    if (filtered.isEmpty) return;
 
-    if (!_scrollController.hasClients) return;
-    final pos = _scrollController.position;
-    if (!pos.hasViewportDimension) return;
-
-    final extentAfter = pos.extentAfter;
-    final shortViewport = pos.maxScrollExtent <= _loadMoreScrollThreshold;
-    if (shortViewport || extentAfter <= _loadMoreScrollThreshold) {
+    final ctx = ExtratoLoadMoreContext(
+      hasMore: tx.hasMore,
+      isLoadingMore: tx.isLoadingMore,
+      isLoading: tx.isLoading,
+      loadedCount: loaded.length,
+      filteredCount: filtered.length,
+      scrollHasClients: scrollHasClients,
+      hasViewportDimension: hasViewportDimension,
+      extentAfter: extentAfter,
+      maxScrollExtent: maxScrollExtent,
+    );
+    if (shouldRequestLoadMore(ctx)) {
       tx.loadMoreTransactions();
     }
   }
 
   void _onScroll() {
     _checkLoadMore();
+  }
+
+  StatementFilterCriteria _currentCriteria() {
+    return StatementFilterCriteria(
+      searchQuery: _searchController.text,
+      dateStart: _dateStart,
+      dateEnd: _dateEnd,
+      tipoFiltro: _tipoFiltro,
+      statusFiltro: _statusFiltro,
+      minCents: parseBRLMaskToCents(_minValueController.text),
+      maxCents: parseBRLMaskToCents(_maxValueController.text),
+    );
   }
 
   void _applyPreset(String preset) {
@@ -166,88 +178,6 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _statusFiltro = 'todas';
     });
     _applyPreset('last30');
-  }
-
-  int _parseValorBRL(String text) {
-    return parseBRLMaskToCents(text);
-  }
-
-  List<model.Transaction> _filtrar(List<model.Transaction> list) {
-    var result = list;
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isNotEmpty) {
-      result = result.where((t) {
-        if (t.from?.toLowerCase().contains(query) ?? false) return true;
-        if (t.to?.toLowerCase().contains(query) ?? false) return true;
-        if (t.id.toLowerCase().contains(query)) return true;
-        if (t.value.toString().contains(query)) return true;
-        return false;
-      }).toList();
-    }
-    if (_dateStart != null) {
-      final start = DateTime(
-        _dateStart!.year,
-        _dateStart!.month,
-        _dateStart!.day,
-      );
-      result = result.where((t) {
-        final txDate = DateTime(t.date.year, t.date.month, t.date.day);
-        return !txDate.isBefore(start);
-      }).toList();
-    }
-    if (_dateEnd != null) {
-      final end = DateTime(
-        _dateEnd!.year,
-        _dateEnd!.month,
-        _dateEnd!.day,
-        23,
-        59,
-        59,
-        999,
-      );
-      result = result
-          .where((t) => t.date.isBefore(end) || t.date.isAtSameMomentAs(end))
-          .toList();
-    }
-    if (_tipoFiltro == 'credito') {
-      result = result
-          .where((t) => t.type == model.TransactionType.credit)
-          .toList();
-    } else if (_tipoFiltro == 'debito') {
-      result = result
-          .where((t) => t.type == model.TransactionType.debit)
-          .toList();
-    } else if (_tipoFiltro == 'ted') {
-      result = result
-          .where((t) => t.type == model.TransactionType.ted)
-          .toList();
-    }
-    if (_statusFiltro == 'completa') {
-      result = result
-          .where((t) => t.status == model.TransactionStatus.completed)
-          .toList();
-    } else if (_statusFiltro == 'agendada') {
-      result = result
-          .where((t) => t.status == model.TransactionStatus.scheduled)
-          .toList();
-    } else if (_statusFiltro == 'pendente') {
-      result = result
-          .where((t) => t.status == model.TransactionStatus.pending)
-          .toList();
-    }
-    final minCents = _parseValorBRL(_minValueController.text);
-    final maxCents = _parseValorBRL(_maxValueController.text);
-    if (minCents > 0) {
-      result = result
-          .where((t) => (t.value.abs() * 100).round() >= minCents)
-          .toList();
-    }
-    if (maxCents > 0) {
-      result = result
-          .where((t) => (t.value.abs() * 100).round() <= maxCents)
-          .toList();
-    }
-    return result;
   }
 
   Future<void> _pickDateRangeCalendar() async {
@@ -400,7 +330,8 @@ class _ExtratoPageState extends State<ExtratoPage> {
           if (tx.isLoading && tx.transactions.isEmpty) {
             return const AppLoading();
           }
-          final filtered = _filtrar(tx.transactions);
+          final filtered =
+              applyStatementFilter(tx.transactions, _currentCriteria());
           _scheduleCheckLoadMore();
           return NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification n) {
@@ -420,177 +351,21 @@ class _ExtratoPageState extends State<ExtratoPage> {
                 controller: _scrollController,
                 slivers: [
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDesignTokens.spacingMd,
-                        vertical: AppDesignTokens.spacingSm,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextField(
-                            controller: _searchController,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              hintText:
-                                  'Buscar por origem, destino, ID ou valor...',
-                              prefixIcon: const Icon(Icons.search),
-                              filled: true,
-                              fillColor: AppDesignTokens.colorWhite,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDesignTokens.borderRadiusDefault,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingMd),
-                          InkWell(
-                            onTap: _showPeriodoOptions,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppDesignTokens.colorWhite,
-                                borderRadius: BorderRadius.circular(
-                                  AppDesignTokens.borderRadiusDefault,
-                                ),
-                                border: Border.all(
-                                  color: AppDesignTokens.colorBorderDefault,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.calendar_today, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _periodoTexto,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: AppDesignTokens.fontSizeBody,
-                                      color:
-                                          AppDesignTokens.colorContentDefault,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  const Icon(Icons.arrow_drop_down),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingMd),
-                          AppDropdownField<String>(
-                            hintText: 'Selecione o tipo de transação',
-                            value: _tipoFiltro,
-                            items: [
-                              DropdownMenuItem(
-                                value: 'todas',
-                                child: Text('Todos'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'credito',
-                                child: Text('Crédito'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'debito',
-                                child: Text('Débito'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'ted',
-                                child: Text('TED/DOC'),
-                              ),
-                            ],
-                            onChanged: (v) =>
-                                setState(() => _tipoFiltro = v ?? 'todas'),
-                            validator: (value) =>
-                                value == null ? 'Campo obrigatório' : null,
-                            decoration: InputDecoration(
-                              labelText: 'Tipo de Transação',
-                              hintText: 'R\$ 0,00',
-                              filled: true,
-                              fillColor: AppDesignTokens.colorWhite,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDesignTokens.borderRadiusDefault,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppDesignTokens.spacingMd),
-                          AppDropdownField<String>(
-                            hintText: 'Selecione o status da transação',
-                            value: _statusFiltro,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'todas',
-                                child: Text('Todos'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'completa',
-                                child: Text('Completa'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'agendada',
-                                child: Text('Agendada'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'pendente',
-                                child: Text('Pendente'),
-                              ),
-                            ],
-                            onChanged: (v) =>
-                                setState(() => _statusFiltro = v ?? 'todas'),
-                            validator: (value) =>
-                                value == null ? 'Campo obrigatório' : null,
-                            decoration: InputDecoration(
-                              labelText: 'Status da Transação',
-                              hintText: 'Selecione o status',
-                              filled: true,
-                              fillColor: AppDesignTokens.colorWhite,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDesignTokens.borderRadiusDefault,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppDesignTokens.spacingMd),
-                          AppTextFieldDecorator(
-                            label: 'Valor Mínimo',
-                            controller: _minValueController,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingMd),
-                          AppTextFieldDecorator(
-                            label: 'Valor máximo',
-                            controller: _maxValueController,
-
-                            onChanged: (_) => setState(() {}),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingLg),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _limparFiltros,
-                              icon: Icon(MdiIcons.eraser, size: 20),
-                              label: const Text('Limpar Filtros'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppDesignTokens.colorPrimary,
-                                foregroundColor: AppDesignTokens.colorWhite,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppDesignTokens.spacingMd,
-                                  horizontal: AppDesignTokens.spacingLg,
-                                ),
-                                minimumSize: const Size.fromHeight(48),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppDesignTokens.spacingLg),
-                        ],
-                      ),
+                    child: ExtratoStatementFiltersPanel(
+                      searchController: _searchController,
+                      onSearchChanged: (_) => setState(() {}),
+                      periodoTexto: _periodoTexto,
+                      onPeriodTap: _showPeriodoOptions,
+                      tipoFiltro: _tipoFiltro,
+                      onTipoChanged: (v) =>
+                          setState(() => _tipoFiltro = v ?? 'todas'),
+                      statusFiltro: _statusFiltro,
+                      onStatusChanged: (v) =>
+                          setState(() => _statusFiltro = v ?? 'todas'),
+                      minValueController: _minValueController,
+                      maxValueController: _maxValueController,
+                      onMinMaxChanged: () => setState(() {}),
+                      onClearFilters: _limparFiltros,
                     ),
                   ),
                   if (filtered.isEmpty)

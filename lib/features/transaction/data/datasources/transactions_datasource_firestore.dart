@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/mappers/transaction_firestore_mapper.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'transactions_datasource.dart';
@@ -46,7 +47,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .orderBy(FieldPath.documentId, descending: true)
         .get();
     return snapshot.docs
-        .map((d) => model.Transaction.fromFirestore(d.data(), d.id))
+        .map((d) => transactionFromFirestoreMap(d.data(), d.id))
         .toList();
   }
 
@@ -93,7 +94,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     final hasMore = allDocs.length > limit;
     final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
     final items = pageDocs
-        .map((d) => model.Transaction.fromFirestore(d.data(), d.id))
+        .map((d) => transactionFromFirestoreMap(d.data(), d.id))
         .toList();
 
     return TransactionPage(

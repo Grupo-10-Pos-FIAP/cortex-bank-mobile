@@ -637,7 +637,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Forçar status Pendente (debug; senão data futura = Agendada)',
+                      'Forçar status Pendente (ambiente de desenvolvimento)',
                     ),
                   ),
                 ],

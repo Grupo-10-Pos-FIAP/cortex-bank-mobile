@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum TransactionType { credit, debit, ted }
 enum TransactionCategory { food, transport, salary, ted, others }
 
@@ -16,13 +14,6 @@ abstract class TransactionStatus {
     if (status == scheduled) return 'Agendada';
     if (status == completed) return 'Completa';
     return status;
-  }
-
-  static bool _isStrictlyAfterToday(DateTime date) {
-    final n = DateTime.now();
-    final today = DateTime(n.year, n.month, n.day);
-    final d = DateTime(date.year, date.month, date.day);
-    return d.isAfter(today);
   }
 }
 
@@ -52,46 +43,6 @@ class Transaction {
     this.description,
     List<String>? receiptUrls,
   }) : receiptUrls = receiptUrls ?? const [];
-
-  factory Transaction.fromFirestore(Map<String, dynamic> data, String docId) {
-    final receipts = data['receiptUrls'];
-    final list = receipts is List
-        ? (receipts)
-            .map((e) => e is String ? e : e.toString())
-            .toList()
-        : <String>[];
-    final date = (data['date'] as Timestamp).toDate();
-    var status = data['status'] ?? TransactionStatus.completed;
-    if (status == TransactionStatus.pending &&
-        TransactionStatus._isStrictlyAfterToday(date)) {
-      status = TransactionStatus.scheduled;
-    }
-    // Legado / gravação incorreta: "Completa" com data ainda futura → tratar como agendada.
-    if (status == TransactionStatus.completed &&
-        TransactionStatus._isStrictlyAfterToday(date)) {
-      status = TransactionStatus.scheduled;
-    }
-    // Agendada só é consistente com data futura; hoje ou passado não pode ser Scheduled.
-    if (status == TransactionStatus.scheduled &&
-        !TransactionStatus._isStrictlyAfterToday(date)) {
-      status = TransactionStatus.completed;
-    }
-    return Transaction(
-      id: docId,
-      accountId: data['accountId'] ?? '',
-      type: TransactionTypeExtension.fromString(data['type']),
-      value: (data['value'] as num?)?.toDouble() ?? 0.0,
-      date: date,
-      to: data['to'],
-      from: data['from'],
-      status: status,
-      category: TransactionCategoryExtension.fromString(
-        data['category'] ?? 'others',
-      ),
-      description: data['description'],
-      receiptUrls: list,
-    );
-  }
 
   Transaction copyWith({
     String? id,
