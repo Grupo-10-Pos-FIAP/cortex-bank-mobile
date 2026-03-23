@@ -35,6 +35,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   DateTime? _dateEnd;
   String _tipoFiltro = 'todas';
   String _statusFiltro = 'todas';
+  String _categoriaFiltro = 'todas';
 
   String _periodoPreset = 'last30';
 
@@ -106,6 +107,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       dateEnd: _dateEnd,
       tipoFiltro: _tipoFiltro,
       statusFiltro: _statusFiltro,
+      categoriaFiltro: _categoriaFiltro,
       minCents: parseBRLMaskToCents(_minValueController.text),
       maxCents: parseBRLMaskToCents(_maxValueController.text),
     );
@@ -176,6 +178,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _maxValueController.text = 'R\$ 0,00';
       _tipoFiltro = 'todas';
       _statusFiltro = 'todas';
+      _categoriaFiltro = 'todas';
     });
     _applyPreset('last30');
   }
@@ -362,6 +365,9 @@ class _ExtratoPageState extends State<ExtratoPage> {
                       statusFiltro: _statusFiltro,
                       onStatusChanged: (v) =>
                           setState(() => _statusFiltro = v ?? 'todas'),
+                      categoriaFiltro: _categoriaFiltro,
+                      onCategoriaChanged: (v) =>
+                          setState(() => _categoriaFiltro = v ?? 'todas'),
                       minValueController: _minValueController,
                       maxValueController: _maxValueController,
                       onMinMaxChanged: () => setState(() {}),

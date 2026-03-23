@@ -1,5 +1,6 @@
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
+import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +17,8 @@ class ExtratoStatementFiltersPanel extends StatelessWidget {
     required this.onTipoChanged,
     required this.statusFiltro,
     required this.onStatusChanged,
+    required this.categoriaFiltro,
+    required this.onCategoriaChanged,
     required this.minValueController,
     required this.maxValueController,
     required this.onMinMaxChanged,
@@ -30,6 +33,8 @@ class ExtratoStatementFiltersPanel extends StatelessWidget {
   final ValueChanged<String?> onTipoChanged;
   final String statusFiltro;
   final ValueChanged<String?> onStatusChanged;
+  final String categoriaFiltro;
+  final ValueChanged<String?> onCategoriaChanged;
   final TextEditingController minValueController;
   final TextEditingController maxValueController;
   final VoidCallback onMinMaxChanged;
@@ -128,6 +133,33 @@ class ExtratoStatementFiltersPanel extends StatelessWidget {
             decoration: InputDecoration(
               labelText: 'Status da Transação',
               hintText: 'Selecione o status',
+              filled: true,
+              fillColor: AppDesignTokens.colorWhite,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                  AppDesignTokens.borderRadiusDefault,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppDesignTokens.spacingMd),
+          AppDropdownField<String>(
+            hintText: 'Selecione a categoria',
+            value: categoriaFiltro,
+            items: [
+              const DropdownMenuItem(value: 'todas', child: Text('Todas')),
+              ...TransactionCategory.values.map(
+                (cat) => DropdownMenuItem<String>(
+                  value: cat.name,
+                  child: Text(cat.label),
+                ),
+              ),
+            ],
+            onChanged: onCategoriaChanged,
+            validator: (value) => value == null ? 'Campo obrigatório' : null,
+            decoration: InputDecoration(
+              labelText: 'Categoria',
+              hintText: 'Todas',
               filled: true,
               fillColor: AppDesignTokens.colorWhite,
               border: OutlineInputBorder(

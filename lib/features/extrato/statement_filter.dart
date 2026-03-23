@@ -8,6 +8,7 @@ class StatementFilterCriteria {
     this.dateEnd,
     required this.tipoFiltro,
     required this.statusFiltro,
+    this.categoriaFiltro = 'todas',
     required this.minCents,
     required this.maxCents,
   });
@@ -21,6 +22,9 @@ class StatementFilterCriteria {
 
   /// `todas` | `completa` | `agendada` | `pendente`
   final String statusFiltro;
+
+  /// `todas` ou [TransactionCategory.name] (ex.: `food`, `transport`).
+  final String categoriaFiltro;
 
   final int minCents;
   final int maxCents;
@@ -83,6 +87,18 @@ List<Transaction> applyStatementFilter(
   } else if (c.statusFiltro == 'pendente') {
     result =
         result.where((t) => t.status == TransactionStatus.pending).toList();
+  }
+  if (c.categoriaFiltro != 'todas') {
+    TransactionCategory? match;
+    for (final cat in TransactionCategory.values) {
+      if (cat.name == c.categoriaFiltro) {
+        match = cat;
+        break;
+      }
+    }
+    if (match != null) {
+      result = result.where((t) => t.category == match).toList();
+    }
   }
   if (c.minCents > 0) {
     result = result

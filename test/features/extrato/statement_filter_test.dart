@@ -10,6 +10,7 @@ Transaction _tx({
   double value = 100,
   String? from,
   String? to,
+  TransactionCategory category = TransactionCategory.others,
 }) {
   return Transaction(
     id: id,
@@ -20,7 +21,7 @@ Transaction _tx({
     from: from,
     to: to,
     status: status,
-    category: TransactionCategory.others,
+    category: category,
   );
 }
 
@@ -37,6 +38,7 @@ void main() {
       date: baseDate,
       from: 'Alice',
       value: 50.0,
+      category: TransactionCategory.salary,
     ),
     _tx(
       id: 'b',
@@ -45,6 +47,7 @@ void main() {
       date: baseDate,
       to: 'Bob',
       value: 200.0,
+      category: TransactionCategory.food,
     ),
     _tx(
       id: 'c',
@@ -52,6 +55,7 @@ void main() {
       status: TransactionStatus.scheduled,
       date: dayAfter,
       value: 10.0,
+      category: TransactionCategory.ted,
     ),
   ];
 
@@ -214,5 +218,79 @@ void main() {
     );
     final out = applyStatementFilter(list, c);
     expect(out.map((e) => e.id).toList(), ['c']);
+  });
+
+  test('categoria salary', () {
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'salary',
+      minCents: 0,
+      maxCents: 0,
+    );
+    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
+  });
+
+  test('categoria food', () {
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'food',
+      minCents: 0,
+      maxCents: 0,
+    );
+    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
+  });
+
+  test('categoria ted matches enum name', () {
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'ted',
+      minCents: 0,
+      maxCents: 0,
+    );
+    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
+  });
+
+  test('categoria todas keeps all items', () {
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'todas',
+      minCents: 0,
+      maxCents: 0,
+    );
+    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), [
+      'a',
+      'b',
+      'c',
+    ]);
+  });
+
+  test('unknown categoriaFiltro does not filter', () {
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'not_a_category',
+      minCents: 0,
+      maxCents: 0,
+    );
+    expect(applyStatementFilter(list, c).length, 3);
   });
 }

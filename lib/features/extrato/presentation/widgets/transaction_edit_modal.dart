@@ -1,5 +1,6 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
+import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
@@ -72,11 +73,20 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       return;
     }
 
+    final valueError = validateMinTransferValueBRL(_valueController.text);
+    if (valueError != null) {
+      AppSnackBar.error(
+        context,
+        valueError,
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
-    final text = _valueController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    final newValue = (double.tryParse(text) ?? 0.0) / 100;
-    final valueToSave = newValue > 0 ? newValue : widget.data.value;
+    final cents = parseBRLMaskToCents(_valueController.text);
+    final valueToSave = cents / 100.0;
 
     final fromTitular =
         context.read<AuthProvider>().user?.username ?? widget.data.from;
