@@ -168,6 +168,11 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
               value: _tipoLabel(_transaction),
             ),
             _DetailRow(
+              icon: Icons.category_outlined,
+              label: 'Categoria',
+              value: _transaction.category.label,
+            ),
+            _DetailRow(
               icon: Icons.attach_money,
               label: 'Valor',
               value: _valueFormatted(_transaction),

@@ -32,6 +32,10 @@ abstract class TransactionDatePolicy {
     return dateOnly(date).isAfter(today);
   }
 
+  static bool isSameCalendarDay(DateTime a, DateTime b) {
+    return dateOnly(a) == dateOnly(b);
+  }
+
   static String get validationMessage =>
       'A data deve ser hoje ou até $futureDaysInclusive dias no futuro (não é permitido data passada).';
 

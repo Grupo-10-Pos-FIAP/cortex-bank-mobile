@@ -205,7 +205,7 @@ class TransactionCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                statusLabel,
+                                'Agendada para: $dateStr',
                                 style: textTheme.bodySmall?.copyWith(
                                   fontSize: AppDesignTokens.fontSizeCaption,
                                   fontWeight: AppDesignTokens.fontWeightMedium,

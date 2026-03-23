@@ -83,11 +83,20 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
     final descriptionText = _descriptionController.text.trim();
 
-    final resolvedStatus = TransactionDatePolicy.isStrictlyAfterToday(
+    // Mantém o status salvo quando só outros campos mudam; só recalcula se a data mudar.
+    final String resolvedStatus;
+    if (TransactionDatePolicy.isSameCalendarDay(
+          widget.data.date,
           _selectedDate,
-        )
-        ? model.TransactionStatus.pending
-        : model.TransactionStatus.completed;
+        )) {
+      resolvedStatus = widget.data.status;
+    } else {
+      resolvedStatus = TransactionDatePolicy.isStrictlyAfterToday(
+            _selectedDate,
+          )
+          ? model.TransactionStatus.pending
+          : model.TransactionStatus.completed;
+    }
 
     final updated = model.Transaction(
       id: widget.data.id,
@@ -259,6 +268,8 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
               label: 'Descrição (opcional)',
               controller: _descriptionController,
               onChanged: (value) {},
+              isCurrency: false,
+              maxLines: 3,
             ),
 
             const SizedBox(height: 24),
