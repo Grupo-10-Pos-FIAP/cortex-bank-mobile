@@ -42,13 +42,22 @@ abstract class TransactionDatePolicy {
   /// Inclui a transação no saldo “agora”. Sem [asOf], usa [today] — mesma regra que
   /// o resumo de saldo no Firestore (`getBalanceSummary`) e o card do dashboard.
   /// Gráficos do início devem chamar sem [asOf] para alinhar ao saldo exibido.
+  ///
+  /// - [TransactionStatus.scheduled]: entra no saldo quando a data da transação
+  ///   chega (mesmo dia ou anterior ao dia de referência).
+  /// - [TransactionStatus.pending]: não altera saldo até virar [Completed].
   static bool transactionAffectsBalanceNow(
     Transaction transaction, {
     DateTime? asOf,
   }) {
     final refDay = dateOnly(asOf ?? DateTime.now());
-    if (transaction.status != TransactionStatus.pending) return true;
-    final txDay = dateOnly(transaction.date);
-    return !txDay.isAfter(refDay);
+    if (transaction.status == TransactionStatus.pending) {
+      return false;
+    }
+    if (transaction.status == TransactionStatus.scheduled) {
+      final txDay = dateOnly(transaction.date);
+      return !txDay.isAfter(refDay);
+    }
+    return true;
   }
 }

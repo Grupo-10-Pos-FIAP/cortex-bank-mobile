@@ -6,12 +6,23 @@ enum TransactionCategory { food, transport, salary, ted, others }
 abstract class TransactionStatus {
   TransactionStatus._();
   static const String pending = 'Pending';
+  /// Só é válido com data **estritamente posterior a hoje** (programada na janela permitida).
+  /// Data de hoje ou passada não usa este status (usa [pending] ou [completed]).
+  static const String scheduled = 'Scheduled';
   static const String completed = 'Completed';
 
   static String labelPt(String status) {
     if (status == pending) return 'Pendente';
+    if (status == scheduled) return 'Agendada';
     if (status == completed) return 'Completa';
     return status;
+  }
+
+  static bool _isStrictlyAfterToday(DateTime date) {
+    final n = DateTime.now();
+    final today = DateTime(n.year, n.month, n.day);
+    final d = DateTime(date.year, date.month, date.day);
+    return d.isAfter(today);
   }
 }
 
@@ -49,15 +60,31 @@ class Transaction {
             .map((e) => e is String ? e : e.toString())
             .toList()
         : <String>[];
+    final date = (data['date'] as Timestamp).toDate();
+    var status = data['status'] ?? TransactionStatus.completed;
+    if (status == TransactionStatus.pending &&
+        TransactionStatus._isStrictlyAfterToday(date)) {
+      status = TransactionStatus.scheduled;
+    }
+    // Legado / gravação incorreta: "Completa" com data ainda futura → tratar como agendada.
+    if (status == TransactionStatus.completed &&
+        TransactionStatus._isStrictlyAfterToday(date)) {
+      status = TransactionStatus.scheduled;
+    }
+    // Agendada só é consistente com data futura; hoje ou passado não pode ser Scheduled.
+    if (status == TransactionStatus.scheduled &&
+        !TransactionStatus._isStrictlyAfterToday(date)) {
+      status = TransactionStatus.completed;
+    }
     return Transaction(
       id: docId,
       accountId: data['accountId'] ?? '',
       type: TransactionTypeExtension.fromString(data['type']),
       value: (data['value'] as num?)?.toDouble() ?? 0.0,
-      date: (data['date'] as Timestamp).toDate(),
+      date: date,
       to: data['to'],
       from: data['from'],
-      status: data['status'] ?? TransactionStatus.completed,
+      status: status,
       category: TransactionCategoryExtension.fromString(
         data['category'] ?? 'others',
       ),

@@ -51,7 +51,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   int? selectedTitularidade;
   DateTime _selectedDate = DateTime.now();
   final List<({List<int> bytes, String name})> _attachments = [];
-  bool _debugCreatePending = false;
+  /// Força status [TransactionStatus.pending] (“Pendente”) em debug, ignorando a data.
+  /// Sem o flag, datas futuras usam [TransactionStatus.scheduled] (“Agendada”).
+  bool _debugForcePendingStatus = false;
 
   bool _isSubmitting = false;
 
@@ -271,10 +273,11 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
         date: _selectedDate,
         from: titularName.isNotEmpty ? titularName : null,
         to: counterpartyToValue,
-        status: kDebugMode && _debugCreatePending
+        // Agendada (Scheduled) só com data futura na janela; hoje = Completa ou Pendente (debug).
+        status: kDebugMode && _debugForcePendingStatus
             ? TransactionStatus.pending
             : TransactionDatePolicy.isStrictlyAfterToday(_selectedDate)
-                ? TransactionStatus.pending
+                ? TransactionStatus.scheduled
                 : TransactionStatus.completed,
         description: descriptionText.isNotEmpty ? descriptionText : null,
       );
@@ -627,14 +630,14 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               Row(
                 children: [
                   Switch(
-                    value: _debugCreatePending,
+                    value: _debugForcePendingStatus,
                     onChanged: (v) =>
-                        setState(() => _debugCreatePending = v),
+                        setState(() => _debugForcePendingStatus = v),
                   ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Criar como pendente (apenas ambiente de teste)',
+                      'Forçar status Pendente (debug; senão data futura = Agendada)',
                     ),
                   ),
                 ],

@@ -48,9 +48,12 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
 
   static const String _bankName = 'CortexBank';
 
-  bool get _isPending => _transaction.status == model.TransactionStatus.pending;
+  bool get _showEditForScheduledOrPending =>
+      _transaction.status == model.TransactionStatus.scheduled ||
+      _transaction.status == model.TransactionStatus.pending;
+
   bool get _canDownloadComprovante =>
-      _transaction.status != model.TransactionStatus.pending;
+      _transaction.status == model.TransactionStatus.completed;
 
   String _dateFormatted(model.Transaction t) =>
       DateFormatter.formatDate(t.date);
@@ -173,6 +176,11 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
               value: _transaction.category.label,
             ),
             _DetailRow(
+              icon: Icons.flag_outlined,
+              label: 'Status',
+              value: model.TransactionStatus.labelPt(_transaction.status),
+            ),
+            _DetailRow(
               icon: Icons.attach_money,
               label: 'Valor',
               value: _valueFormatted(_transaction),
@@ -281,7 +289,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
 
                 final List<Widget> buttons = [];
 
-                if (_isPending) {
+                if (_showEditForScheduledOrPending) {
                   buttons.add(
                     TextButton(
                       onPressed: () async {

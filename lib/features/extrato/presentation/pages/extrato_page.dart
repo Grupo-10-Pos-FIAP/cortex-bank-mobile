@@ -3,6 +3,7 @@ import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
@@ -99,7 +100,18 @@ class _ExtratoPageState extends State<ExtratoPage> {
 
   void _applyPreset(String preset) {
     final now = DateTime.now();
-    final end = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    // Inclui o fim da janela de agendamento (hoje+N dias), senão transações
+    // futuras somem do extrato por causa do filtro de data.
+    final maxDay = TransactionDatePolicy.maxSelectableDate;
+    final end = DateTime(
+      maxDay.year,
+      maxDay.month,
+      maxDay.day,
+      23,
+      59,
+      59,
+      999,
+    );
     DateTime start;
     switch (preset) {
       case 'last7':
@@ -224,18 +236,19 @@ class _ExtratoPageState extends State<ExtratoPage> {
   }
 
   Future<void> _pickDateRangeCalendar() async {
+    final lastSelectable = TransactionDatePolicy.maxSelectableDate;
     final start = await showDatePicker(
       context: context,
       initialDate: _dateStart ?? DateTime.now(),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: lastSelectable,
     );
     if (start == null || !mounted) return;
     final end = await showDatePicker(
       context: context,
       initialDate: _dateEnd ?? start,
       firstDate: start,
-      lastDate: DateTime.now(),
+      lastDate: lastSelectable,
     );
     if (end != null && mounted) {
       setState(() {

@@ -91,10 +91,11 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
         )) {
       resolvedStatus = widget.data.status;
     } else {
+      // Agendada só para data estritamente futura; hoje ou passado = Completa (não Scheduled).
       resolvedStatus = TransactionDatePolicy.isStrictlyAfterToday(
             _selectedDate,
           )
-          ? model.TransactionStatus.pending
+          ? model.TransactionStatus.scheduled
           : model.TransactionStatus.completed;
     }
 

@@ -85,14 +85,18 @@ class TransactionCard extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     final isIncome = transaction.type == model.TransactionType.credit;
+    final isTedCategory =
+        transaction.category == model.TransactionCategory.ted;
 
     String transactionTypeLabel;
     if (transaction.type == model.TransactionType.credit) {
-      transactionTypeLabel = 'Transação recebida';
+      transactionTypeLabel =
+          isTedCategory ? 'Entrada (TED)' : 'Entrada';
     } else if (transaction.type == model.TransactionType.ted) {
-      transactionTypeLabel = 'TED efetuada';
+      transactionTypeLabel = 'Saída (TED)';
     } else {
-      transactionTypeLabel = 'Transação efetuada';
+      transactionTypeLabel =
+          isTedCategory ? 'Saída (TED)' : 'Saída';
     }
 
     final valueCents = (transaction.value.abs() * 100).round();
@@ -136,7 +140,7 @@ class TransactionCard extends StatelessWidget {
               builder: (ctx) => TransactionDetailModal(
                 transaction: transaction,
                 onDownloadComprovante:
-                    transaction.status != model.TransactionStatus.pending
+                    transaction.status == model.TransactionStatus.completed
                         ? () => _downloadComprovante(context, transaction)
                         : null,
                 onUploadReceipt:
@@ -193,6 +197,28 @@ class TransactionCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           if (transaction.status ==
+                              model.TransactionStatus.scheduled)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    AppDesignTokens.colorBadgeScheduledBackground,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Agendada para: $dateStr',
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontSize: AppDesignTokens.fontSizeCaption,
+                                  fontWeight: AppDesignTokens.fontWeightMedium,
+                                  color: AppDesignTokens
+                                      .colorBadgeScheduledForeground,
+                                ),
+                              ),
+                            ),
+                          if (transaction.status ==
                               model.TransactionStatus.pending)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -205,7 +231,7 @@ class TransactionCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                'Agendada para: $dateStr',
+                                statusLabel,
                                 style: textTheme.bodySmall?.copyWith(
                                   fontSize: AppDesignTokens.fontSizeCaption,
                                   fontWeight: AppDesignTokens.fontWeightMedium,
@@ -213,9 +239,8 @@ class TransactionCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          if (transaction.status !=
-                                  model.TransactionStatus.pending &&
-                              transaction.status.isNotEmpty)
+                          if (transaction.status ==
+                              model.TransactionStatus.completed)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,

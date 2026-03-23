@@ -90,6 +90,10 @@ class AppDesignTokens {
   static const Color colorFeedbackFavorite = Colors.red;
   static const Color colorFeedbackMuted = colorGray100;
 
+  /// Badge “Agendada” no extrato (lavanda — distinto de Pendente/azul e Completa/verde).
+  static const Color colorBadgeScheduledBackground = Color(0xFFEDE7F6);
+  static const Color colorBadgeScheduledForeground = Color(0xFF5E35B1);
+
   static const double spacingXs = 4;
   static const double spacingSm = 8;
   static const double spacingMd = 16;
