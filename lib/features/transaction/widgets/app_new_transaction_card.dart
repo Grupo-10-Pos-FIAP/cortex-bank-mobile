@@ -15,6 +15,7 @@ import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/add_co
 import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contact_list_item.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/attachment_constants.dart';
+import 'package:cortex_bank_mobile/features/transaction/utils/ted_recipient_line.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
@@ -90,17 +91,6 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     _otherTitularBranchController.dispose();
     _otherTitularAccountController.dispose();
     super.dispose();
-  }
-
-  static String _formatTedRecipientLine({
-    required String name,
-    required String branch,
-    required String account,
-  }) {
-    final n = name.trim();
-    final b = branch.trim();
-    final a = account.trim();
-    return '$n | Ag.: $b | Cc.: $a';
   }
 
   void _clearOtherTitularidadeFields() {
@@ -255,9 +245,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
         counterpartyToValue = selectedContact.name;
       } else if (selectedTitularidade == 0 && loggedUser != null) {
         counterpartyToValue =
-            'Mesma titularidade — ${_formatTedRecipientLine(name: loggedUser.username, branch: loggedUser.branchCode, account: loggedUser.accountNumber)}';
+            'Mesma titularidade — ${TedRecipientLine.format(name: loggedUser.username, branch: loggedUser.branchCode, account: loggedUser.accountNumber)}';
       } else if (selectedTitularidade == 1) {
-        counterpartyToValue = _formatTedRecipientLine(
+        counterpartyToValue = TedRecipientLine.format(
           name: _otherTitularNameController.text,
           branch: _otherTitularBranchController.text,
           account: _otherTitularAccountController.text,
@@ -510,7 +500,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
               ],
             ),
             const Divider(height: 1, color: AppDesignTokens.colorNeutral),
-            if (selectedValueType != null && selectedTitularidade == 1) ...[
+            if (selectedTitularidade == 1) ...[
               const SizedBox(height: 16),
               Text(
                 'Dados do favorecido (outra titularidade)',

@@ -3,7 +3,9 @@ import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
+import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
+import 'package:cortex_bank_mobile/features/transaction/utils/ted_recipient_line.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
@@ -20,6 +22,32 @@ class TransactionEditModal extends StatefulWidget {
 
   const TransactionEditModal({super.key, required this.data});
 
+  /// Mapeia o valor persistido em [Transaction.to] para o rótulo do dropdown
+  /// (Mesma / Outra titularidade ou nome de contato).
+  static String dropdownLabelForStoredTo(
+    String? storedTo,
+    Iterable<String> contactNames,
+  ) {
+    final t = storedTo?.trim() ?? '';
+    if (t.isEmpty) return 'Mesma Titularidade';
+    final lower = t.toLowerCase();
+    if (lower.startsWith('mesma titularidade')) {
+      return 'Mesma Titularidade';
+    }
+    if (TedRecipientLine.looksLike(t)) {
+      return 'Outra Titularidade';
+    }
+    final names = contactNames
+        .map((n) => n.trim())
+        .where((n) => n.isNotEmpty)
+        .toSet();
+    if (names.contains(t)) {
+      return t;
+    }
+    // Ex.: contato removido da agenda — mantém o texto salvo como opção válida.
+    return t;
+  }
+
   @override
   State<TransactionEditModal> createState() => _TransactionEditModalState();
 }
@@ -27,6 +55,9 @@ class TransactionEditModal extends StatefulWidget {
 class _TransactionEditModalState extends State<TransactionEditModal> {
   late TextEditingController _valueController;
   late TextEditingController _descriptionController;
+  late TextEditingController _otherTitularNameController;
+  late TextEditingController _otherTitularBranchController;
+  late TextEditingController _otherTitularAccountController;
   late model.TransactionType _selectedType;
   late String _selectedTo;
   late model.TransactionCategory _selectedCategory;
@@ -45,14 +76,41 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     );
 
     _selectedType = widget.data.type;
-    _selectedTo = widget.data.to ?? 'Mesma Titularidade';
+    _selectedTo = TransactionEditModal.dropdownLabelForStoredTo(
+      widget.data.to,
+      const [],
+    );
+
+    // Só parseia linha TED quando o destino salvo é outra titularidade; "Mesma titularidade — … | Ag.: …"
+    // também contém "|" e "Ag.:" e não deve preencher os campos de favorecido.
+    final parsedOutra = _selectedTo == 'Outra Titularidade'
+        ? TedRecipientLine.tryParse(widget.data.to ?? '')
+        : null;
+    _otherTitularNameController = TextEditingController(
+      text: parsedOutra?.name ?? '',
+    );
+    _otherTitularBranchController = TextEditingController(
+      text: parsedOutra?.branch ?? '',
+    );
+    _otherTitularAccountController = TextEditingController(
+      text: parsedOutra?.account ?? '',
+    );
     _selectedCategory = widget.data.category;
     _selectedDate = TransactionDatePolicy.clampToAllowedRange(
       widget.data.date,
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ContactsProvider>().loadContacts();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<ContactsProvider>().loadContacts();
+      if (!mounted) return;
+      final names =
+          context.read<ContactsProvider>().contacts.map((c) => c.name).toList();
+      setState(() {
+        _selectedTo = TransactionEditModal.dropdownLabelForStoredTo(
+          widget.data.to,
+          names,
+        );
+      });
     });
   }
 
@@ -60,7 +118,16 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
   void dispose() {
     _valueController.dispose();
     _descriptionController.dispose();
+    _otherTitularNameController.dispose();
+    _otherTitularBranchController.dispose();
+    _otherTitularAccountController.dispose();
     super.dispose();
+  }
+
+  void _clearOtherTitularidadeFields() {
+    _otherTitularNameController.clear();
+    _otherTitularBranchController.clear();
+    _otherTitularAccountController.clear();
   }
 
   Future<void> _handleSave() async {
@@ -83,6 +150,36 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       return;
     }
 
+    if (_selectedTo == 'Outra Titularidade') {
+      final name = _otherTitularNameController.text.trim();
+      final branch = _otherTitularBranchController.text.trim();
+      final account = _otherTitularAccountController.text.trim();
+      if (name.isEmpty) {
+        AppSnackBar.error(
+          context,
+          'Informe o nome do favorecido (outra titularidade).',
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      }
+      if (branch.isEmpty) {
+        AppSnackBar.error(
+          context,
+          'Informe a agência do favorecido (outra titularidade).',
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      }
+      if (account.isEmpty) {
+        AppSnackBar.error(
+          context,
+          'Informe a conta do favorecido (outra titularidade).',
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
 
     final cents = parseBRLMaskToCents(_valueController.text);
@@ -92,6 +189,21 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
         context.read<AuthProvider>().user?.username ?? widget.data.from;
 
     final descriptionText = _descriptionController.text.trim();
+
+    String resolvedTo = _selectedTo;
+
+    if (_selectedTo == 'Mesma Titularidade') {
+      final initial = widget.data.to?.trim() ?? '';
+      if (initial.toLowerCase().startsWith('mesma titularidade')) {
+        resolvedTo = initial;
+      }
+    } else if (_selectedTo == 'Outra Titularidade') {
+      resolvedTo = TedRecipientLine.format(
+        name: _otherTitularNameController.text,
+        branch: _otherTitularBranchController.text,
+        account: _otherTitularAccountController.text,
+      );
+    }
 
     // Mantém o status salvo quando só outros campos mudam; só recalcula se a data mudar.
     final String resolvedStatus;
@@ -117,7 +229,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       value: valueToSave,
       date: _selectedDate,
       status: resolvedStatus,
-      to: _selectedTo,
+      to: resolvedTo,
       from: fromTitular,
       description: descriptionText.isNotEmpty ? descriptionText : null,
       receiptUrls: widget.data.receiptUrls,
@@ -155,11 +267,20 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       'Outra Titularidade',
     ];
 
-    final allToOptions = {...fixedOptions, ...contactNames}.toList();
+    final rawTo = widget.data.to?.trim();
+    final orphanTo = rawTo != null &&
+            rawTo.isNotEmpty &&
+            !fixedOptions.contains(rawTo) &&
+            !contactNames.contains(rawTo) &&
+            !TedRecipientLine.looksLike(rawTo)
+        ? rawTo
+        : null;
 
-    if (!allToOptions.contains(_selectedTo)) {
-      _selectedTo = allToOptions.first;
-    }
+    final allToOptions = [
+      ...fixedOptions,
+      ...contactNames,
+      ?orphanTo,
+    ];
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -265,8 +386,45 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
                   child: Text(value),
                 );
               }).toList(),
-              onChanged: (val) => setState(() => _selectedTo = val!),
+              onChanged: (val) {
+                setState(() {
+                  _selectedTo = val!;
+                  if (_selectedTo != 'Outra Titularidade') {
+                    _clearOtherTitularidadeFields();
+                  }
+                });
+              },
             ),
+
+            if (_selectedTo == 'Outra Titularidade') ...[
+              const SizedBox(height: 16),
+              Text(
+                'Dados do favorecido (outra titularidade)',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              AppTextField(
+                label: 'Nome do favorecido',
+                controller: _otherTitularNameController,
+                showRequiredIndicator: true,
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Agência',
+                controller: _otherTitularBranchController,
+                showRequiredIndicator: true,
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Conta',
+                controller: _otherTitularAccountController,
+                showRequiredIndicator: true,
+                keyboardType: TextInputType.number,
+              ),
+            ],
 
             const SizedBox(height: 24),
             _buildDropdown<model.TransactionCategory>(
