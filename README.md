@@ -2,10 +2,6 @@
 
 Desenvolver uma aplicação de gerenciamento financeiro, utilizando Flutter Mobile, com funcionalidades avançadas que foram ensinadas nas disciplinas. A aplicação deve ser capaz de gerenciar transações financeiras, integrando recursos de navegação, segurança, autenticação e armazenamento em cloud.
 
-## Código-fonte (Git)
-
-O código-fonte deve ser obtido a partir do **repositório Git** onde o projeto estiver hospedado: faça o clone na sua máquina e use a **pasta raiz** deste app como diretório de trabalho nos comandos abaixo.
-
 ## Instruções para rodar localmente (resumo)
 
 Este README reúne o necessário para executar o app na sua máquina:
