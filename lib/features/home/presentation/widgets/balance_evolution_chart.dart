@@ -20,19 +20,6 @@ class BalanceEvolutionChart extends StatefulWidget {
 }
 
 class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
-  }
-
-  Future<void> _loadData() async {
-    final provider = context.read<TransactionsProvider>();
-    await provider.loadTransactions();
-  }
-
   List<_BalanceEvolutionData> _computeEvolution(
     List<model.Transaction> transactions,
   ) {
@@ -67,10 +54,7 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     if (firstParts.length != 2) {
       return lastFive
           .map(
-            (e) => _BalanceEvolutionData(
-              monthKeyToShortLabel(e.key),
-              e.value,
-            ),
+            (e) => _BalanceEvolutionData(monthKeyToShortLabel(e.key), e.value),
           )
           .toList();
     }
@@ -79,10 +63,7 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
     if (firstY == null || firstM == null) {
       return lastFive
           .map(
-            (e) => _BalanceEvolutionData(
-              monthKeyToShortLabel(e.key),
-              e.value,
-            ),
+            (e) => _BalanceEvolutionData(monthKeyToShortLabel(e.key), e.value),
           )
           .toList();
     }
@@ -93,8 +74,9 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
       final d = TransactionDatePolicy.dateOnly(t.date);
       if (!d.isBefore(startOfFirstMonth)) break;
       if (TransactionDatePolicy.transactionAffectsBalanceNow(t)) {
-        openingBalance +=
-            t.type == model.TransactionType.credit ? t.value : -t.value;
+        openingBalance += t.type == model.TransactionType.credit
+            ? t.value
+            : -t.value;
       }
     }
 
@@ -104,10 +86,7 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
         openingBalance,
       ),
       ...lastFive.map(
-        (e) => _BalanceEvolutionData(
-          monthKeyToShortLabel(e.key),
-          e.value,
-        ),
+        (e) => _BalanceEvolutionData(monthKeyToShortLabel(e.key), e.value),
       ),
     ];
   }

@@ -27,10 +27,7 @@ class ProfilePage extends StatelessWidget {
             }
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDesignTokens.spacingMd,
-                vertical: AppDesignTokens.spacingSm,
-              ),
+         
               child: AppCardContainer(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDesignTokens.spacingLg,

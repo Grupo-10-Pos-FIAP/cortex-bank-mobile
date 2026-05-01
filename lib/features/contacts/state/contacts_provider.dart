@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
 import '../data/repositories/i_contacts_repository.dart';
 import '../models/contact.dart';
 
 class ContactsProvider extends ChangeNotifier {
+  static const _contactsCacheKey = 'contacts_provider.contacts';
+  static const _contactsCacheTtl = Duration(minutes: 5);
+
   final IContactsRepository _repository;
 
   ContactsProvider(this._repository);
@@ -19,16 +23,34 @@ class ContactsProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   // Carregar contatos
-  Future<void> loadContacts() async {
+  Future<void> loadContacts({bool forceRefresh = false}) async {
+    if (_isLoading) return;
+    if (!forceRefresh) {
+      final cachedContacts = CacheManager.get<List<Contact>>(_contactsCacheKey);
+      if (cachedContacts != null) {
+        if (_contacts.isEmpty) {
+          _contacts = List<Contact>.from(cachedContacts);
+          notifyListeners();
+        }
+        return;
+      }
+
+      if (_contacts.isNotEmpty) return;
+    }
+
     _setLoading(true);
     _errorMessage = null;
 
     final result = await _repository.getAll();
 
-    result.fold(
-      (success) => _contacts = success,
-      (failure) => _errorMessage = failure.message,
-    );
+    result.fold((success) {
+      _contacts = success;
+      CacheManager.set(
+        _contactsCacheKey,
+        List<Contact>.from(success),
+        ttl: _contactsCacheTtl,
+      );
+    }, (failure) => _errorMessage = failure.message);
 
     _setLoading(false);
   }
@@ -40,6 +62,11 @@ class ContactsProvider extends ChangeNotifier {
 
     result.fold((id) {
       _contacts.add(Contact(id: id, name: name));
+      CacheManager.set(
+        _contactsCacheKey,
+        List<Contact>.from(_contacts),
+        ttl: _contactsCacheTtl,
+      );
       notifyListeners();
     }, (failure) => _errorMessage = failure.message);
     _setLoading(false);
@@ -65,6 +92,12 @@ class ContactsProvider extends ChangeNotifier {
         notifyListeners();
       },
     );
+
+    CacheManager.set(
+      _contactsCacheKey,
+      List<Contact>.from(_contacts),
+      ttl: _contactsCacheTtl,
+    );
   }
 
   // Deletar contato
@@ -73,6 +106,11 @@ class ContactsProvider extends ChangeNotifier {
 
     result.fold((_) {
       _contacts.removeWhere((c) => c.id == id);
+      CacheManager.set(
+        _contactsCacheKey,
+        List<Contact>.from(_contacts),
+        ttl: _contactsCacheTtl,
+      );
       notifyListeners();
     }, (failure) => _errorMessage = failure.message);
   }

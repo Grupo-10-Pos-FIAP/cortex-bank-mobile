@@ -3,6 +3,12 @@ allprojects {
         google()
         mavenCentral()
     }
+    // Resolve duplicate androidx.core:core-ktx trazido pelo firebase_performance
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.core:core-ktx:1.13.1")
+        }
+    }
 }
 
 val newBuildDir: Directory =

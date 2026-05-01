@@ -9,6 +9,11 @@ class AuthRepositoryImpl implements IAuthRepository {
   final AuthDataSourceFirebase _remote;
 
   @override
+  Future<User?> getCachedCurrentUser() async {
+    return _remote.getCachedCurrentUser();
+  }
+
+  @override
   Future<Result<User>> signIn(String email, String password) async {
     return await _remote.signIn(email, password);
   }
@@ -23,8 +28,8 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Future<Result<User?>> getCurrentUser() async {
-    return await _remote.getCurrentUser();
+  Future<Result<User?>> getCurrentUser({bool forceRefresh = false}) async {
+    return await _remote.getCurrentUser(forceRefresh: forceRefresh);
   }
 
   @override

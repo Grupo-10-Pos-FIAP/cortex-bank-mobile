@@ -1,70 +1,39 @@
 import 'package:cortex_bank_mobile/features/contacts/data/repositories/i_contacts_repository.dart';
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
-import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:cortex_bank_mobile/app.dart';
+import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
 import 'package:cortex_bank_mobile/core/di/injection.dart';
 import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
-import 'package:cortex_bank_mobile/core/utils/env_validator.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
-import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: '.env');
-  } catch (e) {
-    safeLogError('Erro ao carregar .env', e);
-  }
-
-  final missingEnv = getMissingFirebaseEnvVars();
-  if (missingEnv.isNotEmpty) {
-    runApp(_ConfigErrorApp(missingKeys: missingEnv));
-    return;
-  }
-
-  try {
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    }
-  } on FirebaseException catch (e) {
-    if (e.message != null && e.message!.contains('exists')) {
-    } else {
-      safeLogError('Erro ao inicializar Firebase', e);
-      runApp(_StartupErrorApp(message: 'Firebase: ${e.message ?? e.code}'));
-      return;
-    }
-  } catch (e) {
-    final msg = e.toString();
-    if (msg.contains('exists') || msg.contains('Default')) {
-    } else {
-      safeLogError('Erro ao inicializar Firebase', e);
-      runApp(_StartupErrorApp(message: 'Firebase: $e'));
-      return;
-    }
-  }
-
-  try {
     configureDependencies();
   } catch (e) {
     safeLogError('Erro ao configurar dependências', e);
-    runApp(_StartupErrorApp(message: 'Dependências: $e'));
+    runApp(
+      MaterialApp(
+        home: Scaffold(body: Center(child: Text('Dependências: $e'))),
+      ),
+    );
     return;
   }
 
+  // Inicializar cache local
+  CacheManager.initialize().then((_) {
+    safeLogInfo('Cache Manager inicializado');
+  });
+
   try {
     final authProvider = AuthProvider(getIt<IAuthRepository>());
-    await authProvider.loadCurrentUser();
 
     runApp(
       MultiProvider(
@@ -84,110 +53,9 @@ Future<void> main() async {
     );
   } catch (e) {
     safeLogError('Erro ao iniciar app', e);
-    runApp(_StartupErrorApp(message: '$e'));
-  }
-}
-
-/// Tela exibida quando variáveis .env necessárias ao Firebase estão ausentes.
-class _ConfigErrorApp extends StatelessWidget {
-  const _ConfigErrorApp({required this.missingKeys});
-
-  final List<String> missingKeys;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Cortex Bank Mobile',
-      home: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.orange),
-                const SizedBox(height: 24),
-                const Text(
-                  'Configuração incompleta',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: AppDesignTokens.fontSizeTitle,
-                    fontWeight: AppDesignTokens.fontWeightBold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Verifique o arquivo .env. Faltam variáveis necessárias para o Firebase.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: AppDesignTokens.fontSizeBody,
-                    fontWeight: AppDesignTokens.fontWeightMedium,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Variáveis ausentes: ${missingKeys.join(", ")}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: AppDesignTokens.fontSizeCaption,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tela exibida quando ocorre um erro na inicialização (evita fechar o app).
-class _StartupErrorApp extends StatelessWidget {
-  const _StartupErrorApp({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Cortex Bank Mobile',
-      home: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  size: 64,
-                  color: Colors.orange,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Erro ao iniciar',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: AppDesignTokens.fontSizeTitle,
-                    fontWeight: AppDesignTokens.fontWeightBold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SelectableText(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: AppDesignTokens.fontSizeCaption,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    runApp(
+      MaterialApp(
+        home: Scaffold(body: Center(child: Text('$e'))),
       ),
     );
   }

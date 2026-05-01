@@ -1,6 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+/// Loga mensagem informativa em modo debug.
+void safeLogInfo(String message) {
+  debugPrint(message);
+}
+
 /// Loga erro sem incluir o objeto exceção completo (evita PII/stack em release).
 /// Usa apenas [runtimeType] e [code] quando disponível.
 void safeLogError(String context, Object e) {

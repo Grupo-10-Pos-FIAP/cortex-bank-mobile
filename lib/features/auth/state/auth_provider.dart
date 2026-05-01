@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
@@ -9,20 +11,50 @@ class AuthProvider extends ChangeNotifier {
 
   User? _user;
   bool _loading = false;
+  bool _hasResolvedInitialAuth = false;
   String? _errorMessage;
+  Future<void>? _pendingLoadCurrentUser;
+  Future<void>? _backgroundRefreshCurrentUser;
 
   User? get user => _user;
   bool get loading => _loading;
+  bool get hasResolvedInitialAuth => _hasResolvedInitialAuth;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
 
-  Future<void> loadCurrentUser() async {
-    if (_loading) return;
+  Future<void> loadCurrentUser({bool force = false}) {
+    if (_pendingLoadCurrentUser != null) {
+      return _pendingLoadCurrentUser!;
+    }
+    if (_hasResolvedInitialAuth && !force) {
+      return Future.value();
+    }
+
+    final future = _loadCurrentUserImpl(force: force);
+    _pendingLoadCurrentUser = future;
+    future.whenComplete(() => _pendingLoadCurrentUser = null);
+    return future;
+  }
+
+  Future<void> _loadCurrentUserImpl({required bool force}) async {
+    if (!force) {
+      final cachedUser = await _authRepository.getCachedCurrentUser();
+      if (cachedUser != null) {
+        _user = cachedUser;
+        _errorMessage = null;
+        _hasResolvedInitialAuth = true;
+        _loading = false;
+        notifyListeners();
+        _scheduleBackgroundRefreshCurrentUser();
+        return;
+      }
+    }
+
     _loading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _authRepository.getCurrentUser();
+    final result = await _authRepository.getCurrentUser(forceRefresh: force);
     result.fold(
       (u) {
         _user = u;
@@ -33,8 +65,39 @@ class AuthProvider extends ChangeNotifier {
         _errorMessage = f.message;
       },
     );
+    _hasResolvedInitialAuth = true;
     _loading = false;
     notifyListeners();
+  }
+
+  void _scheduleBackgroundRefreshCurrentUser() {
+    if (_backgroundRefreshCurrentUser != null) return;
+
+    final future = _refreshCurrentUserInBackground();
+    _backgroundRefreshCurrentUser = future;
+    future.whenComplete(() => _backgroundRefreshCurrentUser = null);
+  }
+
+  Future<void> _refreshCurrentUserInBackground() async {
+    final result = await _authRepository.getCurrentUser(forceRefresh: true);
+    result.fold(
+      (u) {
+        if (u == null) {
+          _user = null;
+          _errorMessage = null;
+        } else {
+          _user = u;
+          _errorMessage = null;
+        }
+        _hasResolvedInitialAuth = true;
+        notifyListeners();
+      },
+      (f) {
+        // Mantém o usuário em cache na UI e apenas registra o erro para inspeção.
+        _errorMessage = f.message;
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> signIn(String email, String password) async {
@@ -47,10 +110,12 @@ class AuthProvider extends ChangeNotifier {
     result.fold(
       (u) {
         _user = u;
+        _hasResolvedInitialAuth = true;
         _errorMessage = null;
       },
       (f) {
         _user = null;
+        _hasResolvedInitialAuth = true;
         _errorMessage = f.message;
       },
     );
@@ -68,10 +133,12 @@ class AuthProvider extends ChangeNotifier {
     result.fold(
       (u) {
         _user = u;
+        _hasResolvedInitialAuth = true;
         _errorMessage = null;
       },
       (f) {
         _user = null;
+        _hasResolvedInitialAuth = true;
         _errorMessage = f.message;
       },
     );
@@ -85,13 +152,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     final result = await _authRepository.signOut();
-    result.fold(
-      (_) {
-        _user = null;
-        _errorMessage = null;
-      },
-      (f) => _errorMessage = f.message,
-    );
+    result.fold((_) {
+      _user = null;
+      _hasResolvedInitialAuth = true;
+      _errorMessage = null;
+    }, (f) => _errorMessage = f.message);
     _loading = false;
     notifyListeners();
   }

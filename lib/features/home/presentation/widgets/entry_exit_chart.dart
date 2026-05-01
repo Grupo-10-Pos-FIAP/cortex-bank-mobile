@@ -19,19 +19,6 @@ class EntryExitChart extends StatefulWidget {
 }
 
 class _EntryExitChartState extends State<EntryExitChart> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
-  }
-
-  Future<void> _loadData() async {
-    final provider = context.read<TransactionsProvider>();
-    await provider.loadTransactions();
-  }
-
   List<_EntryExitData> _computeEntryExit(List<model.Transaction> transactions) {
     if (transactions.isEmpty) return [];
 

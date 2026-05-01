@@ -29,23 +29,37 @@ class AppTheme {
         filled: true,
         fillColor: AppDesignTokens.colorWhite,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
-          borderSide: const BorderSide(color: AppDesignTokens.colorBorderDefault),
+          borderRadius: BorderRadius.circular(
+            AppDesignTokens.borderRadiusDefault,
+          ),
+          borderSide: const BorderSide(
+            color: AppDesignTokens.colorBorderDefault,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
-          borderSide: const BorderSide(color: AppDesignTokens.colorBorderDefault),
+          borderRadius: BorderRadius.circular(
+            AppDesignTokens.borderRadiusDefault,
+          ),
+          borderSide: const BorderSide(
+            color: AppDesignTokens.colorBorderDefault,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
+          borderRadius: BorderRadius.circular(
+            AppDesignTokens.borderRadiusDefault,
+          ),
           borderSide: const BorderSide(
             color: AppDesignTokens.colorBorderFocused,
             width: AppDesignTokens.borderWidthSmall,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
-          borderSide: const BorderSide(color: AppDesignTokens.colorFeedbackError),
+          borderRadius: BorderRadius.circular(
+            AppDesignTokens.borderRadiusDefault,
+          ),
+          borderSide: const BorderSide(
+            color: AppDesignTokens.colorFeedbackError,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppDesignTokens.spacingMd,
@@ -58,89 +72,106 @@ class AppTheme {
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppDesignTokens.buttonBrandBgDefault,
-          foregroundColor: AppDesignTokens.buttonBrandContentDefault,
-          disabledBackgroundColor: AppDesignTokens.buttonBrandBgDisabled,
-          disabledForegroundColor: AppDesignTokens.buttonBrandContentDisabled,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.spacingMd),
-          textStyle: TextStyle(
-            fontSize: AppDesignTokens.fontSizeBody,
-            fontWeight: AppDesignTokens.fontWeightSemibold,
-            fontFamily: GoogleFonts.roboto().fontFamily,
-          ),
-        ).copyWith(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return AppDesignTokens.buttonBrandBgDisabled;
-            }
-            if (states.contains(WidgetState.pressed)) {
-              return AppDesignTokens.buttonBrandBgPressed;
-            }
-            if (states.contains(WidgetState.hovered)) {
-              return AppDesignTokens.buttonBrandBgHovered;
-            }
-            return AppDesignTokens.buttonBrandBgDefault;
-          }),
-          foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return AppDesignTokens.buttonBrandContentDisabled;
-            }
-            return AppDesignTokens.buttonBrandContentDefault;
-          }),
-        ),
+        style:
+            ElevatedButton.styleFrom(
+              backgroundColor: AppDesignTokens.buttonBrandBgDefault,
+              foregroundColor: AppDesignTokens.buttonBrandContentDefault,
+              disabledBackgroundColor: AppDesignTokens.buttonBrandBgDisabled,
+              disabledForegroundColor:
+                  AppDesignTokens.buttonBrandContentDisabled,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  AppDesignTokens.borderRadiusDefault,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppDesignTokens.spacingMd,
+              ),
+              textStyle: TextStyle(
+                fontSize: AppDesignTokens.fontSizeBody,
+                fontWeight: AppDesignTokens.fontWeightSemibold,
+                fontFamily: GoogleFonts.roboto().fontFamily,
+              ),
+            ).copyWith(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return AppDesignTokens.buttonBrandBgDisabled;
+                }
+                if (states.contains(WidgetState.pressed)) {
+                  return AppDesignTokens.buttonBrandBgPressed;
+                }
+                if (states.contains(WidgetState.hovered)) {
+                  return AppDesignTokens.buttonBrandBgHovered;
+                }
+                return AppDesignTokens.buttonBrandBgDefault;
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return AppDesignTokens.buttonBrandContentDisabled;
+                }
+                return AppDesignTokens.buttonBrandContentDefault;
+              }),
+            ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppDesignTokens.buttonOutlinedContentDefault,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDesignTokens.borderRadiusDefault),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.spacingMd),
-          textStyle: TextStyle(
-            fontSize: AppDesignTokens.fontSizeBody,
-            fontWeight: AppDesignTokens.fontWeightSemibold,
-            fontFamily: GoogleFonts.roboto().fontFamily,
-          ),
-        ).copyWith(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return AppDesignTokens.buttonOutlinedBgDisabled;
-            }
-            if (states.contains(WidgetState.pressed)) {
-              return AppDesignTokens.buttonOutlinedBgPressed;
-            }
-            if (states.contains(WidgetState.hovered)) {
-              return AppDesignTokens.buttonOutlinedBgHovered;
-            }
-            return AppDesignTokens.buttonOutlinedBgDefault;
-          }),
-          foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return AppDesignTokens.buttonOutlinedContentDisabled;
-            }
-            if (states.contains(WidgetState.pressed)) {
-              return AppDesignTokens.buttonOutlinedContentPressed;
-            }
-            if (states.contains(WidgetState.hovered)) {
-              return AppDesignTokens.buttonOutlinedContentHovered;
-            }
-            return AppDesignTokens.buttonOutlinedContentDefault;
-          }),
-          side: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return const BorderSide(color: AppDesignTokens.buttonOutlinedBorderDisabled);
-            }
-            if (states.contains(WidgetState.pressed) ||
-                states.contains(WidgetState.hovered)) {
-              return const BorderSide(color: AppDesignTokens.buttonOutlinedBorderHovered);
-            }
-            return const BorderSide(color: AppDesignTokens.buttonOutlinedBorderDefault);
-          }),
-        ),
+        style:
+            OutlinedButton.styleFrom(
+              foregroundColor: AppDesignTokens.buttonOutlinedContentDefault,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  AppDesignTokens.borderRadiusDefault,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppDesignTokens.spacingMd,
+              ),
+              textStyle: TextStyle(
+                fontSize: AppDesignTokens.fontSizeBody,
+                fontWeight: AppDesignTokens.fontWeightSemibold,
+                fontFamily: GoogleFonts.roboto().fontFamily,
+              ),
+            ).copyWith(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return AppDesignTokens.buttonOutlinedBgDisabled;
+                }
+                if (states.contains(WidgetState.pressed)) {
+                  return AppDesignTokens.buttonOutlinedBgPressed;
+                }
+                if (states.contains(WidgetState.hovered)) {
+                  return AppDesignTokens.buttonOutlinedBgHovered;
+                }
+                return AppDesignTokens.buttonOutlinedBgDefault;
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return AppDesignTokens.buttonOutlinedContentDisabled;
+                }
+                if (states.contains(WidgetState.pressed)) {
+                  return AppDesignTokens.buttonOutlinedContentPressed;
+                }
+                if (states.contains(WidgetState.hovered)) {
+                  return AppDesignTokens.buttonOutlinedContentHovered;
+                }
+                return AppDesignTokens.buttonOutlinedContentDefault;
+              }),
+              side: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return const BorderSide(
+                    color: AppDesignTokens.buttonOutlinedBorderDisabled,
+                  );
+                }
+                if (states.contains(WidgetState.pressed) ||
+                    states.contains(WidgetState.hovered)) {
+                  return const BorderSide(
+                    color: AppDesignTokens.buttonOutlinedBorderHovered,
+                  );
+                }
+                return const BorderSide(
+                  color: AppDesignTokens.buttonOutlinedBorderDefault,
+                );
+              }),
+            ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -150,6 +181,12 @@ class AppTheme {
             fontFamily: GoogleFonts.roboto().fontFamily,
           ),
         ),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
   }

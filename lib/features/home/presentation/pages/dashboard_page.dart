@@ -1,15 +1,10 @@
 import 'package:cortex_bank_mobile/features/home/presentation/widgets/entry_exit_chart.dart';
-import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/widgets/balance_evolution_chart.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({
-    super.key,
-    this.entranceVersion = 0,
-  });
+  const DashboardPage({super.key, this.entranceVersion = 0});
 
   /// Incrementado pela [HomePage] ao focar a aba Início para repetir a animação das seções.
   final int entranceVersion;
@@ -47,7 +42,6 @@ class _DashboardPageState extends State<DashboardPage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<TransactionsProvider>().loadBalanceSummary();
       _replaySectionEntrance();
     });
   }
@@ -97,9 +91,7 @@ class _DashboardPageState extends State<DashboardPage>
         children: [
           _staggeredSection(
             animation: _section1,
-            child: AppBalanceCard(
-              mostrarSaldoInicial: true,
-            ),
+            child: AppBalanceCard(mostrarSaldoInicial: true),
           ),
           _staggeredSection(
             animation: _section2,

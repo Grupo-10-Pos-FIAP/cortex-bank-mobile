@@ -4,6 +4,7 @@ import 'package:cortex_bank_mobile/core/utils/result.dart';
 abstract class IAuthRepository {
   Future<Result<User>> signIn(String email, String password);
   Future<Result<User>> signUp(String fullName, String email, String password);
-  Future<Result<User?>> getCurrentUser();
+  Future<User?> getCachedCurrentUser();
+  Future<Result<User?>> getCurrentUser({bool forceRefresh = false});
   Future<Result<void>> signOut();
 }
