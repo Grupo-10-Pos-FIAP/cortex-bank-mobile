@@ -12,6 +12,7 @@ class AppButton extends StatelessWidget {
     this.enabled = true,
     this.variant = ButtonVariant.primary,
     this.backgroundColor,
+    this.icon,
   });
 
   final String label;
@@ -20,6 +21,7 @@ class AppButton extends StatelessWidget {
   final bool enabled;
   final ButtonVariant variant;
   final Color? backgroundColor;
+  final Widget? icon;
 
   static const double _buttonHeight = 48;
 
@@ -30,6 +32,11 @@ class AppButton extends StatelessWidget {
             width: AppDesignTokens.spacingLg,
             height: AppDesignTokens.spacingLg,
             child: const CircularProgressIndicator(strokeWidth: 2),
+          )
+        : icon != null
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [icon!, const SizedBox(width: 8), Text(label)],
           )
         : Text(label);
 

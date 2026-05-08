@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
 import 'package:cortex_bank_mobile/core/utils/bank_account_generator.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:cortex_bank_mobile/core/di/injection.dart';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
@@ -20,6 +22,7 @@ const _userCacheTtl = Duration(minutes: 10);
 class AuthDataSourceFirebase implements AuthDataSource {
   fa.FirebaseAuth get _auth => fa.FirebaseAuth.instance;
   UserDataSource get _userDataSource => getIt<UserDataSource>();
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   String _userCacheKey(String uid) => 'auth.user.$uid';
 
@@ -159,10 +162,92 @@ class AuthDataSourceFirebase implements AuthDataSource {
   }
 
   @override
+  Future<Result<User>> signInWithGoogle() async {
+    try {
+      fa.UserCredential userCredential;
+
+      if (kIsWeb) {
+        final provider = fa.GoogleAuthProvider();
+        userCredential = await _auth
+            .signInWithPopup(provider)
+            .timeout(_authTimeout);
+      } else {
+        final googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          return FailureResult(
+            const Failure(message: 'Login com Google cancelado.'),
+          );
+        }
+
+        final googleAuth = await googleUser.authentication;
+        final credential = fa.GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        userCredential = await _auth
+            .signInWithCredential(credential)
+            .timeout(_authTimeout);
+      }
+
+      final firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        return FailureResult(const Failure(message: 'Usuário não encontrado.'));
+      }
+
+      // Verifica se o perfil já existe; se não, cria um novo.
+      Map<String, dynamic> userData;
+      try {
+        userData = await _userDataSource.getUserProfile(firebaseUser.uid);
+      } catch (_) {
+        userData = {};
+      }
+
+      if (userData.isEmpty) {
+        final branch = BankAccountGenerator.generateBranch();
+        final account = BankAccountGenerator.generateAccountNumber();
+        final displayName = firebaseUser.displayName ?? '';
+        final email = (firebaseUser.email ?? '').toLowerCase();
+
+        final newUserMap = {
+          'uid': firebaseUser.uid,
+          'username': displayName.trim(),
+          'email': email,
+          'branchCode': branch,
+          'accountNumber': account,
+          'balance': 0.0,
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+
+        await _userDataSource.createUserProfile(newUserMap);
+        userData = newUserMap;
+      }
+
+      final user = User.fromFirestore(firebaseUser.uid, userData);
+      _cacheUser(user);
+      return Success(user);
+    } on TimeoutException {
+      return FailureResult(
+        const Failure(message: 'Tempo esgotado. Tente novamente.'),
+      );
+    } catch (e) {
+      safeLogError('Erro no signInWithGoogle', e);
+      return FailureResult(
+        AuthErrorMapper.toFailure(e, context: AuthErrorContext.signIn),
+      );
+    }
+  }
+
+  @override
   Future<Result<void>> signOut() async {
     try {
       final currentUid = _auth.currentUser?.uid;
       await _auth.signOut();
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {
+        // Google Sign-In pode não estar configurado ou não ter sessão ativa.
+      }
       if (currentUid != null && currentUid.isNotEmpty) {
         CacheManager.remove(_userCacheKey(currentUid));
       }

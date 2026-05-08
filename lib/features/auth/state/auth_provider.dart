@@ -146,6 +146,29 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> signInWithGoogle() async {
+    if (_loading) return;
+    _loading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final result = await _authRepository.signInWithGoogle();
+    result.fold(
+      (u) {
+        _user = u;
+        _hasResolvedInitialAuth = true;
+        _errorMessage = null;
+      },
+      (f) {
+        _user = null;
+        _hasResolvedInitialAuth = true;
+        _errorMessage = f.message;
+      },
+    );
+    _loading = false;
+    notifyListeners();
+  }
+
   Future<void> signOut() async {
     if (_loading) return;
     _loading = true;

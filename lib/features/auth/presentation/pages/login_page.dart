@@ -10,7 +10,9 @@ import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_page_header.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_field_styles.dart';
+import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -77,6 +79,26 @@ class _LoginPageState extends State<LoginPage> {
     if (auth.isAuthenticated) {
       AppSnackBar.success(context, 'Bem-vindo!');
       Navigator.of(context).pushReplacementNamed('/');
+    }
+  }
+
+  Future<void> _onGoogleSignIn() async {
+    final auth = context.read<AuthProvider>();
+    await auth.signInWithGoogle();
+    if (!mounted) return;
+    if (auth.isAuthenticated) {
+      AppSnackBar.success(context, 'Bem-vindo!');
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const HomePage(),
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (_, animation, __, child) => FadeTransition(
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
+            child: child,
+          ),
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -173,6 +195,25 @@ class _LoginPageState extends State<LoginPage> {
                           loading: auth.loading,
                           onPressed: _onSubmit,
                           variant: ButtonVariant.primary,
+                        ),
+                        const SizedBox(height: AppDesignTokens.spacingMd),
+                        // Botão Entrar com Google
+                        AppButton(
+                          label: 'Entrar com Google',
+                          loading: auth.loading,
+                          onPressed: _onGoogleSignIn,
+                          variant: ButtonVariant.negative,
+                          backgroundColor: AppDesignTokens.colorBgDefaultDark,
+                          icon: SvgPicture.string(
+                            '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                              <path fill="#EA4335" d="M24 9.5c3.1 0 5.9 1.1 8.1 2.9l6-6C34.5 3.1 29.5 1 24 1 14.8 1 7 6.7 3.7 14.6l7 5.4C12.4 13.7 17.7 9.5 24 9.5z"/>
+                              <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7c4.3-4 6.8-9.9 6.8-16.9z"/>
+                              <path fill="#FBBC05" d="M10.7 28.5A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.7-4.5l-7-5.4A23.9 23.9 0 0 0 .1 24c0 3.9.9 7.5 2.6 10.7l8-6.2z"/>
+                              <path fill="#34A853" d="M24 47c5.5 0 10.1-1.8 13.5-4.9l-7.4-5.7c-1.8 1.2-4.1 2-6.1 2-6.3 0-11.6-4.2-13.3-10l-8 6.2C7 42.3 14.8 47 24 47z"/>
+                            </svg>''',
+                            height: 20,
+                            width: 20,
+                          ),
                         ),
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Botão Criar conta

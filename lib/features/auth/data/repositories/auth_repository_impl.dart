@@ -28,6 +28,11 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
+  Future<Result<User>> signInWithGoogle() async {
+    return await _remote.signInWithGoogle();
+  }
+
+  @override
   Future<Result<User?>> getCurrentUser({bool forceRefresh = false}) async {
     return await _remote.getCurrentUser(forceRefresh: forceRefresh);
   }
