@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,9 @@ class TransactionsProvider extends ChangeNotifier {
   bool _isLoadingMore = false;
   static const int _pageSize = 20;
 
+  /// Critérios atualmente aplicados na paginação server-side.
+  StatementFilterCriteria? _currentFilterCriteria;
+
   /// Mais recente primeiro; empate por id (mesma regra do índice Firestore).
   void _sortTransactionsNewestFirst() {
     _transactions.sort((a, b) {
@@ -40,6 +44,7 @@ class TransactionsProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
+  StatementFilterCriteria? get currentFilterCriteria => _currentFilterCriteria;
 
   Future<void> loadTransactions({bool forceRefresh = false}) async {
     if (_isLoading) return;
@@ -77,13 +82,16 @@ class TransactionsProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  Future<void> loadTransactionsPaginated() async {
+  Future<void> loadTransactionsPaginated({
+    StatementFilterCriteria? criteria,
+  }) async {
     _setLoading(true);
     _errorMessage = null;
     _lastDocument = null;
     _hasMore = true;
+    _currentFilterCriteria = criteria;
 
-    final result = await _repository.getPage(_pageSize);
+    final result = await _repository.getPage(_pageSize, criteria: criteria);
 
     result.fold((page) {
       _transactions = page.items;
@@ -109,6 +117,7 @@ class TransactionsProvider extends ChangeNotifier {
     final result = await _repository.getPage(
       _pageSize,
       startAfterDocument: _lastDocument,
+      criteria: _currentFilterCriteria,
     );
 
     result.fold((page) {

@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/firebase_user_error_message.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
@@ -71,11 +72,13 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
   Future<Result<TransactionPage>> getPage(
     int limit, {
     dynamic startAfterDocument,
+    StatementFilterCriteria? criteria,
   }) async {
     try {
       final page = await _dataSource.getPage(
         limit,
         startAfterDocument: startAfterDocument,
+        criteria: criteria,
       );
       return Success(page);
     } catch (e) {
@@ -137,11 +140,7 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
     try {
       final urls = await Future.wait(
         attachments.map(
-          (a) => _receiptStorage.uploadReceipt(
-            transaction.id,
-            a.bytes,
-            a.name,
-          ),
+          (a) => _receiptStorage.uploadReceipt(transaction.id, a.bytes, a.name),
         ),
       );
       final updated = transaction.copyWith(

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
+import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/mappers/transaction_firestore_mapper.dart';
@@ -19,8 +20,6 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .doc(user.uid)
         .collection('transactions');
   }
-
-  
 
   @override
   Future<String> add(model.Transaction transaction) async {
@@ -76,32 +75,178 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   Future<TransactionPage> getPage(
     int limit, {
     dynamic startAfterDocument,
+    StatementFilterCriteria? criteria,
   }) async {
     final fetchLimit = limit + 1;
-    Query<Map<String, dynamic>> query = _transactionsCol
+    Query<Map<String, dynamic>> query = _buildQueryWithFilters(criteria)
         .orderBy('date', descending: true)
         .orderBy(FieldPath.documentId, descending: true)
         .limit(fetchLimit);
 
     if (startAfterDocument != null) {
-      query = query.startAfterDocument(
-        startAfterDocument as DocumentSnapshot,
+      query = query.startAfterDocument(startAfterDocument as DocumentSnapshot);
+    }
+
+    try {
+      final snapshot = await query.get();
+      final allDocs = snapshot.docs;
+      final hasMore = allDocs.length > limit;
+      final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
+      final items = pageDocs
+          .map((d) => transactionFromFirestoreMap(d.data(), d.id))
+          .toList();
+
+      return TransactionPage(
+        items: items,
+        hasMore: hasMore,
+        lastDocument: pageDocs.isNotEmpty ? pageDocs.last : null,
       );
+    } on FirebaseException catch (e) {
+      if (e.code == 'failed-precondition' && criteria != null) {
+        return await _getPageWithDateFallback(
+          limit,
+          startAfterDocument: startAfterDocument,
+          criteria: criteria,
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<TransactionPage> _getPageWithDateFallback(
+    int limit, {
+    dynamic startAfterDocument,
+    required StatementFilterCriteria criteria,
+  }) async {
+    final fetchLimit = (limit * 3) + 1;
+    var query = _buildQueryWithDateFilters(criteria)
+        .orderBy('date', descending: true)
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(fetchLimit);
+
+    if (startAfterDocument != null) {
+      query = query.startAfterDocument(startAfterDocument as DocumentSnapshot);
     }
 
     final snapshot = await query.get();
-    final allDocs = snapshot.docs;
-    final hasMore = allDocs.length > limit;
-    final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
-    final items = pageDocs
-        .map((d) => transactionFromFirestoreMap(d.data(), d.id))
-        .toList();
+    final filteredDocs = <DocumentSnapshot<Map<String, dynamic>>>[];
+    final filteredItems = <model.Transaction>[];
 
+    for (final doc in snapshot.docs) {
+      final transaction = transactionFromFirestoreMap(doc.data(), doc.id);
+      if (applyStatementFilter([transaction], criteria).isNotEmpty) {
+        filteredDocs.add(doc);
+        filteredItems.add(transaction);
+        if (filteredItems.length > limit) break;
+      }
+    }
+
+    final items = filteredItems.length > limit
+        ? filteredItems.sublist(0, limit)
+        : filteredItems;
+    final hasMore =
+        filteredItems.length > limit || snapshot.docs.length == fetchLimit;
     return TransactionPage(
       items: items,
       hasMore: hasMore,
-      lastDocument: pageDocs.isNotEmpty ? pageDocs.last : null,
+      lastDocument: filteredDocs.isNotEmpty
+          ? filteredDocs[items.length - 1]
+          : null,
     );
+  }
+
+  /// Constrói uma query com filtros server-side aplicados.
+  /// NOTA: Por limitações de índices, aplicamos apenas filtros que têm índices compostos.
+  Query<Map<String, dynamic>> _buildQueryWithFilters(
+    StatementFilterCriteria? criteria,
+  ) {
+    Query<Map<String, dynamic>> query = _transactionsCol;
+
+    if (criteria == null) return query;
+
+    // Aplicar apenas filtros que sabemos ter índices
+    // Priorizar filtros mais comuns primeiro
+
+    // Filtro de data - sempre aplicado se presente
+    if (criteria.dateStart != null) {
+      final start = DateTime(
+        criteria.dateStart!.year,
+        criteria.dateStart!.month,
+        criteria.dateStart!.day,
+      );
+      query = query.where(
+        'date',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+      );
+    }
+
+    if (criteria.dateEnd != null) {
+      final end = DateTime(
+        criteria.dateEnd!.year,
+        criteria.dateEnd!.month,
+        criteria.dateEnd!.day,
+        23,
+        59,
+        59,
+        999,
+      );
+      query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(end));
+    }
+
+    // Aplicar apenas UM filtro adicional para evitar problemas de índices
+    // Prioridade: tipo > status > categoria > valor
+    if (criteria.tipoFiltro != 'todas') {
+      query = query.where('type', isEqualTo: criteria.tipoFiltro);
+    } else if (criteria.statusFiltro != 'todas') {
+      final statusMap = {
+        'completa': 'completed',
+        'agendada': 'scheduled',
+        'pendente': 'pending',
+      };
+      final statusValue = statusMap[criteria.statusFiltro];
+      if (statusValue != null) {
+        query = query.where('status', isEqualTo: statusValue);
+      }
+    } else if (criteria.categoriaFiltro != 'todas') {
+      query = query.where('category', isEqualTo: criteria.categoriaFiltro);
+    } else if (criteria.minCents > 0 || criteria.maxCents > 0) {
+      // Filtros de valor são mais complexos, deixar para client-side por enquanto
+    }
+
+    return query;
+  }
+
+  Query<Map<String, dynamic>> _buildQueryWithDateFilters(
+    StatementFilterCriteria criteria,
+  ) {
+    Query<Map<String, dynamic>> query = _transactionsCol;
+
+    if (criteria.dateStart != null) {
+      final start = DateTime(
+        criteria.dateStart!.year,
+        criteria.dateStart!.month,
+        criteria.dateStart!.day,
+      );
+      query = query.where(
+        'date',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+      );
+    }
+
+    if (criteria.dateEnd != null) {
+      final end = DateTime(
+        criteria.dateEnd!.year,
+        criteria.dateEnd!.month,
+        criteria.dateEnd!.day,
+        23,
+        59,
+        59,
+        999,
+      );
+      query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(end));
+    }
+
+    return query;
   }
 
   @override
