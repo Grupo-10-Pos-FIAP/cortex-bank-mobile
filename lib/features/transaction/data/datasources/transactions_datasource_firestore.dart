@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';

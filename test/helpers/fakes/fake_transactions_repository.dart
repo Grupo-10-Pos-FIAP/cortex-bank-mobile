@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cortex_bank_mobile/core/utils/result.dart';
+import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart'
     show TransactionPage;
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
@@ -39,6 +40,7 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   int uploadReceiptsCalls = 0;
 
   Object? lastStartAfterDocument;
+  StatementFilterCriteria? lastGetPageCriteria;
   Transaction? lastAdded;
   Transaction? lastUpdated;
   String? lastDeletedId;
@@ -99,9 +101,11 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   Future<Result<TransactionPage>> getPage(
     int limit, {
     dynamic startAfterDocument,
+    StatementFilterCriteria? criteria,
   }) async {
     getPageCalls += 1;
     lastStartAfterDocument = startAfterDocument;
+    lastGetPageCriteria = criteria;
     if (getPageCompleter != null) return getPageCompleter!.future;
 
     if (mirrorTimelineInMemory) {

@@ -39,11 +39,11 @@ class _ExtratoPageState extends State<ExtratoPage> {
   @override
   void initState() {
     super.initState();
+    _applyPreset('last30');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadWithServerSideFilters();
+      if (!mounted) return;
       context.read<TransactionsProvider>().loadBalanceSummary();
     });
-    _applyPreset('last30');
   }
 
   void _scheduleCheckLoadMore() {
@@ -144,6 +144,14 @@ class _ExtratoPageState extends State<ExtratoPage> {
     );
   }
 
+  /// Evita [notifyListeners] durante o mount (ex.: [initState] → [_applyPreset]).
+  void _scheduleLoadWithServerSideFilters() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadWithServerSideFilters();
+    });
+  }
+
   void _applyPreset(String preset) {
     final now = DateTime.now();
     // Inclui o fim da janela de agendamento (hoje+N dias), senão transações
@@ -184,7 +192,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _dateStart = start;
       _dateEnd = end;
     });
-    _loadWithServerSideFilters();
+    _scheduleLoadWithServerSideFilters();
   }
 
   @override
