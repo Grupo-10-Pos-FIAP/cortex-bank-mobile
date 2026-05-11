@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/features/auth/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
 
 User buildUser({
   String? uid = 'u1',

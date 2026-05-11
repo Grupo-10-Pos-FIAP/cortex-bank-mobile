@@ -1,6 +1,7 @@
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/repositories/transactions_repository_impl.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -41,23 +42,31 @@ void main() {
       when(
         () => ds.getPage(
           any(),
-          startAfterDocument: any(named: 'startAfterDocument'),
+          startAfterCursor: any(named: 'startAfterCursor'),
         ),
       ).thenAnswer(
         (_) async => TransactionPage(
           items: [buildTransaction(id: 't10')],
           hasMore: true,
-          lastDocument: 'doc',
+          endCursor: const StringTransactionPageCursor('doc'),
         ),
       );
       final repository = TransactionsRepositoryImpl(ds, storage);
 
-      final result = await repository.getPage(20, startAfterDocument: 'prev');
+      final result = await repository.getPage(
+        20,
+        startAfterCursor: const StringTransactionPageCursor('prev'),
+      );
 
       expect(result, isSuccess);
       expect(result.valueOrNull?.items.first.id, 't10');
       expect(result.valueOrNull?.hasMore, true);
-      verify(() => ds.getPage(20, startAfterDocument: 'prev')).called(1);
+      verify(
+        () => ds.getPage(
+          20,
+          startAfterCursor: const StringTransactionPageCursor('prev'),
+        ),
+      ).called(1);
     });
 
     test('deve mapear exceção quando getPage lançar', () async {
@@ -66,7 +75,7 @@ void main() {
       when(
         () => ds.getPage(
           any(),
-          startAfterDocument: any(named: 'startAfterDocument'),
+          startAfterCursor: any(named: 'startAfterCursor'),
         ),
       ).thenThrow(Exception('boom'));
       final repository = TransactionsRepositoryImpl(ds, storage);

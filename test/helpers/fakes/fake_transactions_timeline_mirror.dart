@@ -1,7 +1,7 @@
 import 'package:cortex_bank_mobile/core/utils/result.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart'
-    show TransactionPage;
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
 
 class FakeTransactionsTimelineMirror {
   final List<Transaction> _items = [];
@@ -29,9 +29,13 @@ class FakeTransactionsTimelineMirror {
     return Success(List<Transaction>.from(_items));
   }
 
-  Result<TransactionPage> getPage(int limit, {dynamic startAfterDocument}) {
+  Result<TransactionPage> getPage(int limit, {TransactionPageCursor? startAfterCursor}) {
     sortNewestFirst();
-    final afterId = startAfterDocument?.toString();
+    final afterId = switch (startAfterCursor) {
+      null => null,
+      StringTransactionPageCursor(:final transactionId) => transactionId,
+      _ => null,
+    };
     final startIndex = afterId == null || afterId.isEmpty
         ? 0
         : (() {
@@ -44,7 +48,9 @@ class FakeTransactionsTimelineMirror {
       TransactionPage(
         items: pageItems,
         hasMore: hasMore,
-        lastDocument: pageItems.isEmpty ? null : pageItems.last.id,
+        endCursor: pageItems.isEmpty
+            ? null
+            : StringTransactionPageCursor(pageItems.last.id),
       ),
     );
   }

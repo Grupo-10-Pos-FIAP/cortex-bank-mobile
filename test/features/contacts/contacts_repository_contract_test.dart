@@ -1,5 +1,5 @@
 import 'package:cortex_bank_mobile/features/contacts/data/repositories/contacts_repository_impl.dart';
-import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

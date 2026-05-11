@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
-import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_page.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
-import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -44,7 +45,7 @@ void main() {
 
       repo.getPageCompleter!.complete(
         const Success(
-          TransactionPage(items: [], hasMore: false, lastDocument: null),
+          TransactionPage(items: [], hasMore: false, endCursor: null),
         ),
       );
       await pumpUntil(tester, () => find.byType(AppLoading).evaluate().isEmpty);
@@ -77,7 +78,7 @@ void main() {
     ) async {
       final repo = FakeTransactionsRepository()
         ..getPageResult = const Success(
-          TransactionPage(items: [], hasMore: false, lastDocument: null),
+          TransactionPage(items: [], hasMore: false, endCursor: null),
         );
       final provider = TransactionsProvider(repo);
 
@@ -101,7 +102,7 @@ void main() {
             TransactionPage(
               items: [buildTransaction(id: 'x1', from: 'Maria', date: recent)],
               hasMore: false,
-              lastDocument: null,
+              endCursor: null,
             ),
           );
         final provider = TransactionsProvider(repo);
@@ -148,7 +149,7 @@ void main() {
             TransactionPage(
               items: [buildTransaction(id: 'a', from: 'Ana', date: recent)],
               hasMore: true,
-              lastDocument: 'd1',
+              endCursor: const StringTransactionPageCursor('d1'),
             ),
           )
           ..getPageNextResult = FailureResult(

@@ -1,5 +1,5 @@
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 
 final DateTime kDefaultTxDate = DateTime(2024, 5, 1);
 

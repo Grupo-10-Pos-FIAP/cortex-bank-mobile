@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/helpers.dart';
@@ -22,7 +23,7 @@ void main() {
                 buildTransaction(id: 'new', date: DateTime(2024, 2, 1)),
               ],
               hasMore: true,
-              lastDocument: 'doc-1',
+              endCursor: const StringTransactionPageCursor('doc-1'),
             ),
           );
         final provider = TransactionsProvider(repo);
@@ -48,7 +49,7 @@ void main() {
                 buildTransaction(id: 'b', date: DateTime(2024, 3, 1)),
               ],
               hasMore: true,
-              lastDocument: 'doc-1',
+              endCursor: const StringTransactionPageCursor('doc-1'),
             ),
           )
           ..getPageNextResult = Success(
@@ -58,7 +59,7 @@ void main() {
                 buildTransaction(id: 'c', date: DateTime(2024, 2, 1)),
               ],
               hasMore: false,
-              lastDocument: 'doc-2',
+              endCursor: const StringTransactionPageCursor('doc-2'),
             ),
           );
         final provider = TransactionsProvider(repo);
@@ -73,7 +74,10 @@ void main() {
         ]);
         expect(provider.hasMore, false);
         expect(provider.isLoadingMore, false);
-        expect(repo.lastStartAfterDocument, 'doc-1');
+        expect(
+          repo.lastStartAfterCursor,
+          const StringTransactionPageCursor('doc-1'),
+        );
       },
     );
 
@@ -88,7 +92,7 @@ void main() {
                 buildTransaction(id: 'b', date: DateTime(2024, 3, 1)),
               ],
               hasMore: true,
-              lastDocument: 'doc-1',
+              endCursor: const StringTransactionPageCursor('doc-1'),
             ),
           )
           ..getPageNextResult = Success(
@@ -98,7 +102,7 @@ void main() {
                 buildTransaction(id: 'c', date: DateTime(2024, 2, 1)),
               ],
               hasMore: false,
-              lastDocument: 'doc-2',
+              endCursor: const StringTransactionPageCursor('doc-2'),
             ),
           );
 
@@ -133,7 +137,11 @@ void main() {
       () async {
         final repo = FakeTransactionsRepository()
           ..getPageResult = Success(
-            TransactionPage(items: [], hasMore: true, lastDocument: 'doc-1'),
+            TransactionPage(
+              items: [],
+              hasMore: true,
+              endCursor: const StringTransactionPageCursor('doc-1'),
+            ),
           )
           ..getPageNextResult = FailureResult(
             const Failure(message: 'Erro ao carregar mais'),
@@ -157,7 +165,7 @@ void main() {
             TransactionPage(
               items: [buildTransaction(id: 'a', date: DateTime(2024, 4, 1))],
               hasMore: true,
-              lastDocument: 'doc-1',
+              endCursor: const StringTransactionPageCursor('doc-1'),
             ),
           )
           ..getPageNextResult = FailureResult(

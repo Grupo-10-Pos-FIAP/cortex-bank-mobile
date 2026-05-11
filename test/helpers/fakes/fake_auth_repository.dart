@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
-import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
-import 'package:cortex_bank_mobile/features/auth/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
 
 class FakeAuthRepository implements IAuthRepository {
   Result<User>? signInResult;

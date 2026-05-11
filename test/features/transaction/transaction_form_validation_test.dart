@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/utils/transaction_form_validation.dart';
 import 'package:flutter_test/flutter_test.dart';

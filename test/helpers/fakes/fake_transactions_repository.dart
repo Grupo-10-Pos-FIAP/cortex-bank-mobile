@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:cortex_bank_mobile/core/utils/result.dart';
-import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart'
-    show TransactionPage;
-import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/repositories/i_transactions_repository.dart';
 
 import 'fake_transactions_timeline_mirror.dart';
 
@@ -39,7 +39,7 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   int uploadReceiptCalls = 0;
   int uploadReceiptsCalls = 0;
 
-  Object? lastStartAfterDocument;
+  TransactionPageCursor? lastStartAfterCursor;
   StatementFilterCriteria? lastGetPageCriteria;
   Transaction? lastAdded;
   Transaction? lastUpdated;
@@ -100,19 +100,19 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   @override
   Future<Result<TransactionPage>> getPage(
     int limit, {
-    dynamic startAfterDocument,
+    TransactionPageCursor? startAfterCursor,
     StatementFilterCriteria? criteria,
   }) async {
     getPageCalls += 1;
-    lastStartAfterDocument = startAfterDocument;
+    lastStartAfterCursor = startAfterCursor;
     lastGetPageCriteria = criteria;
     if (getPageCompleter != null) return getPageCompleter!.future;
 
     if (mirrorTimelineInMemory) {
-      return _timeline.getPage(limit, startAfterDocument: startAfterDocument);
+      return _timeline.getPage(limit, startAfterCursor: startAfterCursor);
     }
 
-    if (startAfterDocument == null) {
+    if (startAfterCursor == null) {
       return getPageResult ??
           Success(TransactionPage(items: <Transaction>[], hasMore: false));
     }
