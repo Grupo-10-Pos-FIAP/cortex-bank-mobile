@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:cortex_bank_mobile/features/auth/models/user.dart';
-import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/repositories/i_auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider(this._authRepository);

@@ -1,15 +1,16 @@
-import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/firebase_user_error_message.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/receipt_storage_datasource.dart';
-import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart'
-    show TransactionsDataSource, TransactionPage;
-import 'package:cortex_bank_mobile/features/transaction/data/repositories/i_transactions_repository.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/repositories/i_transactions_repository.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 
 class TransactionsRepositoryImpl implements ITransactionsRepository {
   TransactionsRepositoryImpl(this._dataSource, this._receiptStorage);
@@ -71,13 +72,13 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
   @override
   Future<Result<TransactionPage>> getPage(
     int limit, {
-    dynamic startAfterDocument,
+    TransactionPageCursor? startAfterCursor,
     StatementFilterCriteria? criteria,
   }) async {
     try {
       final page = await _dataSource.getPage(
         limit,
-        startAfterDocument: startAfterDocument,
+        startAfterCursor: startAfterCursor,
         criteria: criteria,
       );
       return Success(page);

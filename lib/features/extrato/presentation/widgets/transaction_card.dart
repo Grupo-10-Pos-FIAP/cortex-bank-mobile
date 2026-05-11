@@ -2,14 +2,14 @@ import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/download_comprovante.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
-import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/data/comprovante_content.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_detail_modal.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_edit_modal.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/attachment_constants.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
-import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

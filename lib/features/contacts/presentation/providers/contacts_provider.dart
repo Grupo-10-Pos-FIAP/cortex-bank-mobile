@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
-import '../data/repositories/i_contacts_repository.dart';
-import '../models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/repositories/i_contacts_repository.dart';
 
 class ContactsProvider extends ChangeNotifier {
   static const _contactsCacheKey = 'contacts_provider.contacts';

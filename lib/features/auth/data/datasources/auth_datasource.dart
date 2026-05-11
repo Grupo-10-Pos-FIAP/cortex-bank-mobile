@@ -1,5 +1,5 @@
 import 'package:cortex_bank_mobile/core/utils/result.dart';
-import 'package:cortex_bank_mobile/features/auth/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
 
 abstract class AuthDataSource {
   Future<Result<User>> signIn(String email, String password);

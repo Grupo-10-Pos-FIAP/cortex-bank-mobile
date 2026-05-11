@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_status_normalization.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 
 /// Constrói [Transaction] a partir de um documento Firestore (mapa + id).
 Transaction transactionFromFirestoreMap(

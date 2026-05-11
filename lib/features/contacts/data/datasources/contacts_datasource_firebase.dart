@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 import 'contacts_datasource.dart';
-import '../../models/contact.dart';
 
 class ContactsDataSourceFirestore implements ContactsDataSource {
   final FirebaseFirestore _firestore;

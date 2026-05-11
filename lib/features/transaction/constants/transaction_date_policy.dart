@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 
 /// Janela de data (hoje … +30 dias) e quando a transação entra no saldo.
 abstract class TransactionDatePolicy {

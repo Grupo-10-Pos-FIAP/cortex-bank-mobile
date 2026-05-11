@@ -1,5 +1,5 @@
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 
 /// Normaliza o status persistido para exibição/regras do app na leitura (legado / inconsistências).
 String normalizeTransactionStatusForRead(

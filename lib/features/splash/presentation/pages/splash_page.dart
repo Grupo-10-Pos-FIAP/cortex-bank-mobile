@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/core/firebase/firebase_optimization_config.dart';
 import 'package:cortex_bank_mobile/core/utils/env_validator.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
-import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';

@@ -1,4 +1,4 @@
-import '../../models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 
 abstract class ContactsDataSource {
   Future<List<Contact>> getAll();

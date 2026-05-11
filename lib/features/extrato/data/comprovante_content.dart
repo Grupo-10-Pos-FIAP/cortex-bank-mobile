@@ -1,6 +1,6 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
 
 class ComprovanteContent {

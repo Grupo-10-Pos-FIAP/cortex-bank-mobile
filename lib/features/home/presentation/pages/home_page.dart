@@ -1,8 +1,8 @@
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/profile_tab_loader.dart';
-import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
+import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/dashboard_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_tab_loader.dart';
-import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -1,4 +1,4 @@
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
+import '../entities/transaction.dart';
 
 /// Critérios do extrato (sem [TextEditingController]); imutável.
 class StatementFilterCriteria {

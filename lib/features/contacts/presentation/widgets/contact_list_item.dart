@@ -1,6 +1,6 @@
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
-import '../../models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 
 class ContactListItem extends StatelessWidget {
   final Contact contact;

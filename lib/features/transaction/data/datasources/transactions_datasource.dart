@@ -1,18 +1,8 @@
-import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
-
-class TransactionPage {
-  final List<Transaction> items;
-  final bool hasMore;
-  final dynamic lastDocument;
-
-  const TransactionPage({
-    required this.items,
-    required this.hasMore,
-    this.lastDocument,
-  });
-}
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 
 abstract class TransactionsDataSource {
   Future<String> add(Transaction transaction);
@@ -23,7 +13,7 @@ abstract class TransactionsDataSource {
 
   Future<TransactionPage> getPage(
     int limit, {
-    dynamic startAfterDocument,
+    TransactionPageCursor? startAfterCursor,
     StatementFilterCriteria? criteria,
   });
 }

@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
-import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';

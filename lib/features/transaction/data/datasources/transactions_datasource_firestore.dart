@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
-import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/data/pagination/firestore_transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/mappers/transaction_firestore_mapper.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart'
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 import 'transactions_datasource.dart';
 
 class TransactionsDataSourceFirestore implements TransactionsDataSource {
@@ -19,6 +22,19 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .collection('users')
         .doc(user.uid)
         .collection('transactions');
+  }
+
+  Query<Map<String, dynamic>> _queryAfterCursor(
+    Query<Map<String, dynamic>> query,
+    TransactionPageCursor? cursor,
+  ) {
+    if (cursor == null) return query;
+    if (cursor is! FirestoreTransactionPageCursor) {
+      throw ArgumentError(
+        'Paginação Firestore requer FirestoreTransactionPageCursor',
+      );
+    }
+    return query.startAfterDocument(cursor.documentSnapshot);
   }
 
   @override
@@ -74,7 +90,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   @override
   Future<TransactionPage> getPage(
     int limit, {
-    dynamic startAfterDocument,
+    TransactionPageCursor? startAfterCursor,
     StatementFilterCriteria? criteria,
   }) async {
     final fetchLimit = limit + 1;
@@ -83,9 +99,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .orderBy(FieldPath.documentId, descending: true)
         .limit(fetchLimit);
 
-    if (startAfterDocument != null) {
-      query = query.startAfterDocument(startAfterDocument as DocumentSnapshot);
-    }
+    query = _queryAfterCursor(query, startAfterCursor);
 
     try {
       final snapshot = await query.get();
@@ -99,13 +113,15 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
       return TransactionPage(
         items: items,
         hasMore: hasMore,
-        lastDocument: pageDocs.isNotEmpty ? pageDocs.last : null,
+        endCursor: pageDocs.isNotEmpty
+            ? FirestoreTransactionPageCursor(pageDocs.last)
+            : null,
       );
     } on FirebaseException catch (e) {
       if (e.code == 'failed-precondition' && criteria != null) {
         return await _getPageWithDateFallback(
           limit,
-          startAfterDocument: startAfterDocument,
+          startAfterCursor: startAfterCursor,
           criteria: criteria,
         );
       }
@@ -115,7 +131,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
 
   Future<TransactionPage> _getPageWithDateFallback(
     int limit, {
-    dynamic startAfterDocument,
+    TransactionPageCursor? startAfterCursor,
     required StatementFilterCriteria criteria,
   }) async {
     final fetchLimit = (limit * 3) + 1;
@@ -124,9 +140,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .orderBy(FieldPath.documentId, descending: true)
         .limit(fetchLimit);
 
-    if (startAfterDocument != null) {
-      query = query.startAfterDocument(startAfterDocument as DocumentSnapshot);
-    }
+    query = _queryAfterCursor(query, startAfterCursor);
 
     final snapshot = await query.get();
     final filteredDocs = <DocumentSnapshot<Map<String, dynamic>>>[];
@@ -149,8 +163,8 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     return TransactionPage(
       items: items,
       hasMore: hasMore,
-      lastDocument: filteredDocs.isNotEmpty
-          ? filteredDocs[items.length - 1]
+      endCursor: items.isNotEmpty
+          ? FirestoreTransactionPageCursor(filteredDocs[items.length - 1])
           : null,
     );
   }

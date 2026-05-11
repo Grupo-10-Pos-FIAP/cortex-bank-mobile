@@ -1,6 +1,6 @@
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
-import 'package:cortex_bank_mobile/features/auth/models/user.dart';
-import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 
 /// Snapshot of mutable form state for validation (no [BuildContext]).
@@ -30,7 +30,6 @@ class TransactionFormValidationInput {
   final DateTime selectedDate;
 }
 
-/// First blocking validation message for the new-transaction form, or `null` if OK.
 String? transactionFormFirstValidationError(
   TransactionFormValidationInput input,
 ) {

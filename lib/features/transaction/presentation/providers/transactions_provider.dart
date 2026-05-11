@@ -1,9 +1,10 @@
-import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/repositories/i_transactions_repository.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 import 'package:flutter/material.dart';
-import '../models/transaction.dart';
-import '../data/repositories/i_transactions_repository.dart';
 
 class TransactionsProvider extends ChangeNotifier {
   static const _transactionsCacheKey = 'transactions_provider.transactions';
@@ -36,7 +37,7 @@ class TransactionsProvider extends ChangeNotifier {
   String? _balanceSummaryError;
   bool _isBalanceSummaryLoading = false;
 
-  dynamic _lastDocument;
+  TransactionPageCursor? _lastCursor;
   bool _hasMore = true;
   bool _isLoadingMore = false;
   static const int _pageSize = 20;
@@ -113,7 +114,7 @@ class TransactionsProvider extends ChangeNotifier {
       (success) {
         _transactions = List<Transaction>.from(success);
         _sortTransactionsNewestFirst();
-        _lastDocument = null;
+        _lastCursor = null;
         _hasMore = false;
         CacheManager.set(
           _transactionsCacheKey,
@@ -123,7 +124,7 @@ class TransactionsProvider extends ChangeNotifier {
       },
       (failure) {
         _transactionsError = failure.message;
-        _lastDocument = null;
+        _lastCursor = null;
         _hasMore = false;
       },
     );
@@ -137,7 +138,7 @@ class TransactionsProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     _transactionsError = null;
-    _lastDocument = null;
+    _lastCursor = null;
     _hasMore = true;
     _currentFilterCriteria = criteria;
 
@@ -155,7 +156,7 @@ class TransactionsProvider extends ChangeNotifier {
         List<Transaction>.from(_transactions),
         ttl: _transactionsCacheTtl,
       );
-      _lastDocument = page.lastDocument;
+      _lastCursor = page.endCursor;
       _hasMore = page.hasMore;
     }, (failure) => _transactionsError = failure.message);
 
@@ -170,7 +171,7 @@ class TransactionsProvider extends ChangeNotifier {
 
     final result = await _repository.getPage(
       _pageSize,
-      startAfterDocument: _lastDocument,
+      startAfterCursor: _lastCursor,
       criteria: _currentFilterCriteria,
     );
     if (_disposed) {
@@ -191,7 +192,7 @@ class TransactionsProvider extends ChangeNotifier {
         List<Transaction>.from(_transactions),
         ttl: _transactionsCacheTtl,
       );
-      _lastDocument = page.lastDocument;
+      _lastCursor = page.endCursor;
       _hasMore = page.hasMore;
     }, (failure) => _transactionsError = failure.message);
 

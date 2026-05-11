@@ -1,9 +1,9 @@
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
-import 'package:cortex_bank_mobile/features/contacts/models/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/repositories/i_contacts_repository.dart';
 import '../datasources/contacts_datasource.dart';
-import 'i_contacts_repository.dart';
 
 class ContactsRepositoryImpl implements IContactsRepository {
   final ContactsDataSource _dataSource;

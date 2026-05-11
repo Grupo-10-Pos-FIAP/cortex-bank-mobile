@@ -14,7 +14,7 @@ import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
 import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_datasource.dart';
 import 'package:cortex_bank_mobile/features/auth/data/datasources/user_datasource.dart';
 import 'package:cortex_bank_mobile/features/auth/data/mappers/auth_error_mapper.dart';
-import 'package:cortex_bank_mobile/features/auth/models/user.dart';
+import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
 
 const _authTimeout = Duration(seconds: 25);
 const _userCacheTtl = Duration(minutes: 10);

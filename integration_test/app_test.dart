@@ -1,11 +1,11 @@
 import 'package:cortex_bank_mobile/app.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
-import 'package:cortex_bank_mobile/features/auth/state/auth_provider.dart';
-import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_page.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
-import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:flutter/material.dart';
