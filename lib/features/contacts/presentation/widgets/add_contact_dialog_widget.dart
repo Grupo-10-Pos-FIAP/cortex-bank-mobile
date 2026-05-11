@@ -24,8 +24,7 @@ class _AddContactDialogWidgetState extends State<AddContactDialogWidget> {
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
-          mainAxisSize: MainAxisSize
-              .min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
               label: 'Nome do contato',
@@ -47,6 +46,5 @@ class _AddContactDialogWidgetState extends State<AddContactDialogWidget> {
         ),
       ],
     );
-
   }
 }

@@ -47,7 +47,6 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
     }
   }
 
-
   @override
   void dispose() {
     _subscription.cancel();

@@ -9,17 +9,14 @@ void main() {
   final today = TransactionDatePolicy.today;
 
   group('normalizeTransactionStatusForRead', () {
-    test('Pending + strictly future date -> Scheduled', () {
+    test('deve mapear pending com data futura estrita para scheduled', () {
       expect(
-        normalizeTransactionStatusForRead(
-          TransactionStatus.pending,
-          farFuture,
-        ),
+        normalizeTransactionStatusForRead(TransactionStatus.pending, farFuture),
         TransactionStatus.scheduled,
       );
     });
 
-    test('Completed + strictly future date -> Scheduled', () {
+    test('deve mapear completed com data futura estrita para scheduled', () {
       expect(
         normalizeTransactionStatusForRead(
           TransactionStatus.completed,
@@ -29,47 +26,35 @@ void main() {
       );
     });
 
-    test('Scheduled + today -> Completed', () {
+    test('deve mapear scheduled na data de hoje para completed', () {
       expect(
-        normalizeTransactionStatusForRead(
-          TransactionStatus.scheduled,
-          today,
-        ),
+        normalizeTransactionStatusForRead(TransactionStatus.scheduled, today),
         TransactionStatus.completed,
       );
     });
 
-    test('Scheduled + past -> Completed', () {
+    test('deve mapear scheduled no passado para completed', () {
       expect(
-        normalizeTransactionStatusForRead(
-          TransactionStatus.scheduled,
-          farPast,
-        ),
+        normalizeTransactionStatusForRead(TransactionStatus.scheduled, farPast),
         TransactionStatus.completed,
       );
     });
 
-    test('Pending + past stays Pending', () {
+    test('deve manter pending no passado', () {
       expect(
-        normalizeTransactionStatusForRead(
-          TransactionStatus.pending,
-          farPast,
-        ),
+        normalizeTransactionStatusForRead(TransactionStatus.pending, farPast),
         TransactionStatus.pending,
       );
     });
 
-    test('Completed + past stays Completed', () {
+    test('deve manter completed no passado', () {
       expect(
-        normalizeTransactionStatusForRead(
-          TransactionStatus.completed,
-          farPast,
-        ),
+        normalizeTransactionStatusForRead(TransactionStatus.completed, farPast),
         TransactionStatus.completed,
       );
     });
 
-    test('unknown status string unchanged', () {
+    test('deve preservar status desconhecido como string', () {
       expect(
         normalizeTransactionStatusForRead('Unknown', farFuture),
         'Unknown',

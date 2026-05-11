@@ -1,0 +1,11 @@
+# Cross-platform: normalize line endings (Windows dev vs Linux CI).
+* text=auto eol=lf
+*.dart text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary

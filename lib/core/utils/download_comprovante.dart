@@ -6,10 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:universal_html/html.dart' as html;
 
-Future<void> downloadComprovante(
-  String filename,
-  String content,
-) async {
+Future<void> downloadComprovante(String filename, String content) async {
   try {
     if (kIsWeb) {
       final bytes = utf8.encode(content);
@@ -35,10 +32,8 @@ Future<void> downloadComprovante(
         final file = File(outputPath);
         await file.writeAsBytes(bytes);
       }
-
     }
   } catch (e) {
     safeLogError('Erro ao baixar comprovante:', e);
-    
   }
 }

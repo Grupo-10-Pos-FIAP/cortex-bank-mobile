@@ -20,8 +20,6 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .collection('transactions');
   }
 
-  
-
   @override
   Future<String> add(model.Transaction transaction) async {
     final docRef = await _transactionsCol.add({
@@ -84,9 +82,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         .limit(fetchLimit);
 
     if (startAfterDocument != null) {
-      query = query.startAfterDocument(
-        startAfterDocument as DocumentSnapshot,
-      );
+      query = query.startAfterDocument(startAfterDocument as DocumentSnapshot);
     }
 
     final snapshot = await query.get();

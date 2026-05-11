@@ -5,7 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_theme.dart';
 
 class App extends StatefulWidget {
-  const App({super.key});
+  const App({super.key, this.enableConnectivityWrapper = true, this.theme});
+
+  final bool enableConnectivityWrapper;
+
+  /// When set (e.g. integration tests), avoids [AppTheme.lightTheme] network font fetch.
+  final ThemeData? theme;
 
   @override
   State<App> createState() => _AppState();
@@ -16,17 +21,13 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Cortex Bank Mobile',
-      theme: AppTheme.lightTheme,
+      theme: widget.theme ?? AppTheme.lightTheme,
       builder: (context, child) {
-        return Overlay(
-          initialEntries: [
-            OverlayEntry(
-              builder: (context) => ConnectivityWrapper(child: child!),
-            ),
-          ],
-        );
+        if (!widget.enableConnectivityWrapper) {
+          return child!;
+        }
+        return ConnectivityWrapper(child: child!);
       },
-      initialRoute: AppRouteGenerator.initialRoute,
       onGenerateRoute: AppRouteGenerator.generateRoute,
       home: const SplashPage(),
     );

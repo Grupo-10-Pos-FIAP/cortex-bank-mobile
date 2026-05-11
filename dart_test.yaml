@@ -1,0 +1,7 @@
+# https://pub.dev/packages/test#whole-package-configuration
+tags:
+  golden:
+    description: >
+      Regressão visual (goldens). Ver `goldenTest` em test/helpers/golden_harness.dart.
+      Rodar só goldens: flutter test --tags golden
+      Excluir goldens: flutter test --exclude-tags golden

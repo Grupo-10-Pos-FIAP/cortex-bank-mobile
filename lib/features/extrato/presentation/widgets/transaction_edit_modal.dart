@@ -96,15 +96,16 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       text: parsedOutra?.account ?? '',
     );
     _selectedCategory = widget.data.category;
-    _selectedDate = TransactionDatePolicy.clampToAllowedRange(
-      widget.data.date,
-    );
+    _selectedDate = TransactionDatePolicy.clampToAllowedRange(widget.data.date);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<ContactsProvider>().loadContacts();
       if (!mounted) return;
-      final names =
-          context.read<ContactsProvider>().contacts.map((c) => c.name).toList();
+      final names = context
+          .read<ContactsProvider>()
+          .contacts
+          .map((c) => c.name)
+          .toList();
       setState(() {
         _selectedTo = TransactionEditModal.dropdownLabelForStoredTo(
           widget.data.to,
@@ -208,15 +209,13 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     // Mantém o status salvo quando só outros campos mudam; só recalcula se a data mudar.
     final String resolvedStatus;
     if (TransactionDatePolicy.isSameCalendarDay(
-          widget.data.date,
-          _selectedDate,
-        )) {
+      widget.data.date,
+      _selectedDate,
+    )) {
       resolvedStatus = widget.data.status;
     } else {
       // Agendada só para data estritamente futura; hoje ou passado = Completa (não Scheduled).
-      resolvedStatus = TransactionDatePolicy.isStrictlyAfterToday(
-            _selectedDate,
-          )
+      resolvedStatus = TransactionDatePolicy.isStrictlyAfterToday(_selectedDate)
           ? model.TransactionStatus.scheduled
           : model.TransactionStatus.completed;
     }
@@ -242,17 +241,14 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
     setState(() => _isLoading = false);
 
     if (success) {
-      AppSnackBar.success(
-        context,
-        'Transação atualizada com sucesso.',
-      );
+      AppSnackBar.success(context, 'Transação atualizada com sucesso.');
       Navigator.pop(context, true);
       return;
     }
 
     AppSnackBar.error(
       context,
-      provider.errorMessage ?? 'Não foi possível atualizar a transação.',
+      provider.transactionsError ?? 'Não foi possível atualizar a transação.',
     );
   }
 
@@ -262,13 +258,11 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
     final contactNames = fetchedContacts.map((c) => c.name).toList();
 
-    const fixedOptions = [
-      'Mesma Titularidade',
-      'Outra Titularidade',
-    ];
+    const fixedOptions = ['Mesma Titularidade', 'Outra Titularidade'];
 
     final rawTo = widget.data.to?.trim();
-    final orphanTo = rawTo != null &&
+    final orphanTo =
+        rawTo != null &&
             rawTo.isNotEmpty &&
             !fixedOptions.contains(rawTo) &&
             !contactNames.contains(rawTo) &&
@@ -276,11 +270,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
         ? rawTo
         : null;
 
-    final allToOptions = [
-      ...fixedOptions,
-      ...contactNames,
-      ?orphanTo,
-    ];
+    final allToOptions = [...fixedOptions, ...contactNames, ?orphanTo];
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -358,9 +348,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
                   ),
                   suffixIcon: const Icon(Icons.calendar_today),
                 ),
-                child: Text(
-                  DateFormatter.formatDate(_selectedDate),
-                ),
+                child: Text(DateFormatter.formatDate(_selectedDate)),
               ),
             ),
             if (TransactionDatePolicy.isStrictlyAfterToday(_selectedDate))
@@ -400,9 +388,9 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
               const SizedBox(height: 16),
               Text(
                 'Dados do favorecido (outra titularidade)',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               AppTextField(
@@ -429,14 +417,11 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
             const SizedBox(height: 24),
             _buildDropdown<model.TransactionCategory>(
               label: 'Categoria',
-              value:
-                  _selectedCategory,
+              value: _selectedCategory,
               items: model.TransactionCategory.values.map((cat) {
                 return DropdownMenuItem<model.TransactionCategory>(
                   value: cat,
-                  child: Text(
-                    cat.label,
-                  ),
+                  child: Text(cat.label),
                 );
               }).toList(),
               onChanged: (val) => setState(() => _selectedCategory = val!),

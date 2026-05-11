@@ -1,12 +1,14 @@
 import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_datasource_firebase.dart';
+import 'package:cortex_bank_mobile/features/auth/data/datasources/auth_datasource.dart';
 import 'package:cortex_bank_mobile/features/auth/models/user.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/auth/data/repositories/i_auth_repository.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
-  AuthRepositoryImpl() : _remote = AuthDataSourceFirebase();
+  AuthRepositoryImpl({AuthDataSource? remote})
+    : _remote = remote ?? AuthDataSourceFirebase();
 
-  final AuthDataSourceFirebase _remote;
+  final AuthDataSource _remote;
 
   @override
   Future<User?> getCachedCurrentUser() async {

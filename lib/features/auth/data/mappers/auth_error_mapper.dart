@@ -3,20 +3,17 @@ import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/firebase_error_translator.dart';
 
 /// Contexto da operação de auth, usado para mensagem genérica.
-enum AuthErrorContext {
-  signIn,
-  signUp,
-  getCurrentUser,
-  signOut,
-  firestore,
-}
+enum AuthErrorContext { signIn, signUp, getCurrentUser, signOut, firestore }
 
 /// Centraliza a tradução de exceções de auth/Firebase em [Failure].
 class AuthErrorMapper {
   AuthErrorMapper._();
 
   /// Converte [e] em [Failure] usando [firebase_error_translator] quando for [FirebaseAuthException].
-  static Failure toFailure(Object e, {AuthErrorContext context = AuthErrorContext.signIn}) {
+  static Failure toFailure(
+    Object e, {
+    AuthErrorContext context = AuthErrorContext.signIn,
+  }) {
     if (e is FirebaseAuthException) {
       return Failure(message: translateFirebaseAuthError(e));
     }

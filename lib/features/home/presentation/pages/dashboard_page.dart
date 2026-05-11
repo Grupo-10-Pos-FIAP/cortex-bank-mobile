@@ -87,6 +87,7 @@ class _DashboardPageState extends State<DashboardPage>
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      key: const Key('dashboard.scroll'),
       child: Column(
         children: [
           _staggeredSection(

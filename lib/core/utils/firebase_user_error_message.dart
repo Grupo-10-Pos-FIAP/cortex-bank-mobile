@@ -1,9 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 
-String firebaseErrorUserMessage(
-  Object error, {
-  required String fallback,
-}) {
+String firebaseErrorUserMessage(Object error, {required String fallback}) {
   if (error is FirebaseException) {
     final code = error.code.toLowerCase();
     switch (code) {

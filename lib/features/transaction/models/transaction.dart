@@ -1,9 +1,11 @@
 enum TransactionType { credit, debit, ted }
+
 enum TransactionCategory { food, transport, salary, ted, others }
 
 abstract class TransactionStatus {
   TransactionStatus._();
   static const String pending = 'Pending';
+
   /// Só é válido com data **estritamente posterior a hoje** (programada na janela permitida).
   /// Data de hoje ou passada não usa este status (usa [pending] ou [completed]).
   static const String scheduled = 'Scheduled';
@@ -73,7 +75,6 @@ class Transaction {
   }
 }
 
-
 extension TransactionTypeExtension on TransactionType {
   static TransactionType fromString(String value) {
     switch (value.toLowerCase().trim()) {
@@ -103,7 +104,6 @@ extension TransactionTypeExtension on TransactionType {
     }
   }
 }
-
 
 extension TransactionCategoryExtension on TransactionCategory {
   static TransactionCategory fromString(String value) {
@@ -139,6 +139,3 @@ extension TransactionCategoryExtension on TransactionCategory {
     }
   }
 }
-
-
-

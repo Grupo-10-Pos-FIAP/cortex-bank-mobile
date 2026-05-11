@@ -14,6 +14,7 @@ class ContactsProvider extends ChangeNotifier {
   List<Contact> _contacts = [];
   bool _isLoading = false;
   String? _errorMessage;
+  String? _selectedContactId;
 
   // Getters
   List<Contact> get contacts => _contacts;
@@ -21,6 +22,32 @@ class ContactsProvider extends ChangeNotifier {
       _contacts.where((c) => c.isFavorite).toList();
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  String? get selectedContactId => _selectedContactId;
+
+  /// Contato marcado na lista (checkbox); seleção fica no provider, não no modelo.
+  Contact? get selectedContact {
+    final id = _selectedContactId;
+    if (id == null || id.isEmpty) return null;
+    for (final c in _contacts) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
+  void setSelectedContactId(String? id) {
+    if (_selectedContactId == id) return;
+    _selectedContactId = id;
+    notifyListeners();
+  }
+
+  void _dropSelectionIfContactMissing() {
+    final id = _selectedContactId;
+    if (id == null) return;
+    if (!_contacts.any((c) => c.id == id)) {
+      _selectedContactId = null;
+    }
+  }
 
   // Carregar contatos
   Future<void> loadContacts({bool forceRefresh = false}) async {
@@ -30,6 +57,7 @@ class ContactsProvider extends ChangeNotifier {
       if (cachedContacts != null) {
         if (_contacts.isEmpty) {
           _contacts = List<Contact>.from(cachedContacts);
+          _dropSelectionIfContactMissing();
           notifyListeners();
         }
         return;
@@ -44,7 +72,8 @@ class ContactsProvider extends ChangeNotifier {
     final result = await _repository.getAll();
 
     result.fold((success) {
-      _contacts = success;
+      _contacts = List<Contact>.from(success);
+      _dropSelectionIfContactMissing();
       CacheManager.set(
         _contactsCacheKey,
         List<Contact>.from(success),
@@ -104,15 +133,24 @@ class ContactsProvider extends ChangeNotifier {
   Future<void> deleteContact(String id) async {
     final result = await _repository.delete(id);
 
-    result.fold((_) {
-      _contacts.removeWhere((c) => c.id == id);
-      CacheManager.set(
-        _contactsCacheKey,
-        List<Contact>.from(_contacts),
-        ttl: _contactsCacheTtl,
-      );
-      notifyListeners();
-    }, (failure) => _errorMessage = failure.message);
+    result.fold(
+      (_) {
+        _contacts.removeWhere((c) => c.id == id);
+        if (_selectedContactId == id) {
+          _selectedContactId = null;
+        }
+        CacheManager.set(
+          _contactsCacheKey,
+          List<Contact>.from(_contacts),
+          ttl: _contactsCacheTtl,
+        );
+        notifyListeners();
+      },
+      (failure) {
+        _errorMessage = failure.message;
+        notifyListeners();
+      },
+    );
   }
 
   void _setLoading(bool value) {

@@ -11,8 +11,6 @@ import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.da
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/firebase_options.dart';
 
-/// Tela de splash exibida enquanto o estado de autenticação é verificado.
-/// Exibe o nome do app com animação de fade e redireciona automaticamente.
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -22,6 +20,13 @@ class SplashPage extends StatefulWidget {
 
 class _SplashPageState extends State<SplashPage>
     with SingleTickerProviderStateMixin {
+  /// `flutter test integration_test/... --dart-define=INTEGRATION_SKIP_FIREBASE=true`
+  /// evita Firebase nativo no flutter-tester (ex.: Windows/CI sem plugin móvel).
+  static const bool _skipFirebaseBootstrap = bool.fromEnvironment(
+    'INTEGRATION_SKIP_FIREBASE',
+    defaultValue: false,
+  );
+
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   bool _redirectScheduled = false;
@@ -41,9 +46,19 @@ class _SplashPageState extends State<SplashPage>
   }
 
   Future<void> _initializeAppStartup() async {
+    if (_skipFirebaseBootstrap) {
+      if (!mounted) return;
+      setState(() => _startupReady = true);
+      await context.read<AuthProvider>().loadCurrentUser();
+      if (!mounted) return;
+      _scheduleNavigationAfterAuthReady();
+      return;
+    }
+
     try {
       await dotenv.load(fileName: '.env');
 
+      if (!mounted) return;
       final missingEnv = getMissingFirebaseEnvVars();
       if (missingEnv.isNotEmpty) {
         setState(() {
@@ -64,6 +79,8 @@ class _SplashPageState extends State<SplashPage>
       if (!mounted) return;
       setState(() => _startupReady = true);
       await context.read<AuthProvider>().loadCurrentUser();
+      if (!mounted) return;
+      _scheduleNavigationAfterAuthReady();
     } on FirebaseException catch (e) {
       if (!mounted) return;
       safeLogError('Erro ao inicializar Firebase', e);
@@ -73,6 +90,41 @@ class _SplashPageState extends State<SplashPage>
       safeLogError('Erro ao inicializar app na splash', e);
       setState(() => _startupError = '$e');
     }
+  }
+
+  /// Navegação pós-startup: chamado após [AuthProvider.loadCurrentUser] concluir,
+  /// fora do ciclo [build] (evita side effects durante reconstruções).
+  void _scheduleNavigationAfterAuthReady() {
+    if (!mounted ||
+        _redirectScheduled ||
+        !_startupReady ||
+        _startupError != null) {
+      return;
+    }
+    final auth = context.read<AuthProvider>();
+    if (!auth.hasResolvedInitialAuth || auth.loading) {
+      return;
+    }
+    _redirectScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final authNow = context.read<AuthProvider>();
+      final target = authNow.isAuthenticated
+          ? const HomePage()
+          : const LoginPage();
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => target,
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (_, animation, _, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
+              child: child,
+            );
+          },
+        ),
+      );
+    });
   }
 
   @override
@@ -85,72 +137,37 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppDesignTokens.colorBgDefault,
-      body: Consumer<AuthProvider>(
-        builder: (context, auth, _) {
-          if (_startupError != null) {
-            return _SplashErrorView(message: _startupError!);
-          }
-
-          // Quando a verificação inicial terminar, redireciona uma única vez.
-          if (_startupReady &&
-              auth.hasResolvedInitialAuth &&
-              !auth.loading &&
-              !_redirectScheduled) {
-            _redirectScheduled = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              final target = auth.isAuthenticated
-                  ? const HomePage()
-                  : const LoginPage();
-              Navigator.of(context).pushReplacement(
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => target,
-                  transitionDuration: const Duration(milliseconds: 400),
-                  transitionsBuilder: (_, animation, __, child) {
-                    return FadeTransition(
-                      opacity: CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeIn,
-                      ),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            });
-          }
-
-          return Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.account_balance,
-                    size: 72,
-                    color: AppDesignTokens.colorPrimary,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Cortex Bank',
-                    style: TextStyle(
-                      fontSize: AppDesignTokens.fontSizeTitle,
-                      fontWeight: AppDesignTokens.fontWeightBold,
+      body: _startupError != null
+          ? _SplashErrorView(message: _startupError!)
+          : Center(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.account_balance,
+                      size: 72,
                       color: AppDesignTokens.colorPrimary,
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  const CircularProgressIndicator(
-                    color: AppDesignTokens.colorPrimary,
-                    strokeWidth: 2,
-                  ),
-                ],
+                    const SizedBox(height: 24),
+                    Text(
+                      'Cortex Bank',
+                      style: TextStyle(
+                        fontSize: AppDesignTokens.fontSizeTitle,
+                        fontWeight: AppDesignTokens.fontWeightBold,
+                        color: AppDesignTokens.colorPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const CircularProgressIndicator(
+                      color: AppDesignTokens.colorPrimary,
+                      strokeWidth: 2,
+                    ),
+                  ],
+                ),
               ),
             ),
-          );
-        },
-      ),
     );
   }
 }

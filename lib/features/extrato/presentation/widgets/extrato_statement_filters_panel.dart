@@ -51,6 +51,7 @@ class ExtratoStatementFiltersPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
+            key: const Key('extrato.filter.search'),
             controller: searchController,
             onChanged: onSearchChanged,
             decoration: InputDecoration(

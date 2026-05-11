@@ -8,9 +8,9 @@ class AuthFieldStyles {
 
   static TextStyle labelStyle(BuildContext context) =>
       Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppDesignTokens.colorContentInverse,
-            fontWeight: AppDesignTokens.fontWeightMedium,
-          ) ??
+        color: AppDesignTokens.colorContentInverse,
+        fontWeight: AppDesignTokens.fontWeightMedium,
+      ) ??
       const TextStyle(
         color: AppDesignTokens.colorContentInverse,
         fontWeight: AppDesignTokens.fontWeightMedium,
@@ -18,13 +18,13 @@ class AuthFieldStyles {
 
   static TextStyle inputStyle(BuildContext context) =>
       Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppDesignTokens.colorContentInverse,
-          ) ??
+        color: AppDesignTokens.colorContentInverse,
+      ) ??
       const TextStyle(color: AppDesignTokens.colorContentInverse);
 
   static TextStyle hintStyle(BuildContext context) =>
-      Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppDesignTokens.colorGray400,
-          ) ??
+      Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: AppDesignTokens.colorGray400) ??
       const TextStyle(color: AppDesignTokens.colorGray400);
 }

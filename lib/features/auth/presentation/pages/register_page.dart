@@ -145,6 +145,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         // Campo Nome
                         AppTextField(
+                          key: const Key('register.firstName'),
                           formFieldKey: _firstNameFieldKey,
                           label: 'Nome',
                           controller: _firstNameController,
@@ -169,6 +170,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Campo Sobrenome
                         AppTextField(
+                          key: const Key('register.lastName'),
                           formFieldKey: _lastNameFieldKey,
                           label: 'Sobrenome',
                           controller: _lastNameController,
@@ -192,6 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Campo Email
                         AppTextField(
+                          key: const Key('register.email'),
                           formFieldKey: _emailFieldKey,
                           label: 'Email',
                           controller: _emailController,
@@ -216,6 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Campo Senha (mín. 8 caracteres)
                         AppTextField(
+                          key: const Key('register.password'),
                           formFieldKey: _passwordFieldKey,
                           label: 'Senha',
                           controller: _passwordController,
@@ -251,6 +255,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Campo Confirmar Senha
                         AppTextField(
+                          key: const Key('register.confirmPassword'),
                           formFieldKey: _confirmPasswordFieldKey,
                           label: 'Confirmar Senha',
                           controller: _confirmPasswordController,
@@ -286,6 +291,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(height: AppDesignTokens.spacingLg),
                         // Botão Criar conta
                         AppButton(
+                          key: const Key('register.submit'),
                           label: 'Criar conta',
                           loading: auth.loading,
                           onPressed: _onSubmit,
@@ -294,6 +300,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Botão Voltar para login
                         AppButton(
+                          key: const Key('register.backToLogin'),
                           label: 'Voltar para login',
                           onPressed: () {
                             Navigator.of(context).pop();

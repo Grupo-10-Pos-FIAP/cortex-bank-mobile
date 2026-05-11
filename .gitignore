@@ -33,6 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Golden/widget test failure output (local diffs; never commit)
+test/**/failures/
+
 # Symbolication related
 app.*.symbols
 

@@ -9,6 +9,7 @@ class AppTextFieldDecorator extends StatelessWidget {
   final TextEditingController? controller;
   final void Function(String)? onChanged;
   final bool enabled;
+
   /// Quando falso, usa teclado de texto e sem formatação de moeda (ex.: descrição).
   final bool isCurrency;
   final int? maxLines;

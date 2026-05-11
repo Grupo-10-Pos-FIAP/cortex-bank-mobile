@@ -4,10 +4,7 @@ import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 /// Cabeçalho reutilizável das telas de autenticação (login e registro).
 /// Exibe logo, tagline e título.
 class AuthPageHeader extends StatelessWidget {
-  const AuthPageHeader({
-    super.key,
-    required this.title,
-  });
+  const AuthPageHeader({super.key, required this.title});
 
   final String title;
 

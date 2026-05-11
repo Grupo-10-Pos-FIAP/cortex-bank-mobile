@@ -137,11 +137,7 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
     try {
       final urls = await Future.wait(
         attachments.map(
-          (a) => _receiptStorage.uploadReceipt(
-            transaction.id,
-            a.bytes,
-            a.name,
-          ),
+          (a) => _receiptStorage.uploadReceipt(transaction.id, a.bytes, a.name),
         ),
       );
       final updated = transaction.copyWith(

@@ -2,9 +2,8 @@
 // ignore_for_file: type=lint
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+    show defaultTargetPlatform, kDebugMode, kIsWeb, TargetPlatform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -17,6 +16,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  static const bool _integrationSkipFirebase = bool.fromEnvironment(
+    'INTEGRATION_SKIP_FIREBASE',
+    defaultValue: false,
+  );
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -27,19 +31,16 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       case TargetPlatform.linux:
+        if (kDebugMode || _integrationSkipFirebase) {
+          // Debug / integration: Android options from .env (same project as mobile).
+          return android;
+        }
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'DefaultFirebaseOptions are not configured for this desktop platform '
+          'in release/profile. Use FlutterFire for macOS/Windows/Linux or run '
+          'a debug build.',
         );
       default:
         throw UnsupportedError(

@@ -46,10 +46,10 @@ class AppRouteGenerator {
   ) {
     return PageRouteBuilder(
       settings: settings,
-      pageBuilder: (_, __, ___) => page,
+      pageBuilder: (_, _, _) => page,
       transitionDuration: const Duration(milliseconds: 280),
       reverseTransitionDuration: const Duration(milliseconds: 240),
-      transitionsBuilder: (_, animation, __, child) {
+      transitionsBuilder: (_, animation, _, child) {
         final tween = Tween<Offset>(
           begin: const Offset(1.0, 0.0),
           end: Offset.zero,

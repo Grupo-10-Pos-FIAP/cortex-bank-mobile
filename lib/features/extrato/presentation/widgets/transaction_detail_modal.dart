@@ -206,81 +206,76 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                 ),
               ),
               const SizedBox(height: AppDesignTokens.spacingXs),
-              ..._transaction.receiptUrls.asMap().entries.map(
-                (entry) {
-                  final url = entry.value;
-                  final isImage = url.contains('.jpg') ||
-                      url.contains('.jpeg') ||
-                      url.contains('.png');
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppDesignTokens.spacingSm,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isImage)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              AppDesignTokens.borderRadiusDefault,
-                            ),
-                            child: CachedNetworkImage(
-                              imageUrl: url,
+              ..._transaction.receiptUrls.asMap().entries.map((entry) {
+                final url = entry.value;
+                final isImage =
+                    url.contains('.jpg') ||
+                    url.contains('.jpeg') ||
+                    url.contains('.png');
+                return Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: AppDesignTokens.spacingSm,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isImage)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppDesignTokens.borderRadiusDefault,
+                          ),
+                          child: CachedNetworkImage(
+                            imageUrl: url,
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            placeholder: (_, _) => const SizedBox(
                               height: 120,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              placeholder: (_, _) => const SizedBox(
-                                height: 120,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (_, _, _) => const SizedBox(
-                                height: 60,
-                                child: Center(
-                                  child: Icon(Icons.broken_image, size: 32),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
                               ),
                             ),
-                          ),
-                        InkWell(
-                          onTap: () => launchUrl(
-                            Uri.parse(url),
-                            mode: LaunchMode.externalApplication,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isImage
-                                    ? Icons.image_outlined
-                                    : Icons.picture_as_pdf,
-                                size: 18,
-                                color: AppDesignTokens.colorPrimary,
+                            errorWidget: (_, _, _) => const SizedBox(
+                              height: 60,
+                              child: Center(
+                                child: Icon(Icons.broken_image, size: 32),
                               ),
-                              const SizedBox(
-                                width: AppDesignTokens.spacingSm,
-                              ),
-                              Expanded(
-                                child: Text(
-                                  isImage
-                                      ? 'Abrir imagem'
-                                      : 'Abrir PDF',
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: AppDesignTokens.colorPrimary,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      InkWell(
+                        onTap: () => launchUrl(
+                          Uri.parse(url),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isImage
+                                  ? Icons.image_outlined
+                                  : Icons.picture_as_pdf,
+                              size: 18,
+                              color: AppDesignTokens.colorPrimary,
+                            ),
+                            const SizedBox(width: AppDesignTokens.spacingSm),
+                            Expanded(
+                              child: Text(
+                                isImage ? 'Abrir imagem' : 'Abrir PDF',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: AppDesignTokens.colorPrimary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(height: AppDesignTokens.spacingSm),
             ],
             const SizedBox(height: AppDesignTokens.spacingMd),
@@ -320,7 +315,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
                       onPressed:
                           widget.onDownloadComprovante ??
                           () {
-                                  AppSnackBar.warning(
+                            AppSnackBar.warning(
                               context,
                               'Comprovante disponível em breve.',
                             );

@@ -15,10 +15,25 @@ class TransactionsProvider extends ChangeNotifier {
 
   TransactionsProvider(this._repository);
 
+  bool _disposed = false;
+
+  void _safeNotifyListeners() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   List<Transaction> _transactions = [];
   BalanceSummary? _balanceSummary;
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _transactionsError;
+  String? _balanceSummaryError;
+  bool _isBalanceSummaryLoading = false;
 
   dynamic _lastDocument;
   bool _hasMore = true;
@@ -37,7 +52,16 @@ class TransactionsProvider extends ChangeNotifier {
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   BalanceSummary? get balanceSummary => _balanceSummary;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+
+  /// Falhas em lista, paginação, CRUD e anexos de transação.
+  String? get transactionsError => _transactionsError;
+
+  /// Falhas apenas em [loadBalanceSummary] (independente da lista).
+  String? get balanceSummaryError => _balanceSummaryError;
+
+  /// `true` enquanto [getBalanceSummary] do repositório está em voo (após cache miss / [forceRefresh]).
+  bool get isBalanceSummaryLoading => _isBalanceSummaryLoading;
+
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
 
@@ -48,45 +72,75 @@ class TransactionsProvider extends ChangeNotifier {
         _transactionsCacheKey,
       );
       if (cachedTransactions != null) {
+        var changed = false;
         if (_transactions.isEmpty) {
           _transactions = List<Transaction>.from(cachedTransactions);
           _sortTransactionsNewestFirst();
-          notifyListeners();
+          changed = true;
         }
+        if (_transactionsError != null) {
+          _transactionsError = null;
+          changed = true;
+        }
+        if (changed) _safeNotifyListeners();
         return;
       }
 
-      if (_transactions.isNotEmpty) return;
+      if (_transactions.isNotEmpty) {
+        if (_transactionsError != null) {
+          _transactionsError = null;
+          _safeNotifyListeners();
+        }
+        return;
+      }
     }
 
     _setLoading(true);
-    _errorMessage = null;
+    _transactionsError = null;
 
     final result = await _repository.getAll();
+    if (_disposed) {
+      _setLoading(false);
+      return;
+    }
 
-    result.fold((success) {
-      _transactions = success;
-      _sortTransactionsNewestFirst();
-      CacheManager.set(
-        _transactionsCacheKey,
-        List<Transaction>.from(_transactions),
-        ttl: _transactionsCacheTtl,
-      );
-    }, (failure) => _errorMessage = failure.message);
+    result.fold(
+      (success) {
+        _transactions = List<Transaction>.from(success);
+        _sortTransactionsNewestFirst();
+        _lastDocument = null;
+        _hasMore = false;
+        CacheManager.set(
+          _transactionsCacheKey,
+          List<Transaction>.from(_transactions),
+          ttl: _transactionsCacheTtl,
+        );
+      },
+      (failure) {
+        _transactionsError = failure.message;
+        _lastDocument = null;
+        _hasMore = false;
+      },
+    );
 
+    _isLoadingMore = false;
     _setLoading(false);
   }
 
   Future<void> loadTransactionsPaginated() async {
     _setLoading(true);
-    _errorMessage = null;
+    _transactionsError = null;
     _lastDocument = null;
     _hasMore = true;
 
     final result = await _repository.getPage(_pageSize);
+    if (_disposed) {
+      _setLoading(false);
+      return;
+    }
 
     result.fold((page) {
-      _transactions = page.items;
+      _transactions = List<Transaction>.from(page.items);
       _sortTransactionsNewestFirst();
       CacheManager.set(
         _transactionsCacheKey,
@@ -95,7 +149,7 @@ class TransactionsProvider extends ChangeNotifier {
       );
       _lastDocument = page.lastDocument;
       _hasMore = page.hasMore;
-    }, (failure) => _errorMessage = failure.message);
+    }, (failure) => _transactionsError = failure.message);
 
     _setLoading(false);
   }
@@ -104,12 +158,16 @@ class TransactionsProvider extends ChangeNotifier {
     if (_isLoadingMore || !_hasMore) return;
 
     _isLoadingMore = true;
-    notifyListeners();
+    _safeNotifyListeners();
 
     final result = await _repository.getPage(
       _pageSize,
       startAfterDocument: _lastDocument,
     );
+    if (_disposed) {
+      _isLoadingMore = false;
+      return;
+    }
 
     result.fold((page) {
       final existing = _transactions.map((t) => t.id).toSet();
@@ -126,10 +184,10 @@ class TransactionsProvider extends ChangeNotifier {
       );
       _lastDocument = page.lastDocument;
       _hasMore = page.hasMore;
-    }, (failure) => _errorMessage = failure.message);
+    }, (failure) => _transactionsError = failure.message);
 
     _isLoadingMore = false;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   Future<void> loadBalanceSummary({bool forceRefresh = false}) async {
@@ -138,18 +196,39 @@ class TransactionsProvider extends ChangeNotifier {
         _balanceSummaryCacheKey,
       );
       if (cachedSummary != null) {
+        var changed = false;
         if (_balanceSummary == null) {
           _balanceSummary = cachedSummary;
-          notifyListeners();
+          changed = true;
         }
+        if (_balanceSummaryError != null) {
+          _balanceSummaryError = null;
+          changed = true;
+        }
+        if (changed) _safeNotifyListeners();
         return;
       }
 
-      if (_balanceSummary != null) return;
+      if (_balanceSummary != null) {
+        if (_balanceSummaryError != null) {
+          _balanceSummaryError = null;
+          _safeNotifyListeners();
+        }
+        return;
+      }
     }
 
-    final result = await _repository.getBalanceSummary();
+    _isBalanceSummaryLoading = true;
+    _balanceSummaryError = null;
+    _safeNotifyListeners();
 
+    final result = await _repository.getBalanceSummary();
+    if (_disposed) {
+      _isBalanceSummaryLoading = false;
+      return;
+    }
+
+    _isBalanceSummaryLoading = false;
     result.fold((success) {
       _balanceSummary = success;
       CacheManager.set(
@@ -157,8 +236,8 @@ class TransactionsProvider extends ChangeNotifier {
         success,
         ttl: _balanceSummaryCacheTtl,
       );
-      notifyListeners();
-    }, (failure) => _errorMessage = failure.message);
+    }, (failure) => _balanceSummaryError = failure.message);
+    _safeNotifyListeners();
   }
 
   Future<Transaction?> addTransaction(
@@ -166,13 +245,19 @@ class TransactionsProvider extends ChangeNotifier {
     bool skipBalanceRefresh = false,
   }) async {
     _setLoading(true);
-    _errorMessage = null;
+    _transactionsError = null;
 
     final result = await _repository.add(transaction);
+    if (_disposed) {
+      _setLoading(false);
+      return null;
+    }
 
     Transaction? created;
+    var added = false;
     result.fold(
       (id) {
+        added = true;
         created = transaction.copyWith(id: id);
         _transactions = [created!, ..._transactions];
         _sortTransactionsNewestFirst();
@@ -181,14 +266,15 @@ class TransactionsProvider extends ChangeNotifier {
           List<Transaction>.from(_transactions),
           ttl: _transactionsCacheTtl,
         );
-        if (!skipBalanceRefresh) {
-          loadBalanceSummary(forceRefresh: true);
-        }
       },
       (failure) {
-        _errorMessage = failure.message;
+        _transactionsError = failure.message;
       },
     );
+
+    if (added && !skipBalanceRefresh) {
+      await loadBalanceSummary(forceRefresh: true);
+    }
 
     _setLoading(false);
     return created;
@@ -196,9 +282,13 @@ class TransactionsProvider extends ChangeNotifier {
 
   Future<bool> updateTransaction(Transaction transaction) async {
     _setLoading(true);
-    _errorMessage = null;
+    _transactionsError = null;
 
     final result = await _repository.update(transaction);
+    if (_disposed) {
+      _setLoading(false);
+      return false;
+    }
 
     final isSuccess = result.fold(
       (_) {
@@ -212,17 +302,19 @@ class TransactionsProvider extends ChangeNotifier {
             ttl: _transactionsCacheTtl,
           );
         }
-        loadBalanceSummary(forceRefresh: true);
         return true;
       },
       (failure) {
-        _errorMessage = failure.message;
+        _transactionsError = failure.message;
         return false;
       },
     );
 
+    if (isSuccess) {
+      await loadBalanceSummary(forceRefresh: true);
+    }
+
     _setLoading(false);
-    notifyListeners();
     return isSuccess;
   }
 
@@ -236,6 +328,7 @@ class TransactionsProvider extends ChangeNotifier {
       fileBytes,
       fileName,
     );
+    if (_disposed) return null;
     return result.fold(
       (updated) {
         final index = _transactions.indexWhere((t) => t.id == updated.id);
@@ -247,12 +340,12 @@ class TransactionsProvider extends ChangeNotifier {
             ttl: _transactionsCacheTtl,
           );
         }
-        notifyListeners();
+        _safeNotifyListeners();
         return updated;
       },
       (failure) {
-        _errorMessage = failure.message;
-        notifyListeners();
+        _transactionsError = failure.message;
+        _safeNotifyListeners();
         return null;
       },
     );
@@ -264,6 +357,7 @@ class TransactionsProvider extends ChangeNotifier {
   ) async {
     if (attachments.isEmpty) return transaction;
     final result = await _repository.uploadReceipts(transaction, attachments);
+    if (_disposed) return null;
     return result.fold(
       (updated) {
         final index = _transactions.indexWhere((t) => t.id == updated.id);
@@ -275,12 +369,12 @@ class TransactionsProvider extends ChangeNotifier {
             ttl: _transactionsCacheTtl,
           );
         }
-        notifyListeners();
+        _safeNotifyListeners();
         return updated;
       },
       (failure) {
-        _errorMessage = failure.message;
-        notifyListeners();
+        _transactionsError = failure.message;
+        _safeNotifyListeners();
         return null;
       },
     );
@@ -289,7 +383,12 @@ class TransactionsProvider extends ChangeNotifier {
   Future<void> deleteTransaction(String id) async {
     _setLoading(true);
     final result = await _repository.delete(id);
+    if (_disposed) {
+      _setLoading(false);
+      return;
+    }
 
+    var removed = false;
     result.fold((_) {
       _transactions.removeWhere((t) => t.id == id);
       CacheManager.set(
@@ -297,19 +396,24 @@ class TransactionsProvider extends ChangeNotifier {
         List<Transaction>.from(_transactions),
         ttl: _transactionsCacheTtl,
       );
-      loadBalanceSummary(forceRefresh: true);
-    }, (failure) => _errorMessage = failure.message);
+      removed = true;
+    }, (failure) => _transactionsError = failure.message);
+
+    if (removed) {
+      await loadBalanceSummary(forceRefresh: true);
+    }
 
     _setLoading(false);
   }
 
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void clearError() {
-    _errorMessage = null;
-    notifyListeners();
+    _transactionsError = null;
+    _balanceSummaryError = null;
+    _safeNotifyListeners();
   }
 }

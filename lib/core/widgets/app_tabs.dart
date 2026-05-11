@@ -54,10 +54,7 @@ class AppTabs extends StatelessWidget {
                 ? List.generate(
                     titles.length,
                     (i) => Tab(
-                      child: _WebHoverTabLabel(
-                        index: i,
-                        title: titles[i],
-                      ),
+                      child: _WebHoverTabLabel(index: i, title: titles[i]),
                     ),
                   )
                 : titles.map((title) => Tab(text: title)).toList(),
@@ -77,10 +74,7 @@ class AppTabs extends StatelessWidget {
 }
 
 class _WebHoverTabLabel extends StatefulWidget {
-  const _WebHoverTabLabel({
-    required this.index,
-    required this.title,
-  });
+  const _WebHoverTabLabel({required this.index, required this.title});
 
   final int index;
   final String title;
@@ -126,7 +120,8 @@ class _WebHoverTabLabelState extends State<_WebHoverTabLabel> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final h = constraints.hasBoundedHeight &&
+            final h =
+                constraints.hasBoundedHeight &&
                     constraints.maxHeight.isFinite &&
                     constraints.maxHeight > 0
                 ? constraints.maxHeight

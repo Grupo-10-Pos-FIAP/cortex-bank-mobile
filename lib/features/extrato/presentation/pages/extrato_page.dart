@@ -8,7 +8,6 @@ import 'package:cortex_bank_mobile/features/transaction/constants/transaction_da
 import 'package:cortex_bank_mobile/features/transaction/state/transactions_provider.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 
@@ -20,8 +19,6 @@ class ExtratoPage extends StatefulWidget {
 }
 
 class _ExtratoPageState extends State<ExtratoPage> {
-  TransactionsProvider? _transactionsProvider;
-
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _minValueController = TextEditingController(
     text: 'R\$ 0,00',
@@ -40,12 +37,6 @@ class _ExtratoPageState extends State<ExtratoPage> {
   String _periodoPreset = 'last30';
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _transactionsProvider ??= context.read<TransactionsProvider>();
-  }
-
-  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,7 +44,6 @@ class _ExtratoPageState extends State<ExtratoPage> {
       context.read<TransactionsProvider>().loadBalanceSummary();
     });
     _applyPreset('last30');
-    _scrollController.addListener(_onScroll);
   }
 
   void _scheduleCheckLoadMore() {
@@ -61,6 +51,11 @@ class _ExtratoPageState extends State<ExtratoPage> {
       if (!mounted) return;
       _checkLoadMore();
     });
+  }
+
+  void _notifyFiltersChanged(VoidCallback update) {
+    update();
+    _scheduleCheckLoadMore();
   }
 
   void _checkLoadMore() {
@@ -96,8 +91,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
     }
   }
 
-  void _onScroll() {
-    _checkLoadMore();
+  /// Lista vazia na UI: distingue falha de carga, lista vazia real e filtro sem match.
+  String _extratoEmptyMessage(TransactionsProvider tx) {
+    if (tx.transactions.isEmpty) {
+      return tx.transactionsError ?? 'Nenhuma transação encontrada';
+    }
+    return 'Nenhum resultado para os filtros selecionados.';
   }
 
   StatementFilterCriteria _currentCriteria() {
@@ -153,21 +152,15 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _dateStart = start;
       _dateEnd = end;
     });
+    _scheduleCheckLoadMore();
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchController.dispose();
     _minValueController.dispose();
     _maxValueController.dispose();
-    final provider = _transactionsProvider;
-    if (provider != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        provider.loadTransactions();
-      });
-    }
     super.dispose();
   }
 
@@ -204,6 +197,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
         _dateStart = DateTime(start.year, start.month, start.day);
         _dateEnd = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
       });
+      _scheduleCheckLoadMore();
     }
   }
 
@@ -214,7 +208,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
@@ -228,22 +222,39 @@ class _ExtratoPageState extends State<ExtratoPage> {
                 ),
                 child: Text(
                   'Escolha o período',
-                  style: GoogleFonts.roboto(
+                  style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
                     fontSize: AppDesignTokens.fontSizeSubtitle,
                     fontWeight: AppDesignTokens.fontWeightSemibold,
                     color: AppDesignTokens.colorContentDefault,
                   ),
                 ),
               ),
-              _periodOption('Últimos 7 dias', 'last7', Icons.today),
-              _periodOption('Últimos 15 dias', 'last15', Icons.date_range),
-              _periodOption('Últimos 30 dias', 'last30', Icons.calendar_month),
               _periodOption(
+                sheetContext,
+                'Últimos 7 dias',
+                'last7',
+                Icons.today,
+              ),
+              _periodOption(
+                sheetContext,
+                'Últimos 15 dias',
+                'last15',
+                Icons.date_range,
+              ),
+              _periodOption(
+                sheetContext,
+                'Últimos 30 dias',
+                'last30',
+                Icons.calendar_month,
+              ),
+              _periodOption(
+                sheetContext,
                 'Últimos 90 dias',
                 'last90',
                 Icons.calendar_view_month,
               ),
               _periodOption(
+                sheetContext,
                 'Escolher intervalo no calendário',
                 'custom',
                 Icons.edit_calendar,
@@ -255,7 +266,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
     );
   }
 
-  Widget _periodOption(String label, String value, IconData icon) {
+  Widget _periodOption(
+    BuildContext modalContext,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     final isSelected = _periodoPreset == value;
     return ListTile(
       leading: Icon(
@@ -266,7 +282,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       ),
       title: Text(
         label,
-        style: GoogleFonts.roboto(
+        style: Theme.of(modalContext).textTheme.bodyMedium?.copyWith(
           fontSize: AppDesignTokens.fontSizeBody,
           fontWeight: isSelected
               ? AppDesignTokens.fontWeightSemibold
@@ -280,7 +296,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
                 ? Icon(Icons.check, color: AppDesignTokens.colorPrimary)
                 : null),
       onTap: () async {
-        Navigator.pop(context);
+        Navigator.pop(modalContext);
         if (value == 'custom') {
           await _pickDateRangeCalendar();
         } else {
@@ -319,7 +335,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       appBar: AppBar(
         title: Text(
           'Extrato',
-          style: GoogleFonts.roboto(
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: AppDesignTokens.fontWeightBold,
             color: AppDesignTokens.colorContentDefault,
           ),
@@ -333,9 +349,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
           if (tx.isLoading && tx.transactions.isEmpty) {
             return const AppLoading();
           }
-          final filtered =
-              applyStatementFilter(tx.transactions, _currentCriteria());
-          _scheduleCheckLoadMore();
+          final filtered = applyStatementFilter(
+            tx.transactions,
+            _currentCriteria(),
+          );
           return NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification n) {
               if (n is ScrollUpdateNotification ||
@@ -356,21 +373,26 @@ class _ExtratoPageState extends State<ExtratoPage> {
                   SliverToBoxAdapter(
                     child: ExtratoStatementFiltersPanel(
                       searchController: _searchController,
-                      onSearchChanged: (_) => setState(() {}),
+                      onSearchChanged: (_) =>
+                          _notifyFiltersChanged(() => setState(() {})),
                       periodoTexto: _periodoTexto,
                       onPeriodTap: _showPeriodoOptions,
                       tipoFiltro: _tipoFiltro,
-                      onTipoChanged: (v) =>
-                          setState(() => _tipoFiltro = v ?? 'todas'),
+                      onTipoChanged: (v) => _notifyFiltersChanged(
+                        () => setState(() => _tipoFiltro = v ?? 'todas'),
+                      ),
                       statusFiltro: _statusFiltro,
-                      onStatusChanged: (v) =>
-                          setState(() => _statusFiltro = v ?? 'todas'),
+                      onStatusChanged: (v) => _notifyFiltersChanged(
+                        () => setState(() => _statusFiltro = v ?? 'todas'),
+                      ),
                       categoriaFiltro: _categoriaFiltro,
-                      onCategoriaChanged: (v) =>
-                          setState(() => _categoriaFiltro = v ?? 'todas'),
+                      onCategoriaChanged: (v) => _notifyFiltersChanged(
+                        () => setState(() => _categoriaFiltro = v ?? 'todas'),
+                      ),
                       minValueController: _minValueController,
                       maxValueController: _maxValueController,
-                      onMinMaxChanged: () => setState(() {}),
+                      onMinMaxChanged: () =>
+                          _notifyFiltersChanged(() => setState(() {})),
                       onClearFilters: _limparFiltros,
                     ),
                   ),
@@ -380,12 +402,13 @@ class _ExtratoPageState extends State<ExtratoPage> {
                         child: tx.isLoadingMore && tx.transactions.isNotEmpty
                             ? const CircularProgressIndicator(strokeWidth: 2)
                             : Text(
-                                tx.errorMessage ??
-                                    'Nenhuma transação encontrada',
-                                style: GoogleFonts.roboto(
-                                  fontSize: AppDesignTokens.fontSizeBody,
-                                  color: AppDesignTokens.colorContentDisabled,
-                                ),
+                                _extratoEmptyMessage(tx),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      fontSize: AppDesignTokens.fontSizeBody,
+                                      color:
+                                          AppDesignTokens.colorContentDisabled,
+                                    ),
                               ),
                       ),
                     )
@@ -421,10 +444,11 @@ class _ExtratoPageState extends State<ExtratoPage> {
                           child: Center(
                             child: Text(
                               'Todas as transações carregadas',
-                              style: GoogleFonts.roboto(
-                                fontSize: AppDesignTokens.fontSizeSmall,
-                                color: AppDesignTokens.colorContentDisabled,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontSize: AppDesignTokens.fontSizeSmall,
+                                    color: AppDesignTokens.colorContentDisabled,
+                                  ),
                             ),
                           ),
                         ),

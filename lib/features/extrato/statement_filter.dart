@@ -79,14 +79,17 @@ List<Transaction> applyStatementFilter(
     result = result.where((t) => t.type == TransactionType.ted).toList();
   }
   if (c.statusFiltro == 'completa') {
-    result =
-        result.where((t) => t.status == TransactionStatus.completed).toList();
+    result = result
+        .where((t) => t.status == TransactionStatus.completed)
+        .toList();
   } else if (c.statusFiltro == 'agendada') {
-    result =
-        result.where((t) => t.status == TransactionStatus.scheduled).toList();
+    result = result
+        .where((t) => t.status == TransactionStatus.scheduled)
+        .toList();
   } else if (c.statusFiltro == 'pendente') {
-    result =
-        result.where((t) => t.status == TransactionStatus.pending).toList();
+    result = result
+        .where((t) => t.status == TransactionStatus.pending)
+        .toList();
   }
   if (c.categoriaFiltro != 'todas') {
     TransactionCategory? match;

@@ -15,6 +15,7 @@ class _TransactionFormPageState extends State<TransactionFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('transaction.form.page'),
       backgroundColor: AppDesignTokens.colorBgDefault,
       body: SafeArea(
         child: SingleChildScrollView(

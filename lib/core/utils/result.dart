@@ -8,16 +8,19 @@ sealed class Result<T> {
   bool get isFailure => this is FailureResult<T>;
 
   T? get valueOrNull => switch (this) {
-        Success(:final value) => value,
-        FailureResult() => null,
-      };
+    Success(:final value) => value,
+    FailureResult() => null,
+  };
 
   Failure? get failureOrNull => switch (this) {
-        Success() => null,
-        FailureResult(:final failure) => failure,
-      };
+    Success() => null,
+    FailureResult(:final failure) => failure,
+  };
 
-  R fold<R>(R Function(T value) onSuccess, R Function(Failure failure) onFailure) {
+  R fold<R>(
+    R Function(T value) onSuccess,
+    R Function(Failure failure) onFailure,
+  ) {
     return switch (this) {
       Success(:final value) => onSuccess(value),
       FailureResult(:final failure) => onFailure(failure),

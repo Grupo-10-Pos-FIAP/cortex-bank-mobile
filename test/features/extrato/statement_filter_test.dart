@@ -59,238 +59,243 @@ void main() {
     ),
   ];
 
-  test('empty criteria keeps order and all items', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
+  group('applyStatementFilter', () {
+    test(
+      'deve manter ordem e todos os itens quando critérios estiverem vazios',
+      () {
+        const c = StatementFilterCriteria(
+          searchQuery: '',
+          dateStart: null,
+          dateEnd: null,
+          tipoFiltro: 'todas',
+          statusFiltro: 'todas',
+          minCents: 0,
+          maxCents: 0,
+        );
+        final out = applyStatementFilter(list, c);
+        expect(out.map((e) => e.id).toList(), ['a', 'b', 'c']);
+      },
     );
-    final out = applyStatementFilter(list, c);
-    expect(out.map((e) => e.id).toList(), ['a', 'b', 'c']);
-  });
 
-  test('search by from is case insensitive', () {
-    const c = StatementFilterCriteria(
-      searchQuery: 'alice',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    final out = applyStatementFilter(list, c);
-    expect(out.map((e) => e.id).toList(), ['a']);
-  });
+    test('deve buscar por remetente ignorando maiúsculas', () {
+      const c = StatementFilterCriteria(
+        searchQuery: 'alice',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      final out = applyStatementFilter(list, c);
+      expect(out.map((e) => e.id).toList(), ['a']);
+    });
 
-  test('date range inclusive of end of day', () {
-    final c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: dayBefore,
-      dateEnd: baseDate,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    final out = applyStatementFilter(list, c);
-    expect(out.map((e) => e.id).toList(), ['a', 'b']);
-  });
+    test('deve incluir fim do dia no intervalo de datas', () {
+      final c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: dayBefore,
+        dateEnd: baseDate,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      final out = applyStatementFilter(list, c);
+      expect(out.map((e) => e.id).toList(), ['a', 'b']);
+    });
 
-  test('tipo credito', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'credito',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
-  });
+    test('deve filtrar por tipo crédito', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'credito',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
+    });
 
-  test('tipo debito', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'debito',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
-  });
+    test('deve filtrar por tipo débito', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'debito',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
+    });
 
-  test('tipo ted', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'ted',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
-  });
+    test('deve filtrar por tipo TED', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'ted',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
+    });
 
-  test('status completa', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'completa',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
-  });
+    test('deve filtrar por status completa', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'completa',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
+    });
 
-  test('status pendente', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'pendente',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
-  });
+    test('deve filtrar por status pendente', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'pendente',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
+    });
 
-  test('status agendada', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'agendada',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
-  });
+    test('deve filtrar por status agendada', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'agendada',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
+    });
 
-  test('minCents and maxCents zero do not filter by value', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).length, 3);
-  });
+    test('deve ignorar filtro de valor quando min e max forem zero', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).length, 3);
+    });
 
-  test('minCents filters', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      minCents: 10000,
-      maxCents: 0,
-    );
-    final out = applyStatementFilter(list, c);
-    expect(out.map((e) => e.id).toList(), ['b']);
-  });
+    test('deve filtrar por valor mínimo em centavos', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        minCents: 10000,
+        maxCents: 0,
+      );
+      final out = applyStatementFilter(list, c);
+      expect(out.map((e) => e.id).toList(), ['b']);
+    });
 
-  test('maxCents filters', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      minCents: 0,
-      maxCents: 1500,
-    );
-    final out = applyStatementFilter(list, c);
-    expect(out.map((e) => e.id).toList(), ['c']);
-  });
+    test('deve filtrar por valor máximo em centavos', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        minCents: 0,
+        maxCents: 1500,
+      );
+      final out = applyStatementFilter(list, c);
+      expect(out.map((e) => e.id).toList(), ['c']);
+    });
 
-  test('categoria salary', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      categoriaFiltro: 'salary',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
-  });
+    test('deve filtrar por categoria salary', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        categoriaFiltro: 'salary',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['a']);
+    });
 
-  test('categoria food', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      categoriaFiltro: 'food',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
-  });
+    test('deve filtrar por categoria food', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        categoriaFiltro: 'food',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['b']);
+    });
 
-  test('categoria ted matches enum name', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      categoriaFiltro: 'ted',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
-  });
+    test('deve filtrar categoria ted pelo nome do enum', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        categoriaFiltro: 'ted',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
+    });
 
-  test('categoria todas keeps all items', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      categoriaFiltro: 'todas',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).map((e) => e.id).toList(), [
-      'a',
-      'b',
-      'c',
-    ]);
-  });
+    test('deve manter todos os itens quando categoria for todas', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        categoriaFiltro: 'todas',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).map((e) => e.id).toList(), [
+        'a',
+        'b',
+        'c',
+      ]);
+    });
 
-  test('unknown categoriaFiltro does not filter', () {
-    const c = StatementFilterCriteria(
-      searchQuery: '',
-      dateStart: null,
-      dateEnd: null,
-      tipoFiltro: 'todas',
-      statusFiltro: 'todas',
-      categoriaFiltro: 'not_a_category',
-      minCents: 0,
-      maxCents: 0,
-    );
-    expect(applyStatementFilter(list, c).length, 3);
+    test('deve ignorar categoria desconhecida', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        dateStart: null,
+        dateEnd: null,
+        tipoFiltro: 'todas',
+        statusFiltro: 'todas',
+        categoriaFiltro: 'not_a_category',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(applyStatementFilter(list, c).length, 3);
+    });
   });
 }

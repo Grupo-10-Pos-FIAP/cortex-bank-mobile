@@ -16,24 +16,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 Future<void> _downloadComprovante(
-  BuildContext context,
+  BuildContext dialogContext,
+  BuildContext listContext,
   model.Transaction transaction,
 ) async {
-  final deValue = context.read<AuthProvider>().user?.username ??
+  final deValue =
+      listContext.read<AuthProvider>().user?.username ??
       transaction.from ??
       '—';
   final content = ComprovanteContent.build(transaction, deValue);
   final filename = 'comprovante-${transaction.id}.txt';
   try {
     await downloadComprovante(filename, content);
-    if (context.mounted) {
-      Navigator.of(context).pop();
-      AppSnackBar.success(context, 'Comprovante baixado com sucesso.');
+    if (dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
+    if (listContext.mounted) {
+      AppSnackBar.success(listContext, 'Comprovante baixado com sucesso.');
     }
   } on UnsupportedError catch (_) {
-    if (context.mounted) {
-      Navigator.of(context).pop();
-      AppSnackBar.warning(context, 'Comprovante disponível em breve.');
+    if (dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
+    if (listContext.mounted) {
+      AppSnackBar.warning(listContext, 'Comprovante disponível em breve.');
     }
   }
 }
@@ -86,18 +92,15 @@ class TransactionCard extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     final isIncome = transaction.type == model.TransactionType.credit;
-    final isTedCategory =
-        transaction.category == model.TransactionCategory.ted;
+    final isTedCategory = transaction.category == model.TransactionCategory.ted;
 
     String transactionTypeLabel;
     if (transaction.type == model.TransactionType.credit) {
-      transactionTypeLabel =
-          isTedCategory ? 'Entrada (TED)' : 'Entrada';
+      transactionTypeLabel = isTedCategory ? 'Entrada (TED)' : 'Entrada';
     } else if (transaction.type == model.TransactionType.ted) {
       transactionTypeLabel = 'Saída (TED)';
     } else {
-      transactionTypeLabel =
-          isTedCategory ? 'Saída (TED)' : 'Saída';
+      transactionTypeLabel = isTedCategory ? 'Saída (TED)' : 'Saída';
     }
 
     final valueCents = (transaction.value.abs() * 100).round();
@@ -107,7 +110,9 @@ class TransactionCard extends StatelessWidget {
 
     final dateStr = DateFormatter.formatDate(transaction.date);
     final statusLabel = model.TransactionStatus.labelPt(transaction.status);
-    final titularName = context.read<AuthProvider>().user?.username;
+    final titularName = context.select<AuthProvider, String?>(
+      (auth) => auth.user?.username,
+    );
     final deLabel = (titularName != null && titularName.isNotEmpty)
         ? titularName
         : transaction.from;
@@ -134,233 +139,305 @@ class TransactionCard extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.zero,
-        child: InkWell(
-          onTap: () async {
-            await showDialog<void>(
-              context: context,
-              builder: (ctx) => TransactionDetailModal(
-                transaction: transaction,
-                onDownloadComprovante:
-                    transaction.status == model.TransactionStatus.completed
-                        ? () => _downloadComprovante(context, transaction)
-                        : null,
-                onUploadReceipt:
-                    transaction.receiptUrls.length <
-                            AttachmentConstants.maxAttachments
-                        ? () => _uploadReceipt(context, transaction)
-                        : null,
-                onEditTransaction:
-                    transaction.status == model.TransactionStatus.scheduled ||
-                            transaction.status == model.TransactionStatus.pending
-                        ? (model.Transaction t) {
-                            if (!context.mounted) return;
-                            showDialog<void>(
-                              context: context,
-                              builder: (editCtx) =>
-                                  TransactionEditModal(data: t),
-                            );
-                          }
-                        : null,
-              ),
-            );
-          },
-
-          child: Padding(
-            padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: isIncome
-                            ? AppDesignTokens.colorFeedbackSuccess.withValues(
-                                alpha: 0.15,
-                              )
-                            : AppDesignTokens.colorFeedbackWarning.withValues(
-                                alpha: 0.25,
-                              ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-                        color: isIncome
-                            ? AppDesignTokens.colorFeedbackSuccess
-                            : AppDesignTokens.colorFeedbackWarning,
-                        size: 22,
-                      ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () async {
+                  await showDialog<void>(
+                    context: context,
+                    builder: (dialogCtx) => TransactionDetailModal(
+                      transaction: transaction,
+                      onDownloadComprovante:
+                          transaction.status ==
+                              model.TransactionStatus.completed
+                          ? () => _downloadComprovante(
+                              dialogCtx,
+                              context,
+                              transaction,
+                            )
+                          : null,
+                      onUploadReceipt:
+                          transaction.receiptUrls.length <
+                              AttachmentConstants.maxAttachments
+                          ? () => _uploadReceipt(context, transaction)
+                          : null,
+                      onEditTransaction:
+                          transaction.status ==
+                                  model.TransactionStatus.scheduled ||
+                              transaction.status ==
+                                  model.TransactionStatus.pending
+                          ? (model.Transaction t) {
+                              if (!context.mounted) return;
+                              showDialog<void>(
+                                context: context,
+                                builder: (editCtx) =>
+                                    TransactionEditModal(data: t),
+                              );
+                            }
+                          : null,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDesignTokens.spacingMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            transactionTypeLabel,
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontWeight: AppDesignTokens.fontWeightSemibold,
-                              fontSize: AppDesignTokens.fontSizeBody,
-                              color: AppDesignTokens.colorContentDefault,
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: isIncome
+                                  ? AppDesignTokens.colorFeedbackSuccess
+                                        .withValues(alpha: 0.15)
+                                  : AppDesignTokens.colorFeedbackWarning
+                                        .withValues(alpha: 0.25),
+                              shape: BoxShape.circle,
                             ),
-                            overflow: TextOverflow.ellipsis,
+                            child: Icon(
+                              isIncome
+                                  ? Icons.arrow_downward
+                                  : Icons.arrow_upward,
+                              color: isIncome
+                                  ? AppDesignTokens.colorFeedbackSuccess
+                                  : AppDesignTokens.colorFeedbackWarning,
+                              size: 22,
+                            ),
                           ),
-                          const SizedBox(height: 4),
-                          if (transaction.status ==
-                              model.TransactionStatus.scheduled)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    AppDesignTokens.colorBadgeScheduledBackground,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'Agendada para: $dateStr',
-                                style: textTheme.bodySmall?.copyWith(
-                                  fontSize: AppDesignTokens.fontSizeCaption,
-                                  fontWeight: AppDesignTokens.fontWeightMedium,
-                                  color: AppDesignTokens
-                                      .colorBadgeScheduledForeground,
-                                ),
-                              ),
-                            ),
-                          if (transaction.status ==
-                              model.TransactionStatus.pending)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppDesignTokens.colorFeedbackWarning
-                                    .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                statusLabel,
-                                style: textTheme.bodySmall?.copyWith(
-                                  fontSize: AppDesignTokens.fontSizeCaption,
-                                  fontWeight: AppDesignTokens.fontWeightMedium,
-                                  color: const Color(0xFFE65100),
-                                ),
-                              ),
-                            ),
-                          if (transaction.status ==
-                              model.TransactionStatus.completed)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppDesignTokens.colorFeedbackSuccess
-                                    .withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                statusLabel,
-                                style: textTheme.bodySmall?.copyWith(
-                                  fontSize: AppDesignTokens.fontSizeCaption,
-                                  fontWeight: AppDesignTokens.fontWeightMedium,
-                                  color: AppDesignTokens.colorFeedbackSuccess,
-                                ),
-                              ),
-                            ),
-                          if (hasFromTo) ...[
-                            const SizedBox(height: 6),
-                            Row(
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.person_outline,
-                                  size: 16,
-                                  color: AppDesignTokens.colorContentDisabled,
+                                Text(
+                                  transactionTypeLabel,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontWeight:
+                                        AppDesignTokens.fontWeightSemibold,
+                                    fontSize: AppDesignTokens.fontSizeBody,
+                                    color: AppDesignTokens.colorContentDefault,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    fromToText,
+                                const SizedBox(height: 4),
+                                if (transaction.status ==
+                                    model.TransactionStatus.scheduled)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppDesignTokens
+                                          .colorBadgeScheduledBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'Agendada para: $dateStr',
+                                      style: textTheme.bodySmall?.copyWith(
+                                        fontSize:
+                                            AppDesignTokens.fontSizeCaption,
+                                        fontWeight:
+                                            AppDesignTokens.fontWeightMedium,
+                                        color: AppDesignTokens
+                                            .colorBadgeScheduledForeground,
+                                      ),
+                                    ),
+                                  ),
+                                if (transaction.status ==
+                                    model.TransactionStatus.pending)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppDesignTokens
+                                          .colorFeedbackWarning
+                                          .withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      statusLabel,
+                                      style: textTheme.bodySmall?.copyWith(
+                                        fontSize:
+                                            AppDesignTokens.fontSizeCaption,
+                                        fontWeight:
+                                            AppDesignTokens.fontWeightMedium,
+                                        color: const Color(0xFFE65100),
+                                      ),
+                                    ),
+                                  ),
+                                if (transaction.status ==
+                                    model.TransactionStatus.completed)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppDesignTokens
+                                          .colorFeedbackSuccess
+                                          .withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      statusLabel,
+                                      style: textTheme.bodySmall?.copyWith(
+                                        fontSize:
+                                            AppDesignTokens.fontSizeCaption,
+                                        fontWeight:
+                                            AppDesignTokens.fontWeightMedium,
+                                        color: AppDesignTokens
+                                            .colorFeedbackSuccess,
+                                      ),
+                                    ),
+                                  ),
+                                if (hasFromTo) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.person_outline,
+                                        size: 16,
+                                        color: AppDesignTokens
+                                            .colorContentDisabled,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          fromToText,
+                                          style: textTheme.bodySmall?.copyWith(
+                                            fontSize:
+                                                AppDesignTokens.fontSizeSmall,
+                                            color: AppDesignTokens
+                                                .colorContentDisabled,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                if (transaction.description != null &&
+                                    transaction.description!.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    transaction.description!,
                                     style: textTheme.bodySmall?.copyWith(
                                       fontSize: AppDesignTokens.fontSizeSmall,
                                       color:
                                           AppDesignTokens.colorContentDisabled,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    valorStr,
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      fontWeight:
+                                          AppDesignTokens.fontWeightBold,
+                                      fontSize: AppDesignTokens.fontSizeBody,
+                                      color: isIncome
+                                          ? AppDesignTokens.colorFeedbackSuccess
+                                          : AppDesignTokens.colorFeedbackError,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (transaction.description != null &&
-                              transaction.description!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              transaction.description!,
-                              style: textTheme.bodySmall?.copyWith(
-                                fontSize: AppDesignTokens.fontSizeSmall,
-                                color: AppDesignTokens.colorContentDisabled,
-                                fontStyle: FontStyle.italic,
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today,
+                                        size: 14,
+                                        color: AppDesignTokens
+                                            .colorContentDisabled,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        dateStr,
+                                        style: textTheme.bodySmall?.copyWith(
+                                          fontSize:
+                                              AppDesignTokens.fontSizeCaption,
+                                          color: AppDesignTokens
+                                              .colorContentDisabled,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ],
                       ),
-                    ),
-                    Flexible(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              valorStr,
-                              style: textTheme.bodyMedium?.copyWith(
-                                fontWeight: AppDesignTokens.fontWeightBold,
-                                fontSize: AppDesignTokens.fontSizeBody,
-                                color: isIncome
-                                    ? AppDesignTokens.colorFeedbackSuccess
-                                    : AppDesignTokens.colorFeedbackError,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.calendar_today,
-                                  size: 14,
-                                  color: AppDesignTokens.colorContentDisabled,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  dateStr,
-                                  style: textTheme.bodySmall?.copyWith(
-                                    fontSize: AppDesignTokens.fontSizeCaption,
-                                    color: AppDesignTokens.colorContentDisabled,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, right: 4),
+              child: IconButton(
+                key: const Key('extrato.transaction.delete'),
+                tooltip: 'Excluir',
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: AppDesignTokens.colorFeedbackAlert,
+                ),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Excluir transação?'),
+                      content: const Text(
+                        'Esta transação será removida do extrato. Deseja continuar?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        TextButton(
+                          key: const Key('extrato.transaction.delete.confirm'),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(
+                            'Excluir',
+                            style: TextStyle(
+                              color: AppDesignTokens.colorFeedbackAlert,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    onDelete();
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

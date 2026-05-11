@@ -90,12 +90,17 @@ class _LoginPageState extends State<LoginPage> {
       AppSnackBar.success(context, 'Bem-vindo!');
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const HomePage(),
+          pageBuilder: (_, primaryAnimation, secondaryAnimation) =>
+              const HomePage(),
           transitionDuration: const Duration(milliseconds: 400),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
-            child: child,
-          ),
+          transitionsBuilder: (_, animation, secondaryAnimation, child) =>
+              FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeIn,
+                ),
+                child: child,
+              ),
         ),
         (route) => false,
       );
@@ -133,6 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         // Campo Email — validação ao sair do campo (blur)
                         AppTextField(
+                          key: const Key('login.email'),
                           formFieldKey: _emailFieldKey,
                           label: 'Email',
                           controller: _emailController,
@@ -158,6 +164,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Campo Senha — validação ao blur ou ao submeter
                         AppTextField(
+                          key: const Key('login.password'),
                           formFieldKey: _passwordFieldKey,
                           label: 'Senha',
                           controller: _passwordController,
@@ -191,6 +198,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: AppDesignTokens.spacingLg),
                         // Botão Entrar
                         AppButton(
+                          key: const Key('login.submit'),
                           label: 'Entrar',
                           loading: auth.loading,
                           onPressed: _onSubmit,
@@ -218,6 +226,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: AppDesignTokens.spacingMd),
                         // Botão Criar conta
                         AppButton(
+                          key: const Key('login.register'),
                           label: 'Criar conta',
                           onPressed: () {
                             Navigator.of(context).pushNamed('/register');

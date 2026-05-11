@@ -273,6 +273,37 @@ Para rodar no **simulador do iPhone** não é necessária conta paga da Apple; b
    flutter run -d <nome_do_iphone>
    ```
 
+## Testes
+
+O projeto possui uma estratégia incremental de testes documentada em [`docs/TESTES.md`](docs/TESTES.md).
+
+### Comandos úteis
+
+Espelham o job [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (analyze, format, testes sem golden, goldens, piso de cobertura, integração):
+
+```bash
+flutter analyze
+dart format --output=none --set-exit-if-changed lib test integration_test tool
+# Unit + widget (goldens excluídos — mesmo conjunto do CI antes do job de goldens)
+flutter test --coverage --exclude-tags golden
+# Goldens (gerar/atualizar PNGs no mesmo SO do CI quando possível — ver nota abaixo)
+flutter test --tags golden
+# Piso de cobertura (ajuste COVERAGE_MIN se o script permitir)
+bash tool/coverage_gate.sh
+# Integração sem Firebase real
+flutter test integration_test/app_test.dart -d flutter-tester --dart-define=INTEGRATION_SKIP_FIREBASE=true
+```
+
+**Goldens e CI:** o workflow roda em **ubuntu-latest**. PNGs de golden gerados no Windows podem divergir (fontes/subpixel). Antes do merge, rode `flutter test --tags golden` em **Linux** (ou no próprio CI) e faça commit dos PNGs alinhados a esse ambiente.
+
+O job de **unit/widget** no CI usa ordem de testes aleatória com seed fixo para expor acoplamento; o job de **goldens** não usa shuffle, porque a ordem pode influenciar renderização global (fontes/tema) e gerar falsos positivos de pixel diff.
+
+### Regras mínimas para contribuir
+
+- Execute `flutter analyze` e `flutter test` antes de abrir PR.
+- Toda nova regra de negócio deve incluir teste unitário.
+- Alterações relevantes em providers devem incluir testes de estado.
+
 ## Licença
 
 Este projeto foi desenvolvido como parte do trabalho de pós-graduação em Engenharia de Front End.

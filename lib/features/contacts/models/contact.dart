@@ -2,14 +2,8 @@ class Contact {
   final String id;
   final String name;
   bool isFavorite;
-  bool isSelected;
 
-  Contact({
-    this.id = '',
-    required this.name,
-    this.isFavorite = false,
-    this.isSelected = false,
-  });
+  Contact({this.id = '', required this.name, this.isFavorite = false});
 
   factory Contact.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Contact(

@@ -77,9 +77,7 @@ abstract class TransactionScheduleCopy {
       isScheduled ? dialogTitleScheduled : dialogTitleImmediate;
 
   static String dialogMessage(DateTime date, {required bool isScheduled}) =>
-      isScheduled
-          ? dialogMessageScheduled(date)
-          : dialogMessageImmediate;
+      isScheduled ? dialogMessageScheduled(date) : dialogMessageImmediate;
 
   static String dialogConfirmLabel({required bool isScheduled}) =>
       isScheduled ? dialogConfirmScheduled : dialogConfirmImmediate;
@@ -88,38 +86,30 @@ abstract class TransactionScheduleCopy {
       isScheduled ? loadingTitleScheduled : loadingTitleImmediate;
 
   static String loadingSubtitle({required bool isScheduled}) =>
-      isScheduled
-          ? loadingSubtitleScheduled
-          : loadingSubtitleImmediate;
+      isScheduled ? loadingSubtitleScheduled : loadingSubtitleImmediate;
 
   static String successAllOk({
     required bool isScheduled,
     required String formattedDate,
-  }) =>
-      isScheduled
-          ? successScheduled(formattedDate)
-          : successImmediate;
+  }) => isScheduled ? successScheduled(formattedDate) : successImmediate;
 
   static String warningReceiptPartial({
     required bool isScheduled,
     required String files,
     required int count,
     required String? detail,
-  }) =>
-      isScheduled
-          ? warningReceiptPartialScheduled(
-              files: files,
-              count: count,
-              detail: detail,
-            )
-          : warningReceiptPartialImmediate(
-              files: files,
-              count: count,
-              detail: detail,
-            );
+  }) => isScheduled
+      ? warningReceiptPartialScheduled(
+          files: files,
+          count: count,
+          detail: detail,
+        )
+      : warningReceiptPartialImmediate(
+          files: files,
+          count: count,
+          detail: detail,
+        );
 
   static String errorSubmitFallback({required bool isScheduled}) =>
-      isScheduled
-          ? errorSubmitFallbackScheduled
-          : errorSubmitFallbackImmediate;
+      isScheduled ? errorSubmitFallbackScheduled : errorSubmitFallbackImmediate;
 }

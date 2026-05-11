@@ -27,7 +27,6 @@ class ProfilePage extends StatelessWidget {
             }
 
             return SingleChildScrollView(
-         
               child: AppCardContainer(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDesignTokens.spacingLg,
@@ -57,7 +56,8 @@ class ProfilePage extends StatelessWidget {
                             user.username.isNotEmpty
                                 ? user.username
                                 : 'Usuário',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
                                   fontWeight: AppDesignTokens.fontWeightBold,
                                   color: AppDesignTokens.colorContentDefault,
                                 ),
@@ -94,17 +94,9 @@ class ProfilePage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _infoBlock(
-                            context,
-                            'Nome completo',
-                            user.username,
-                          ),
+                          _infoBlock(context, 'Nome completo', user.username),
                           const SizedBox(height: AppDesignTokens.spacingMd),
-                          _infoBlock(
-                            context,
-                            'Email',
-                            user.email,
-                          ),
+                          _infoBlock(context, 'Email', user.email),
                         ],
                       ),
                     ),
@@ -159,17 +151,17 @@ class ProfilePage extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppDesignTokens.colorContentMuted,
-                fontSize: AppDesignTokens.fontSizeSmall,
-              ),
+            color: AppDesignTokens.colorContentMuted,
+            fontSize: AppDesignTokens.fontSizeSmall,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: AppDesignTokens.fontWeightBold,
-                color: AppDesignTokens.colorContentDefault,
-              ),
+            fontWeight: AppDesignTokens.fontWeightBold,
+            color: AppDesignTokens.colorContentDefault,
+          ),
         ),
       ],
     );

@@ -20,8 +20,18 @@ String monthKeyToShortLabel(String yyyyMm) {
   final m = int.tryParse(parts[1]);
   if (y == null || m == null || m < 1 || m > 12) return yyyyMm;
   const names = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+    'Jan',
+    'Fev',
+    'Mar',
+    'Abr',
+    'Mai',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Set',
+    'Out',
+    'Nov',
+    'Dez',
   ];
   return '${names[m - 1]}/${(y % 100).toString().padLeft(2, '0')}';
 }

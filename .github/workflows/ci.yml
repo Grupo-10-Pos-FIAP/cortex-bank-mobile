@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  analyze-format-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ github.workspace }}/.dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Dart format
+        run: dart format --output=none --set-exit-if-changed lib test integration_test tool
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Unit and widget tests with coverage
+        run: flutter test --coverage --reporter=github --exclude-tags golden --test-randomize-ordering-seed=20260109
+
+      # Goldens sem shuffle: ordem aleatória pode alterar render (fontes/tema global).
+      - name: Golden tests
+        run: flutter test --tags golden --reporter=github
+
+      # Piso de cobertura global (linhas); ver comentário em tool/coverage_gate.sh.
+      - name: Coverage gate
+        run: bash tool/coverage_gate.sh
+        env:
+          COVERAGE_MIN: "50"
+
+      - name: Integration journeys
+        run: flutter test integration_test/app_test.dart -d flutter-tester --dart-define=INTEGRATION_SKIP_FIREBASE=true

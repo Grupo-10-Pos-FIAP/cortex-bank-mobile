@@ -37,8 +37,7 @@ bool shouldRequestLoadMore(ExtratoLoadMoreContext ctx) {
   if (!ctx.scrollHasClients) return false;
   if (!ctx.hasViewportDimension) return false;
 
-  final shortViewport =
-      ctx.maxScrollExtent <= extratoLoadMoreScrollThreshold;
+  final shortViewport = ctx.maxScrollExtent <= extratoLoadMoreScrollThreshold;
   if (shortViewport || ctx.extentAfter <= extratoLoadMoreScrollThreshold) {
     return true;
   }

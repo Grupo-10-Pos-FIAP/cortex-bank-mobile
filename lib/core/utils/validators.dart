@@ -29,7 +29,9 @@ String? validateEmail(String? value) {
   final beforeAt = parts[0].trim();
   final afterAt = parts[1].trim();
   if (beforeAt.isEmpty || afterAt.isEmpty) return 'Digite um email válido';
-  final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  final emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
   if (!emailRegex.hasMatch(trimmed)) return 'Digite um email válido';
   return null;
 }

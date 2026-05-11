@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 
 class AppSnackBar {
+  static const Key successSurfaceKey = Key('app_snackbar.success_surface');
+
   static OverlayEntry? _currentEntry;
 
   static void _showOverlay(
@@ -59,15 +61,18 @@ class AppSnackBar {
   }) {
     _showOverlay(
       context,
-      _SnackContent(
-        backgroundColor: AppDesignTokens.colorFeedbackSuccess,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        message: message,
+      KeyedSubtree(
+        key: successSurfaceKey,
+        child: _SnackContent(
+          backgroundColor: AppDesignTokens.colorFeedbackSuccess,
+          icon: const Icon(Icons.check_circle, color: Colors.white),
+          message: message,
+        ),
       ),
       duration,
     );
   }
-  
+
   static void warning(
     BuildContext context,
     String message, {
@@ -102,11 +107,7 @@ class AppSnackBar {
 }
 
 class _TopSnackBar extends StatefulWidget {
-  const _TopSnackBar({
-    required this.entry,
-    this.duration,
-    required this.child,
-  });
+  const _TopSnackBar({required this.entry, this.duration, required this.child});
 
   final OverlayEntry entry;
   final Widget child;

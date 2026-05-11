@@ -62,7 +62,9 @@ class CurrencyBRLInputFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
-    final limited = digits.length > maxDigits ? digits.substring(0, maxDigits) : digits;
+    final limited = digits.length > maxDigits
+        ? digits.substring(0, maxDigits)
+        : digits;
     final masked = maskBRLFromDigits(limited);
     return TextEditingValue(
       text: masked,

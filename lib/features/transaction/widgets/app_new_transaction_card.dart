@@ -16,6 +16,7 @@ import 'package:cortex_bank_mobile/features/contacts/presentation/widgets/contac
 import 'package:cortex_bank_mobile/features/contacts/state/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/attachment_constants.dart';
 import 'package:cortex_bank_mobile/features/transaction/utils/ted_recipient_line.dart';
+import 'package:cortex_bank_mobile/features/transaction/utils/transaction_form_validation.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
@@ -52,6 +53,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   int? selectedTitularidade;
   DateTime _selectedDate = DateTime.now();
   final List<({List<int> bytes, String name})> _attachments = [];
+
   /// Força status [TransactionStatus.pending] (“Pendente”) em debug, ignorando a data.
   /// Sem o flag, datas futuras usam [TransactionStatus.scheduled] (“Agendada”).
   bool _debugForcePendingStatus = false;
@@ -103,64 +105,21 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   }
 
   String? _firstValidationError() {
-    if (selectedValueType == null) {
-      return 'Tipo de transação é obrigatório.';
-    }
-
-    Contact? selectedContact;
-    try {
-      selectedContact = context.read<ContactsProvider>().contacts.firstWhere(
-            (c) => c.isSelected,
-          );
-    } catch (_) {
-      selectedContact = null;
-    }
-    if (selectedContact == null && selectedTitularidade == null) {
-      return 'Informe a titularidade (mesma ou outra) ou selecione um contato.';
-    }
-
-    if (selectedContact == null) {
-      if (selectedTitularidade == 0) {
-        final u = context.read<AuthProvider>().user;
-        final name = u?.username.trim() ?? '';
-        final branch = u?.branchCode.trim() ?? '';
-        final account = u?.accountNumber.trim() ?? '';
-        if (name.isEmpty) {
-          return 'Nome no perfil é obrigatório para mesma titularidade.';
-        }
-        if (branch.isEmpty) {
-          return 'Agência no perfil é obrigatória para mesma titularidade.';
-        }
-        if (account.isEmpty) {
-          return 'Conta no perfil é obrigatória para mesma titularidade.';
-        }
-      } else if (selectedTitularidade == 1) {
-        if (_otherTitularNameController.text.trim().isEmpty) {
-          return 'Informe o nome do favorecido (outra titularidade).';
-        }
-        if (_otherTitularBranchController.text.trim().isEmpty) {
-          return 'Informe a agência do favorecido (outra titularidade).';
-        }
-        if (_otherTitularAccountController.text.trim().isEmpty) {
-          return 'Informe a conta do favorecido (outra titularidade).';
-        }
-      }
-    }
-
-    final valueMsg = validateMinTransferValueBRL(_valueController.text);
-    if (valueMsg != null) {
-      return 'Valor: $valueMsg';
-    }
-
-    if (selectedValueCategory == null) {
-      return 'Categoria é obrigatória.';
-    }
-
-    if (!TransactionDatePolicy.isAllowed(_selectedDate)) {
-      return TransactionDatePolicy.validationMessage;
-    }
-
-    return null;
+    final selectedContact = context.read<ContactsProvider>().selectedContact;
+    return transactionFormFirstValidationError(
+      TransactionFormValidationInput(
+        selectedValueType: selectedValueType,
+        selectedValueCategory: selectedValueCategory,
+        selectedTitularidade: selectedTitularidade,
+        selectedContact: selectedContact,
+        valueBrlText: _valueController.text,
+        otherTitularName: _otherTitularNameController.text,
+        otherTitularBranch: _otherTitularBranchController.text,
+        otherTitularAccount: _otherTitularAccountController.text,
+        profileUser: context.read<AuthProvider>().user,
+        selectedDate: _selectedDate,
+      ),
+    );
   }
 
   bool _validateFormAndShowFeedback() {
@@ -199,14 +158,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       final cents = parseBRLMaskToCents(_valueController.text);
       final valueToSave = cents / 100.0;
 
-      Contact? selectedContact;
-      try {
-        selectedContact = contactsProvider.contacts.firstWhere(
-          (c) => c.isSelected,
-        );
-      } catch (_) {
-        selectedContact = null;
-      }
+      final selectedContact = contactsProvider.selectedContact;
 
       final tipo = selectedValueType;
       final categoria = selectedValueCategory;
@@ -236,8 +188,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       }
       final descriptionText = _descriptionController.text.trim();
 
-      final isFutureSchedule =
-          TransactionDatePolicy.isStrictlyAfterToday(_selectedDate);
+      final isFutureSchedule = TransactionDatePolicy.isStrictlyAfterToday(
+        _selectedDate,
+      );
       final scheduleDateLabel = DateFormatter.formatDate(_selectedDate);
 
       String? counterpartyToValue;
@@ -267,8 +220,8 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
         status: kDebugMode && _debugForcePendingStatus
             ? TransactionStatus.pending
             : TransactionDatePolicy.isStrictlyAfterToday(_selectedDate)
-                ? TransactionStatus.scheduled
-                : TransactionStatus.completed,
+            ? TransactionStatus.scheduled
+            : TransactionStatus.completed,
         description: descriptionText.isNotEmpty ? descriptionText : null,
       );
 
@@ -301,13 +254,11 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
           selectedValueType = null;
           selectedValueCategory = null;
           selectedTitularidade = null;
-          _clearOtherTitularidadeFields();
           _selectedDate = TransactionDatePolicy.today;
           _attachments.clear();
-          for (var c in contactsProvider.contacts) {
-            c.isSelected = false;
-          }
+          contactsProvider.setSelectedContactId(null);
         });
+        _clearOtherTitularidadeFields();
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -325,7 +276,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
           );
         } else {
           final files = failedReceiptNames.join(', ');
-          final detail = txProvider.errorMessage;
+          final detail = txProvider.transactionsError;
           AppSnackBar.warning(
             context,
             TransactionScheduleCopy.warningReceiptPartial(
@@ -340,8 +291,8 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       } else if (mounted) {
         AppSnackBar.error(
           context,
-          txProvider.errorMessage?.trim().isNotEmpty == true
-              ? txProvider.errorMessage!.trim()
+          txProvider.transactionsError?.trim().isNotEmpty == true
+              ? txProvider.transactionsError!.trim()
               : TransactionScheduleCopy.errorSubmitFallback(
                   isScheduled: isFutureSchedule,
                 ),
@@ -358,6 +309,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
   Widget _buildTitularidadeTile({required String title, required int index}) {
     final isSelected = selectedTitularidade == index;
     return ListTile(
+      key: ValueKey<String>('transaction.form.titularidade.$index'),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
       tileColor: isSelected
@@ -366,12 +318,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       selected: isSelected,
       selectedTileColor: AppDesignTokens.colorPrimary.withValues(alpha: 0.15),
       onTap: () {
-        final contacts = context.read<ContactsProvider>().contacts;
+        context.read<ContactsProvider>().setSelectedContactId(null);
         setState(() {
           selectedTitularidade = index;
-          for (var c in contacts) {
-            c.isSelected = false;
-          }
           if (index != 1) {
             _clearOtherTitularidadeFields();
           }
@@ -427,19 +376,20 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                         .map(
                           (contact) => ContactListItem(
                             contact: contact,
+                            selected: provider.selectedContactId == contact.id,
                             onToggleFavorite: () =>
                                 provider.toggleFavorite(contact),
                             onSelectChanged: (value) {
-                              setState(() {
-                                for (var c in provider.contacts) {
-                                  c.isSelected = false;
-                                }
-                                contact.isSelected = value ?? false;
-                                if (contact.isSelected) {
+                              final on = value ?? false;
+                              provider.setSelectedContactId(
+                                on ? contact.id : null,
+                              );
+                              if (on) {
+                                setState(() {
                                   selectedTitularidade = null;
                                   _clearOtherTitularidadeFields();
-                                }
-                              });
+                                });
+                              }
                             },
                           ),
                         )
@@ -451,409 +401,472 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
     );
   }
 
+  /// Assinatura da lista de contatos para [Selector] (favoritos derivam de contacts).
+  String _contactsSelectorSignature(ContactsProvider p) {
+    final sb = StringBuffer('${p.isLoading}|${p.selectedContactId}|');
+    for (final c in p.contacts) {
+      sb.write('${c.id}:${c.isFavorite}:${c.name};');
+    }
+    return sb.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final contactsProvider = context.watch<ContactsProvider>();
-
-    return AppCardContainer(
-      title: TransactionScheduleCopy.cardSectionTitle,
-      child: Stack(
-        children: [
-          AbsorbPointer(
-            absorbing: _isSubmitting,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-            AppDropdownField<String>(
-              label: 'Selecione o tipo de transação',
-              hintText: 'Selecione o tipo de transação',
-              value: selectedValueType,
-              showRequiredIndicator: true,
-              items: const [
-                DropdownMenuItem(value: 'credito', child: Text('Crédito')),
-                DropdownMenuItem(value: 'debito', child: Text('Débito')),
-                DropdownMenuItem(value: 'ted', child: Text('TED/DOC')),
-              ],
-              onChanged: (newValue) =>
-                  setState(() => selectedValueType = newValue),
-              validator: (value) =>
-                  value == null || value.isEmpty ? 'Campo obrigatório' : null,
-            ),
-            AppTabs(
-              marginTop: 16,
-              height: 160,
-              titles: const ['Nova conta', 'Contatos', 'Favoritos'],
-              children: [
-                _buildTitularidadeTab(),
-                _buildListTab(
-                  contactsProvider.contacts,
-                  contactsProvider,
-                  'Nenhum Contato',
-                ),
-                _buildListTab(
-                  contactsProvider.favoriteContacts,
-                  contactsProvider,
-                  'Nenhum Contato Favorito',
-                ),
-              ],
-            ),
-            const Divider(height: 1, color: AppDesignTokens.colorNeutral),
-            if (selectedTitularidade == 1) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Dados do favorecido (outra titularidade)',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                label: 'Nome do favorecido',
-                controller: _otherTitularNameController,
-                showRequiredIndicator: true,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: 'Agência',
-                controller: _otherTitularBranchController,
-                showRequiredIndicator: true,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: 'Conta',
-                controller: _otherTitularAccountController,
-                showRequiredIndicator: true,
-                keyboardType: TextInputType.number,
-              ),
-            ],
-            const SizedBox(height: 24),
-            AppTextField(
-              formFieldKey: _valueFieldKey,
-              label: 'Valor a ser transferido',
-              controller: _valueController,
-              validator: validateMinTransferValueBRL,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              hintText: '0,00',
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                CurrencyBRLInputFormatter(),
-              ],
-              showRequiredIndicator: true,
-            ),
-            const SizedBox(height: 24),
-            InkWell(
-              onTap: () async {
-                final minD = TransactionDatePolicy.today;
-                final maxD = TransactionDatePolicy.maxSelectableDate;
-                final initial = TransactionDatePolicy.clampToAllowedRange(
-                  _selectedDate,
-                );
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: initial,
-                  firstDate: minD,
-                  lastDate: maxD,
-                  helpText:
-                      'Hoje até ${TransactionDatePolicy.futureDaysInclusive} dias à frente',
-                );
-                if (picked != null) {
-                  setState(() => _selectedDate = picked);
-                }
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Data da transação',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDesignTokens.borderRadiusDefault,
-                    ),
-                  ),
-                  suffixIcon: const Icon(Icons.calendar_today),
-                ),
-                child: Text(
-                  DateFormatter.formatDate(_selectedDate),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            ),
-            if (TransactionDatePolicy.isStrictlyAfterToday(_selectedDate))
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  TransactionScheduleCopy.hintFutureDate,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppDesignTokens.colorContentDisabled,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 24),
-            AppDropdownField<String>(
-              label: 'Selecione a categoria',
-              hintText: 'Selecione a categoria',
-              value: selectedValueCategory,
-              showRequiredIndicator: true,
-              items: TransactionCategory.values.map((category) {
-                return DropdownMenuItem<String>(
-                  value: category.name,
-                  child: Text(category.label),
-                );
-              }).toList(),
-              onChanged: (newValue) =>
-                  setState(() => selectedValueCategory = newValue),
-              validator: (value) => value == null ? 'Campo obrigatório' : null,
-            ),
-            const SizedBox(height: 24),
-            AppTextField(
-              label: 'Descrição (opcional)',
-              controller: _descriptionController,
-              hintText: 'Ex: Almoço no restaurante',
-              maxLines: 2,
-            ),
-            const SizedBox(height: 24),
-            if (kDebugMode) ...[
-              Row(
-                children: [
-                  Switch(
-                    value: _debugForcePendingStatus,
-                    onChanged: (v) =>
-                        setState(() => _debugForcePendingStatus = v),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Forçar status Pendente (ambiente de desenvolvimento)',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-            TextButton.icon(
-              onPressed: _attachments.length >= AttachmentConstants.maxAttachments
-                  ? null
-                  : () async {
-                      final result = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions:
-                            AttachmentConstants.allowedExtensions,
-                        withData: true,
-                      );
-                      if (result == null ||
-                          result.files.isEmpty ||
-                          !mounted) {
-                        return;
-                      }
-                      final file = result.files.single;
-                      final bytes = file.bytes;
-                      final name = file.name;
-                      if (bytes == null || name.isEmpty) return;
-                      if (bytes.length > AttachmentConstants.maxFileSizeBytes) {
-                        if (!context.mounted) return;
-                        final maxMb = AttachmentConstants.maxFileSizeBytes /
-                            (1024 * 1024);
-                        AppSnackBar.error(
-                          context,
-                          'Arquivo excede o limite de ${maxMb.toStringAsFixed(0)}MB.',
-                        );
-                        return;
-                      }
-                      if (_attachments.length <
-                          AttachmentConstants.maxAttachments) {
-                        setState(() {
-                          _attachments.add((bytes: bytes, name: name));
-                        });
-                      }
-                    },
-              icon: Icon(
-                Icons.attach_file,
-                size: 20,
-                color: _attachments.length >=
-                        AttachmentConstants.maxAttachments
-                    ? AppDesignTokens.colorContentDisabled
-                    : AppDesignTokens.colorPrimary,
-              ),
-              label: Text(
-                'Anexar recibo',
-                style: TextStyle(
-                  color: _attachments.length >=
-                          AttachmentConstants.maxAttachments
-                      ? AppDesignTokens.colorContentDisabled
-                      : AppDesignTokens.colorPrimary,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: _attachments.length >=
-                        AttachmentConstants.maxAttachments
-                    ? AppDesignTokens.colorContentDisabled
-                    : AppDesignTokens.colorPrimary,
-              ),
-            ),
-            if (_attachments.length >= AttachmentConstants.maxAttachments)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Máximo de ${AttachmentConstants.maxAttachments} arquivos anexados.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppDesignTokens.colorContentDisabled,
-                  ),
-                ),
-              ),
-            ...List.generate(_attachments.length, (i) {
-              final a = _attachments[i];
-              return Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.insert_drive_file,
-                      size: 18,
-                      color: AppDesignTokens.colorContentDisabled,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        a.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppDesignTokens.colorContentDisabled,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+    return Selector<ContactsProvider, String>(
+      selector: (_, p) => _contactsSelectorSignature(p),
+      builder: (context, contactsSignature, child) {
+        final contactsProvider = context.read<ContactsProvider>();
+        return AppCardContainer(
+          title: TransactionScheduleCopy.cardSectionTitle,
+          child: Stack(
+            children: [
+              AbsorbPointer(
+                absorbing: _isSubmitting,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppDropdownField<String>(
+                        key: const Key('transaction.form.type'),
+                        label: 'Selecione o tipo de transação',
+                        hintText: 'Selecione o tipo de transação',
+                        value: selectedValueType,
+                        showRequiredIndicator: true,
+                        items: const [
+                          DropdownMenuItem(
+                            key: Key('transaction.form.type.item.credito'),
+                            value: 'credito',
+                            child: Text('Crédito'),
+                          ),
+                          DropdownMenuItem(
+                            key: Key('transaction.form.type.item.debito'),
+                            value: 'debito',
+                            child: Text('Débito'),
+                          ),
+                          DropdownMenuItem(
+                            key: Key('transaction.form.type.item.ted'),
+                            value: 'ted',
+                            child: Text('TED/DOC'),
+                          ),
+                        ],
+                        onChanged: (newValue) =>
+                            setState(() => selectedValueType = newValue),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Campo obrigatório'
+                            : null,
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => setState(() => _attachments.removeAt(i)),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 24),
-            Consumer<TransactionsProvider>(
-              builder: (context, txProvider, child) {
-                final busy = _isSubmitting || txProvider.isLoading;
-                final isScheduled =
-                    TransactionDatePolicy.isStrictlyAfterToday(_selectedDate);
-                return AppButton(
-                  label: TransactionScheduleCopy.primaryButtonLabel(
-                    isScheduled: isScheduled,
-                  ),
-                  loading: busy,
-                  onPressed: busy
-                      ? null
-                      : () async {
-                          if (!mounted) return;
-                          if (!_validateFormAndShowFeedback()) return;
-
-                          final scheduleFuture =
-                              TransactionDatePolicy.isStrictlyAfterToday(
-                            _selectedDate,
-                          );
-                          final confirmar = await showDialog<bool>(
-                            context: context,
-                            useRootNavigator: true,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(
-                                TransactionScheduleCopy.dialogTitle(
-                                  isScheduled: scheduleFuture,
-                                ),
-                              ),
-                              content: Text(
-                                TransactionScheduleCopy.dialogMessage(
-                                  _selectedDate,
-                                  isScheduled: scheduleFuture,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancelar'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: Text(
-                                    TransactionScheduleCopy.dialogConfirmLabel(
-                                      isScheduled: scheduleFuture,
-                                    ),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (confirmar == true && mounted) {
-                            await _submitTransaction();
-                          }
-                        },
-                );
-              },
-            ),
-                ],
-              ),
-            ),
-          ),
-          if (_isSubmitting)
-            Positioned.fill(
-              child: Material(
-                color: Colors.black.withValues(alpha: 0.12),
-                child: Center(
-                  child: Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 24,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                      AppTabs(
+                        marginTop: 16,
+                        height: 160,
+                        titles: const ['Nova conta', 'Contatos', 'Favoritos'],
                         children: [
-                          const SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: CircularProgressIndicator(strokeWidth: 3),
+                          _buildTitularidadeTab(),
+                          _buildListTab(
+                            contactsProvider.contacts,
+                            contactsProvider,
+                            'Nenhum Contato',
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            TransactionScheduleCopy.loadingTitle(
-                              isScheduled:
-                                  TransactionDatePolicy.isStrictlyAfterToday(
-                                _selectedDate,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            TransactionScheduleCopy.loadingSubtitle(
-                              isScheduled:
-                                  TransactionDatePolicy.isStrictlyAfterToday(
-                                _selectedDate,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall,
+                          _buildListTab(
+                            contactsProvider.favoriteContacts,
+                            contactsProvider,
+                            'Nenhum Contato Favorito',
                           ),
                         ],
                       ),
-                    ),
+                      const Divider(
+                        height: 1,
+                        color: AppDesignTokens.colorNeutral,
+                      ),
+                      if (selectedValueType != null &&
+                          selectedTitularidade == 1) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Dados do favorecido (outra titularidade)',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 12),
+                        AppTextField(
+                          label: 'Nome do favorecido',
+                          controller: _otherTitularNameController,
+                          showRequiredIndicator: true,
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          label: 'Agência',
+                          controller: _otherTitularBranchController,
+                          showRequiredIndicator: true,
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          label: 'Conta',
+                          controller: _otherTitularAccountController,
+                          showRequiredIndicator: true,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      AppTextField(
+                        key: const Key('transaction.form.value'),
+                        formFieldKey: _valueFieldKey,
+                        label: 'Valor a ser transferido',
+                        controller: _valueController,
+                        validator: validateMinTransferValueBRL,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        hintText: '0,00',
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          CurrencyBRLInputFormatter(),
+                        ],
+                        showRequiredIndicator: true,
+                      ),
+                      const SizedBox(height: 24),
+                      InkWell(
+                        onTap: () async {
+                          final minD = TransactionDatePolicy.today;
+                          final maxD = TransactionDatePolicy.maxSelectableDate;
+                          final initial =
+                              TransactionDatePolicy.clampToAllowedRange(
+                                _selectedDate,
+                              );
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: initial,
+                            firstDate: minD,
+                            lastDate: maxD,
+                            helpText:
+                                'Hoje até ${TransactionDatePolicy.futureDaysInclusive} dias à frente',
+                          );
+                          if (picked != null) {
+                            setState(() => _selectedDate = picked);
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Data da transação',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppDesignTokens.borderRadiusDefault,
+                              ),
+                            ),
+                            suffixIcon: const Icon(Icons.calendar_today),
+                          ),
+                          child: Text(
+                            DateFormatter.formatDate(_selectedDate),
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ),
+                      ),
+                      if (TransactionDatePolicy.isStrictlyAfterToday(
+                        _selectedDate,
+                      ))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            TransactionScheduleCopy.hintFutureDate,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppDesignTokens.colorContentDisabled,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 24),
+                      AppDropdownField<String>(
+                        key: const Key('transaction.form.category'),
+                        label: 'Selecione a categoria',
+                        hintText: 'Selecione a categoria',
+                        value: selectedValueCategory,
+                        showRequiredIndicator: true,
+                        items: TransactionCategory.values.map((category) {
+                          return DropdownMenuItem<String>(
+                            key: ValueKey<String>(
+                              'transaction.form.category.item.${category.name}',
+                            ),
+                            value: category.name,
+                            child: Text(category.label),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) =>
+                            setState(() => selectedValueCategory = newValue),
+                        validator: (value) =>
+                            value == null ? 'Campo obrigatório' : null,
+                      ),
+                      const SizedBox(height: 24),
+                      AppTextField(
+                        key: const Key('transaction.form.description'),
+                        label: 'Descrição (opcional)',
+                        controller: _descriptionController,
+                        hintText: 'Ex: Almoço no restaurante',
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 24),
+                      if (kDebugMode) ...[
+                        Row(
+                          children: [
+                            Switch(
+                              value: _debugForcePendingStatus,
+                              onChanged: (v) =>
+                                  setState(() => _debugForcePendingStatus = v),
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Forçar status Pendente (ambiente de desenvolvimento)',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      TextButton.icon(
+                        onPressed:
+                            _attachments.length >=
+                                AttachmentConstants.maxAttachments
+                            ? null
+                            : () async {
+                                final result = await FilePicker.platform
+                                    .pickFiles(
+                                      type: FileType.custom,
+                                      allowedExtensions:
+                                          AttachmentConstants.allowedExtensions,
+                                      withData: true,
+                                    );
+                                if (result == null ||
+                                    result.files.isEmpty ||
+                                    !mounted) {
+                                  return;
+                                }
+                                final file = result.files.single;
+                                final bytes = file.bytes;
+                                final name = file.name;
+                                if (bytes == null || name.isEmpty) return;
+                                if (bytes.length >
+                                    AttachmentConstants.maxFileSizeBytes) {
+                                  if (!context.mounted) return;
+                                  final maxMb =
+                                      AttachmentConstants.maxFileSizeBytes /
+                                      (1024 * 1024);
+                                  AppSnackBar.error(
+                                    context,
+                                    'Arquivo excede o limite de ${maxMb.toStringAsFixed(0)}MB.',
+                                  );
+                                  return;
+                                }
+                                if (_attachments.length <
+                                    AttachmentConstants.maxAttachments) {
+                                  setState(() {
+                                    _attachments.add((
+                                      bytes: bytes,
+                                      name: name,
+                                    ));
+                                  });
+                                }
+                              },
+                        icon: Icon(
+                          Icons.attach_file,
+                          size: 20,
+                          color:
+                              _attachments.length >=
+                                  AttachmentConstants.maxAttachments
+                              ? AppDesignTokens.colorContentDisabled
+                              : AppDesignTokens.colorPrimary,
+                        ),
+                        label: Text(
+                          'Anexar recibo',
+                          style: TextStyle(
+                            color:
+                                _attachments.length >=
+                                    AttachmentConstants.maxAttachments
+                                ? AppDesignTokens.colorContentDisabled
+                                : AppDesignTokens.colorPrimary,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor:
+                              _attachments.length >=
+                                  AttachmentConstants.maxAttachments
+                              ? AppDesignTokens.colorContentDisabled
+                              : AppDesignTokens.colorPrimary,
+                        ),
+                      ),
+                      if (_attachments.length >=
+                          AttachmentConstants.maxAttachments)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Máximo de ${AttachmentConstants.maxAttachments} arquivos anexados.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppDesignTokens.colorContentDisabled,
+                            ),
+                          ),
+                        ),
+                      ...List.generate(_attachments.length, (i) {
+                        final a = _attachments[i];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.insert_drive_file,
+                                size: 18,
+                                color: AppDesignTokens.colorContentDisabled,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  a.name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppDesignTokens.colorContentDisabled,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 20),
+                                onPressed: () =>
+                                    setState(() => _attachments.removeAt(i)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 24),
+                      Consumer<TransactionsProvider>(
+                        builder: (context, txProvider, child) {
+                          final busy = _isSubmitting || txProvider.isLoading;
+                          final isScheduled =
+                              TransactionDatePolicy.isStrictlyAfterToday(
+                                _selectedDate,
+                              );
+                          return AppButton(
+                            key: const Key('transaction.form.submit'),
+                            label: TransactionScheduleCopy.primaryButtonLabel(
+                              isScheduled: isScheduled,
+                            ),
+                            loading: busy,
+                            onPressed: busy
+                                ? null
+                                : () async {
+                                    if (!mounted) return;
+                                    if (!_validateFormAndShowFeedback()) return;
+
+                                    final scheduleFuture =
+                                        TransactionDatePolicy.isStrictlyAfterToday(
+                                          _selectedDate,
+                                        );
+                                    final confirmar = await showDialog<bool>(
+                                      context: context,
+                                      useRootNavigator: true,
+                                      builder: (ctx) => AlertDialog(
+                                        title: Text(
+                                          TransactionScheduleCopy.dialogTitle(
+                                            isScheduled: scheduleFuture,
+                                          ),
+                                        ),
+                                        content: Text(
+                                          TransactionScheduleCopy.dialogMessage(
+                                            _selectedDate,
+                                            isScheduled: scheduleFuture,
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, false),
+                                            child: const Text('Cancelar'),
+                                          ),
+                                          TextButton(
+                                            key: const Key(
+                                              'transaction.form.dialog.confirm',
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, true),
+                                            child: Text(
+                                              TransactionScheduleCopy.dialogConfirmLabel(
+                                                isScheduled: scheduleFuture,
+                                              ),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirmar == true && mounted) {
+                                      await _submitTransaction();
+                                    }
+                                  },
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
+              if (_isSubmitting)
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    child: Center(
+                      child: Card(
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 24,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                TransactionScheduleCopy.loadingTitle(
+                                  isScheduled:
+                                      TransactionDatePolicy.isStrictlyAfterToday(
+                                        _selectedDate,
+                                      ),
+                                ),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                TransactionScheduleCopy.loadingSubtitle(
+                                  isScheduled:
+                                      TransactionDatePolicy.isStrictlyAfterToday(
+                                        _selectedDate,
+                                      ),
+                                ),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

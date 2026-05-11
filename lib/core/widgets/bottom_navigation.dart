@@ -24,12 +24,23 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
 
   /* Lista das páginas que serão exibidas */
   final List<Widget> _paginas = [
-    const Center(child: Text('Página Home', style: TextStyle(fontSize: AppDesignTokens.fontSizeH3))),
     const Center(
-      child: Text('Página de Transações', style: TextStyle(fontSize: AppDesignTokens.fontSizeH3)),
+      child: Text(
+        'Página Home',
+        style: TextStyle(fontSize: AppDesignTokens.fontSizeH3),
+      ),
     ),
     const Center(
-      child: Text('Página de Perfil', style: TextStyle(fontSize: AppDesignTokens.fontSizeH3)),
+      child: Text(
+        'Página de Transações',
+        style: TextStyle(fontSize: AppDesignTokens.fontSizeH3),
+      ),
+    ),
+    const Center(
+      child: Text(
+        'Página de Perfil',
+        style: TextStyle(fontSize: AppDesignTokens.fontSizeH3),
+      ),
     ),
   ];
 
@@ -41,7 +52,7 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(  
+    return Scaffold(
       body: _paginas[_indiceAtual],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _indiceAtual,

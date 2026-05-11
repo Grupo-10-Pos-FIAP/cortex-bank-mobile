@@ -18,8 +18,8 @@ class ComprovanteContent {
     final paraValue = transaction.to ?? '—';
     final descriptionLine =
         (transaction.description != null && transaction.description!.isNotEmpty)
-            ? '\nDescrição: ${transaction.description}'
-            : '';
+        ? '\nDescrição: ${transaction.description}'
+        : '';
 
     return '''
 COMPROVANTE DE TRANSAÇÃO
@@ -33,7 +33,8 @@ Para: $paraValue
 Banco: $_bankName
 Tipo: $tipoStr
 Valor: $valueStr$descriptionLine
-'''.trim();
+'''
+        .trim();
   }
 
   static String _formatValue(double value) {
