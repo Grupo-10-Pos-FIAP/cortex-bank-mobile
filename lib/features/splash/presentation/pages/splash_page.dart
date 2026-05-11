@@ -20,6 +20,12 @@ class SplashPage extends StatefulWidget {
 
 class _SplashPageState extends State<SplashPage>
     with SingleTickerProviderStateMixin {
+  // Garante que `Firebase.initializeApp()` só rode uma vez por execução do app.
+  // Isso evita o erro `FirebaseException code=duplicate-app` caso o bootstrap
+  // seja disparado em paralelo (ex.: hot restart/hot reload ou múltiplas
+  // instâncias do widget).
+  static Future<void>? _firebaseInitializationFuture;
+
   /// `flutter test integration_test/... --dart-define=INTEGRATION_SKIP_FIREBASE=true`
   /// evita Firebase nativo no flutter-tester (ex.: Windows/CI sem plugin móvel).
   static const bool _skipFirebaseBootstrap = bool.fromEnvironment(
@@ -68,11 +74,7 @@ class _SplashPageState extends State<SplashPage>
         return;
       }
 
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
-      }
+      await _initializeFirebaseOnce();
 
       FirebaseOptimizationConfig.configureFirestoreOptimizations();
 
@@ -83,6 +85,22 @@ class _SplashPageState extends State<SplashPage>
       _scheduleNavigationAfterAuthReady();
     } on FirebaseException catch (e) {
       if (!mounted) return;
+
+      // Em dev, pode existir uma inicialização implícita concorrente.
+      // Se o erro for "duplicate-app", o Firebase provavelmente já está ok;
+      // então seguimos o bootstrap sem travar a Splash.
+      if (e.code == 'duplicate-app') {
+        try {
+          await context.read<AuthProvider>().loadCurrentUser();
+          if (!mounted) return;
+          setState(() => _startupReady = true);
+          _scheduleNavigationAfterAuthReady();
+          return;
+        } catch (_) {
+          // Se falhar também, caímos no fluxo padrão de erro.
+        }
+      }
+
       safeLogError('Erro ao inicializar Firebase', e);
       setState(() => _startupError = 'Firebase: ${e.message ?? e.code}');
     } catch (e) {
@@ -90,6 +108,33 @@ class _SplashPageState extends State<SplashPage>
       safeLogError('Erro ao inicializar app na splash', e);
       setState(() => _startupError = '$e');
     }
+  }
+
+  Future<void> _initializeFirebaseOnce() {
+    _firebaseInitializationFuture ??= () async {
+      if (!Firebase.apps.isEmpty) return;
+
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } on FirebaseException catch (e) {
+        // Em dev/boot, existe corrida com inicializações implícitas
+        // (ex.: streams/instâncias sendo criadas antes do bootstrap).
+        // Se outro "vencer", o app já está ok: só ignore.
+        if (e.code == 'duplicate-app') {
+          // Aguarda o "bootstrap vencedor" finalizar.
+          final start = DateTime.now();
+          while (Firebase.apps.isEmpty &&
+              DateTime.now().difference(start) < const Duration(seconds: 5)) {
+            await Future<void>.delayed(const Duration(milliseconds: 100));
+          }
+          return;
+        }
+        rethrow;
+      }
+    }();
+    return _firebaseInitializationFuture!;
   }
 
   /// Navegação pós-startup: chamado após [AuthProvider.loadCurrentUser] concluir,
