@@ -40,7 +40,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionsProvider>().loadTransactionsPaginated();
+      _loadWithServerSideFilters();
       context.read<TransactionsProvider>().loadBalanceSummary();
     });
     _applyPreset('last30');
@@ -61,7 +61,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
   void _checkLoadMore() {
     final tx = context.read<TransactionsProvider>();
     final loaded = tx.transactions;
-    final filtered = applyStatementFilter(loaded, _currentCriteria());
+    // Filtra apenas por searchQuery (client-side); outros filtros já estão server-side
+    // Aplicar filtros client-side (search + filtros não suportados server-side)
+    final filtered = applyStatementFilter(
+      loaded,
+      _additionalClientSideCriteria(),
+    );
 
     var scrollHasClients = false;
     var hasViewportDimension = false;
@@ -99,9 +104,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
     return 'Nenhum resultado para os filtros selecionados.';
   }
 
-  StatementFilterCriteria _currentCriteria() {
+  /// Critérios aplicados server-side (data + um filtro prioritário).
+  StatementFilterCriteria _serverSideFilterCriteria() {
     return StatementFilterCriteria(
-      searchQuery: _searchController.text,
+      searchQuery: '',
       dateStart: _dateStart,
       dateEnd: _dateEnd,
       tipoFiltro: _tipoFiltro,
@@ -109,6 +115,32 @@ class _ExtratoPageState extends State<ExtratoPage> {
       categoriaFiltro: _categoriaFiltro,
       minCents: parseBRLMaskToCents(_minValueController.text),
       maxCents: parseBRLMaskToCents(_maxValueController.text),
+    );
+  }
+
+  /// Critérios aplicados client-side para filtros não suportados server-side.
+  StatementFilterCriteria _additionalClientSideCriteria() {
+    final serverCriteria = _serverSideFilterCriteria();
+    return StatementFilterCriteria(
+      searchQuery: _searchController.text,
+      dateStart: null, // Já aplicado server-side
+      dateEnd: null, // Já aplicado server-side
+      tipoFiltro: serverCriteria.tipoFiltro != 'todas' ? 'todas' : _tipoFiltro,
+      statusFiltro: serverCriteria.statusFiltro != 'todas'
+          ? 'todas'
+          : _statusFiltro,
+      categoriaFiltro: serverCriteria.categoriaFiltro != 'todas'
+          ? 'todas'
+          : _categoriaFiltro,
+      minCents: parseBRLMaskToCents(_minValueController.text),
+      maxCents: parseBRLMaskToCents(_maxValueController.text),
+    );
+  }
+
+  /// Carrega transações com os filtros server-side atuais.
+  Future<void> _loadWithServerSideFilters() async {
+    await context.read<TransactionsProvider>().loadTransactionsPaginated(
+      criteria: _serverSideFilterCriteria(),
     );
   }
 
@@ -152,7 +184,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
       _dateStart = start;
       _dateEnd = end;
     });
-    _scheduleCheckLoadMore();
+    _loadWithServerSideFilters();
   }
 
   @override
@@ -197,7 +229,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
         _dateStart = DateTime(start.year, start.month, start.day);
         _dateEnd = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
       });
-      _scheduleCheckLoadMore();
+      _loadWithServerSideFilters();
     }
   }
 
@@ -349,10 +381,12 @@ class _ExtratoPageState extends State<ExtratoPage> {
           if (tx.isLoading && tx.transactions.isEmpty) {
             return const AppLoading();
           }
+          // Aplicar filtros client-side (search + filtros não suportados server-side)
           final filtered = applyStatementFilter(
             tx.transactions,
-            _currentCriteria(),
+            _additionalClientSideCriteria(),
           );
+          _scheduleCheckLoadMore();
           return NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification n) {
               if (n is ScrollUpdateNotification ||
@@ -378,21 +412,26 @@ class _ExtratoPageState extends State<ExtratoPage> {
                       periodoTexto: _periodoTexto,
                       onPeriodTap: _showPeriodoOptions,
                       tipoFiltro: _tipoFiltro,
-                      onTipoChanged: (v) => _notifyFiltersChanged(
-                        () => setState(() => _tipoFiltro = v ?? 'todas'),
-                      ),
+                      onTipoChanged: (v) {
+                        setState(() => _tipoFiltro = v ?? 'todas');
+                        _loadWithServerSideFilters();
+                      },
                       statusFiltro: _statusFiltro,
-                      onStatusChanged: (v) => _notifyFiltersChanged(
-                        () => setState(() => _statusFiltro = v ?? 'todas'),
-                      ),
+                      onStatusChanged: (v) {
+                        setState(() => _statusFiltro = v ?? 'todas');
+                        _loadWithServerSideFilters();
+                      },
                       categoriaFiltro: _categoriaFiltro,
-                      onCategoriaChanged: (v) => _notifyFiltersChanged(
-                        () => setState(() => _categoriaFiltro = v ?? 'todas'),
-                      ),
+                      onCategoriaChanged: (v) {
+                        setState(() => _categoriaFiltro = v ?? 'todas');
+                        _loadWithServerSideFilters();
+                      },
                       minValueController: _minValueController,
                       maxValueController: _maxValueController,
-                      onMinMaxChanged: () =>
-                          _notifyFiltersChanged(() => setState(() {})),
+                      onMinMaxChanged: () {
+                        setState(() {});
+                        _loadWithServerSideFilters();
+                      },
                       onClearFilters: _limparFiltros,
                     ),
                   ),

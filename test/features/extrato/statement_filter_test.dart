@@ -2,6 +2,15 @@ import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Testes para applyStatementFilter.
+///
+/// NOTA: A partir de agora, os filtros server-side (dateStart, dateEnd,
+/// tipoFiltro, statusFiltro, categoriaFiltro, minCents, maxCents) são
+/// aplicados no Firestore. A função applyStatementFilter é usada principalmente
+/// para filtro client-side de searchQuery (busca por texto).
+///
+/// Os testes abaixo validam que esses filtros são ignorados no cliente.
+
 Transaction _tx({
   required String id,
   required TransactionType type,
@@ -297,5 +306,118 @@ void main() {
       );
       expect(applyStatementFilter(list, c).length, 3);
     });
+  });
+
+  // --- Tests documenting server-side filter behavior ---
+  // These tests validate that applyStatementFilter IGNORES server-side filters
+  // (dateStart, dateEnd, tipoFiltro, statusFiltro, categoriaFiltro, minCents, maxCents).
+  // Those filters are now applied in Firestore queries.
+
+  test('server-side date filter is ignored (dateStart)', () {
+    // Even with dateStart set, applyStatementFilter ignores it
+    final c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: dayBefore,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      minCents: 0,
+      maxCents: 0,
+    );
+    // All items should be returned, not filtered by dateStart
+    expect(applyStatementFilter(list, c).length, 3);
+  });
+
+  test('server-side date filter is ignored (dateEnd)', () {
+    // Even with dateEnd set, applyStatementFilter ignores it
+    final c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: dayBefore,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      minCents: 0,
+      maxCents: 0,
+    );
+    // All items should be returned, not filtered by dateEnd
+    expect(applyStatementFilter(list, c).length, 3);
+  });
+
+  test('server-side tipo filter is ignored', () {
+    // Even with tipoFiltro = 'credito', applyStatementFilter ignores it
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'credito',
+      statusFiltro: 'todas',
+      minCents: 0,
+      maxCents: 0,
+    );
+    // All items should be returned, not filtered by tipo
+    expect(applyStatementFilter(list, c).length, 3);
+  });
+
+  test('server-side status filter is ignored', () {
+    // Even with statusFiltro = 'completa', applyStatementFilter ignores it
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'completa',
+      minCents: 0,
+      maxCents: 0,
+    );
+    // All items should be returned, not filtered by status
+    expect(applyStatementFilter(list, c).length, 3);
+  });
+
+  test('server-side categoria filter is ignored', () {
+    // Even with categoriaFiltro = 'food', applyStatementFilter ignores it
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'food',
+      minCents: 0,
+      maxCents: 0,
+    );
+    // All items should be returned, not filtered by categoria
+    expect(applyStatementFilter(list, c).length, 3);
+  });
+
+  test('server-side minCents and maxCents are ignored', () {
+    // Even with minCents and maxCents set, applyStatementFilter ignores them
+    const c = StatementFilterCriteria(
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      minCents: 15000,
+      maxCents: 20000,
+    );
+    // All items should be returned, not filtered by value range
+    expect(applyStatementFilter(list, c).length, 3);
+  });
+
+  test('only searchQuery affects filtering', () {
+    // Multiple server-side filters set, but only searchQuery matters
+    final c = StatementFilterCriteria(
+      searchQuery: 'bob',
+      dateStart: dayBefore,
+      dateEnd: dayBefore,
+      tipoFiltro: 'credito',
+      statusFiltro: 'agendada',
+      categoriaFiltro: 'salary',
+      minCents: 10000,
+      maxCents: 50000,
+    );
+    // Only searchQuery filter applied; should find 'b' (Bob)
+    final result = applyStatementFilter(list, c);
+    expect(result.map((e) => e.id).toList(), ['b']);
   });
 }

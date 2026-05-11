@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/features/extrato/statement_filter.dart';
 import 'package:cortex_bank_mobile/features/transaction/data/datasources/transactions_datasource.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/models/transaction.dart';
@@ -13,6 +14,7 @@ abstract class ITransactionsRepository {
   Future<Result<TransactionPage>> getPage(
     int limit, {
     dynamic startAfterDocument,
+    StatementFilterCriteria? criteria,
   });
 
   Future<Result<Transaction>> uploadReceipt(
