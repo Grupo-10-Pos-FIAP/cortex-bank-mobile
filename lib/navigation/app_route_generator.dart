@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:cortex_bank_mobile/core/constants/app_routes.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
-import 'package:cortex_bank_mobile/features/auth/presentation/pages/profile_page.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/register_route_loader.dart';
-import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_route_loader.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/shell/authenticated_app_shell.dart';
+import 'package:cortex_bank_mobile/navigation/slide_page_route.dart';
+import 'package:flutter/material.dart';
 
-/// Gerador de rotas com lazy instantiation e animação de slide horizontal.
+/// Gerador de rotas do [MaterialApp] (navigator raiz): splash via [home], demais por nome.
 class AppRouteGenerator {
   AppRouteGenerator._();
 
@@ -14,49 +13,24 @@ class AppRouteGenerator {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case '/':
+        return buildSlidePageRoute(const AuthenticatedAppShell(), settings);
+
       case AppRoutes.login:
-        return _slideRoute(const LoginPage(), settings);
+        return buildSlidePageRoute(const LoginPage(), settings);
 
       case AppRoutes.register:
-        return _slideRoute(const RegisterRouteLoader(), settings);
-
-      case AppRoutes.extrato:
-        return _slideRoute(const ExtratoRouteLoader(), settings);
-
-      case AppRoutes.transaction:
-        return _slideRoute(const TransactionFormPage(), settings);
-
-      case AppRoutes.profile:
-        return _slideRoute(const ProfilePage(), settings);
+        return buildSlidePageRoute(const RegisterRouteLoader(), settings);
 
       default:
-        return _slideRoute(
+        return buildSlidePageRoute(
           Scaffold(
-            body: Center(child: Text('Rota não encontrada: ${settings.name}')),
+            body: Center(
+              child: Text('Rota não encontrada: ${settings.name}'),
+            ),
           ),
           settings,
         );
     }
-  }
-
-  /// Animação de arrastar (slide) da direita para a esquerda.
-  static PageRouteBuilder<dynamic> _slideRoute(
-    Widget page,
-    RouteSettings settings,
-  ) {
-    return PageRouteBuilder(
-      settings: settings,
-      pageBuilder: (_, _, _) => page,
-      transitionDuration: const Duration(milliseconds: 280),
-      reverseTransitionDuration: const Duration(milliseconds: 240),
-      transitionsBuilder: (_, animation, _, child) {
-        final tween = Tween<Offset>(
-          begin: const Offset(1.0, 0.0),
-          end: Offset.zero,
-        ).chain(CurveTween(curve: Curves.easeOutCubic));
-
-        return SlideTransition(position: animation.drive(tween), child: child);
-      },
-    );
   }
 }

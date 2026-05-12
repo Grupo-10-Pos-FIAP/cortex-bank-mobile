@@ -12,7 +12,9 @@ import 'package:cortex_bank_mobile/features/contacts/presentation/providers/cont
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
+import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_new_transaction_card.dart';
 import 'package:flutter/material.dart';
@@ -177,7 +179,7 @@ void main() {
             balanceCents: 3000,
           ),
         );
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
       await provider.loadBalanceSummary();
 
       await pumpGoldenMaterialApp(
@@ -188,7 +190,7 @@ void main() {
               const Scaffold(body: Center(child: Text('Extrato'))),
         },
         home: Scaffold(
-          body: ChangeNotifierProvider<TransactionsProvider>.value(
+          body: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
             value: provider,
             child: const Padding(
               padding: EdgeInsets.all(24),
@@ -226,7 +228,7 @@ void main() {
             balanceCents: 500,
           ),
         );
-      final tx = TransactionsProvider(txRepo);
+      final tx = TransactionsNotifier(txRepo);
       await tx.loadBalanceSummary();
 
       final contacts = ContactsProvider(FakeContactsRepository());
@@ -243,7 +245,7 @@ void main() {
           body: MultiProvider(
             providers: [
               ChangeNotifierProvider<AuthProvider>.value(value: auth),
-              ChangeNotifierProvider<TransactionsProvider>.value(value: tx),
+              StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(value: tx),
               ChangeNotifierProvider<ContactsProvider>.value(value: contacts),
             ],
             child: SingleChildScrollView(

@@ -1,11 +1,12 @@
 import 'package:cortex_bank_mobile/app.dart';
+import 'package:cortex_bank_mobile/core/di/injection.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
-import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/pages/extrato_page.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/repositories/i_contacts_repository.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/repositories/i_transactions_repository.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -35,17 +36,18 @@ Future<void> _pumpTestApp(
   required FakeTransactionsRepository txRepo,
   FakeContactsRepository? contactsRepo,
 }) async {
+  await getIt.reset();
+  getIt.registerSingleton<IContactsRepository>(
+    contactsRepo ?? FakeContactsRepository(),
+  );
+  getIt.registerSingleton<ITransactionsRepository>(txRepo);
+
   final auth = AuthProvider(authRepo);
   await auth.loadCurrentUser();
   await tester.pumpWidget(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
-        ChangeNotifierProvider(
-          create: (_) =>
-              ContactsProvider(contactsRepo ?? FakeContactsRepository()),
-        ),
-        ChangeNotifierProvider(create: (_) => TransactionsProvider(txRepo)),
       ],
       child: App(
         enableConnectivityWrapper: false,

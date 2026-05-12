@@ -12,7 +12,7 @@ import 'package:cortex_bank_mobile/features/contacts/presentation/providers/cont
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/text_field.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -234,7 +234,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       receiptUrls: widget.data.receiptUrls,
     );
 
-    final provider = context.read<TransactionsProvider>();
+    final provider = context.read<TransactionsNotifier>();
     final success = await provider.updateTransaction(updated);
 
     if (!mounted) return;

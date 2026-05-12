@@ -9,7 +9,7 @@ import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transac
 import 'package:cortex_bank_mobile/features/transaction/constants/attachment_constants.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +72,7 @@ Future<model.Transaction?> _uploadReceipt(
     return null;
   }
 
-  final provider = context.read<TransactionsProvider>();
+  final provider = context.read<TransactionsNotifier>();
   return provider.uploadReceipt(transaction, bytes, name);
 }
 

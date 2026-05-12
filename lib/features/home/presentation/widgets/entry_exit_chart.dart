@@ -6,7 +6,7 @@ import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart'
     as model;
@@ -61,55 +61,73 @@ class _EntryExitChartState extends State<EntryExitChart> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<TransactionsProvider>();
-    final chartData = _computeEntryExit(provider.transactions);
-    if (provider.isLoading) {
-      return AppCardContainer(
-        title: 'Entradas e Saídas',
-        child: const Center(child: Text('Carregando...')),
-      );
-    }
-    return AppCardContainer(
-      title: 'Entradas e Saídas',
-      child: SfCartesianChart(
-        plotAreaBorderWidth: 0,
-        primaryXAxis: CategoryAxis(
-          majorGridLines: const MajorGridLines(width: 0),
-        ),
-        primaryYAxis: NumericAxis(
-          numberFormat: chartAxisBrlNumberFormat,
-          labelRotation: -45,
-          axisLine: const AxisLine(width: 0),
-          majorGridLines: MajorGridLines(
-            width: 1,
-            color: AppDesignTokens.colorGray200,
+    return Selector<TransactionsState, (int, bool)>(
+      selector: (_, s) {
+        final v = Object.hashAll(
+          s.transactions.map(
+            (e) => Object.hash(
+              e.id,
+              e.value,
+              e.date.millisecondsSinceEpoch,
+              e.type.index,
+              e.status,
+            ),
           ),
-        ),
-        legend: Legend(isVisible: true),
-        tooltipBehavior: brlCartesianTooltipBehavior(),
-        series: <CartesianSeries<_EntryExitData, String>>[
-          ColumnSeries<_EntryExitData, String>(
-            dataSource: chartData,
-            xValueMapper: (_EntryExitData item, _) => item.month,
-            yValueMapper: (_EntryExitData item, _) => item.entry,
-            dataLabelMapper: (_EntryExitData item, _) =>
-                formatReaisToBRL(item.entry),
-            name: 'Entrada',
-            color: AppDesignTokens.colorFeedbackSuccess,
-            dataLabelSettings: DataLabelSettings(isVisible: true),
+        );
+        return (v, s.isLoading);
+      },
+      builder: (context, tuple, _) {
+        if (tuple.$2) {
+          return AppCardContainer(
+            title: 'Entradas e Saídas',
+            child: const Center(child: Text('Carregando...')),
+          );
+        }
+        final s = context.read<TransactionsState>();
+        final chartData = _computeEntryExit(s.transactions);
+        return AppCardContainer(
+          title: 'Entradas e Saídas',
+          child: SfCartesianChart(
+            plotAreaBorderWidth: 0,
+            primaryXAxis: CategoryAxis(
+              majorGridLines: const MajorGridLines(width: 0),
+            ),
+            primaryYAxis: NumericAxis(
+              numberFormat: chartAxisBrlNumberFormat,
+              labelRotation: -45,
+              axisLine: const AxisLine(width: 0),
+              majorGridLines: MajorGridLines(
+                width: 1,
+                color: AppDesignTokens.colorGray200,
+              ),
+            ),
+            legend: Legend(isVisible: true),
+            tooltipBehavior: brlCartesianTooltipBehavior(),
+            series: <CartesianSeries<_EntryExitData, String>>[
+              ColumnSeries<_EntryExitData, String>(
+                dataSource: chartData,
+                xValueMapper: (_EntryExitData item, _) => item.month,
+                yValueMapper: (_EntryExitData item, _) => item.entry,
+                dataLabelMapper: (_EntryExitData item, _) =>
+                    formatReaisToBRL(item.entry),
+                name: 'Entrada',
+                color: AppDesignTokens.colorFeedbackSuccess,
+                dataLabelSettings: DataLabelSettings(isVisible: true),
+              ),
+              ColumnSeries<_EntryExitData, String>(
+                dataSource: chartData,
+                xValueMapper: (_EntryExitData item, _) => item.month,
+                yValueMapper: (_EntryExitData item, _) => item.exit,
+                dataLabelMapper: (_EntryExitData item, _) =>
+                    formatReaisToBRL(item.exit),
+                name: 'Saída',
+                color: AppDesignTokens.colorFeedbackError,
+                dataLabelSettings: DataLabelSettings(isVisible: true),
+              ),
+            ],
           ),
-          ColumnSeries<_EntryExitData, String>(
-            dataSource: chartData,
-            xValueMapper: (_EntryExitData item, _) => item.month,
-            yValueMapper: (_EntryExitData item, _) => item.exit,
-            dataLabelMapper: (_EntryExitData item, _) =>
-                formatReaisToBRL(item.exit),
-            name: 'Saída',
-            color: AppDesignTokens.colorFeedbackError,
-            dataLabelSettings: DataLabelSettings(isVisible: true),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

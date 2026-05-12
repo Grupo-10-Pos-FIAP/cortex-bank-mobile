@@ -5,7 +5,8 @@ import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/extrato
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -42,7 +43,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
     _applyPreset('last30');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<TransactionsProvider>().loadBalanceSummary();
+      context.read<TransactionsNotifier>().loadBalanceSummary();
     });
   }
 
@@ -59,7 +60,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   }
 
   void _checkLoadMore() {
-    final tx = context.read<TransactionsProvider>();
+    final tx = context.read<TransactionsNotifier>();
     final loaded = tx.transactions;
     // Filtra apenas por searchQuery (client-side); outros filtros já estão server-side
     // Aplicar filtros client-side (search + filtros não suportados server-side)
@@ -97,7 +98,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   }
 
   /// Lista vazia na UI: distingue falha de carga, lista vazia real e filtro sem match.
-  String _extratoEmptyMessage(TransactionsProvider tx) {
+  String _extratoEmptyMessage(TransactionsNotifier tx) {
     if (tx.transactions.isEmpty) {
       return tx.transactionsError ?? 'Nenhuma transação encontrada';
     }
@@ -139,7 +140,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
 
   /// Carrega transações com os filtros server-side atuais.
   Future<void> _loadWithServerSideFilters() async {
-    await context.read<TransactionsProvider>().loadTransactionsPaginated(
+    await context.read<TransactionsNotifier>().loadTransactionsPaginated(
       criteria: _serverSideFilterCriteria(),
     );
   }
@@ -384,8 +385,30 @@ class _ExtratoPageState extends State<ExtratoPage> {
         elevation: 0,
         centerTitle: false,
       ),
-      body: Consumer<TransactionsProvider>(
-        builder: (context, tx, _) {
+      body: Selector<TransactionsState, (int, bool, bool, bool, String?, TransactionsListPhase)>(
+        selector: (_, s) {
+          final idsVersion = Object.hashAll(
+            s.transactions.map(
+              (e) => Object.hash(
+                e.id,
+                e.value,
+                e.date.millisecondsSinceEpoch,
+                e.status,
+                e.receiptUrls.length,
+              ),
+            ),
+          );
+          return (
+            idsVersion,
+            s.isLoading,
+            s.isLoadingMore,
+            s.hasMore,
+            s.transactionsError,
+            s.listPhase,
+          );
+        },
+        builder: (context, tuple, _) {
+          final tx = context.read<TransactionsNotifier>();
           if (tx.isLoading && tx.transactions.isEmpty) {
             return const AppLoading();
           }

@@ -1,7 +1,7 @@
 /// Distância do fim do conteúdo abaixo da viewport; contrato com o extrato atual.
 const double extratoLoadMoreScrollThreshold = 520;
 
-/// Entrada imutável para decidir se deve pedir mais itens ao [TransactionsProvider].
+/// Entrada imutável para decidir se deve pedir mais itens ao [TransactionsNotifier].
 class ExtratoLoadMoreContext {
   const ExtratoLoadMoreContext({
     required this.hasMore,

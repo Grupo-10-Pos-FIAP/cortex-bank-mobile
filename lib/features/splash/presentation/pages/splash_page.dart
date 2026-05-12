@@ -7,7 +7,7 @@ import 'package:cortex_bank_mobile/core/utils/env_validator.dart';
 import 'package:cortex_bank_mobile/core/utils/safe_log.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
-import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/shell/authenticated_app_shell.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/firebase_options.dart';
 
@@ -112,7 +112,7 @@ class _SplashPageState extends State<SplashPage>
 
   Future<void> _initializeFirebaseOnce() {
     _firebaseInitializationFuture ??= () async {
-      if (!Firebase.apps.isEmpty) return;
+      if (Firebase.apps.isNotEmpty) return;
 
       try {
         await Firebase.initializeApp(
@@ -155,7 +155,7 @@ class _SplashPageState extends State<SplashPage>
       if (!mounted) return;
       final authNow = context.read<AuthProvider>();
       final target = authNow.isAuthenticated
-          ? const HomePage()
+          ? const AuthenticatedAppShell()
           : const LoginPage();
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(

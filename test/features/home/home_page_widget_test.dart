@@ -2,7 +2,9 @@ import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_pro
 import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_form_page.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
+import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -13,8 +15,8 @@ Widget _buildHomeShell() {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => AuthProvider(FakeAuthRepository())),
-      ChangeNotifierProvider(
-        create: (_) => TransactionsProvider(FakeTransactionsRepository()),
+      StateNotifierProvider<TransactionsNotifier, TransactionsState>(
+        create: (_) => TransactionsNotifier(FakeTransactionsRepository()),
       ),
       ChangeNotifierProvider(
         create: (_) => ContactsProvider(FakeContactsRepository()),

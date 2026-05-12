@@ -12,7 +12,7 @@ import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_page_header.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/widgets/auth_field_styles.dart';
-import 'package:cortex_bank_mobile/features/home/presentation/pages/home_page.dart';
+import 'package:cortex_bank_mobile/features/auth/presentation/shell/authenticated_app_shell.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
           pageBuilder: (_, primaryAnimation, secondaryAnimation) =>
-              const HomePage(),
+              const AuthenticatedAppShell(),
           transitionDuration: const Duration(milliseconds: 400),
           transitionsBuilder: (_, animation, secondaryAnimation, child) =>
               FadeTransition(

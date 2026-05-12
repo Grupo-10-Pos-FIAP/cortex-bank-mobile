@@ -20,7 +20,8 @@ import 'package:cortex_bank_mobile/features/transaction/utils/transaction_form_v
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_schedule_copy.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -152,7 +153,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
       }
 
       final contactsProvider = context.read<ContactsProvider>();
-      final txProvider = context.read<TransactionsProvider>();
+      final txProvider = context.read<TransactionsNotifier>();
       final authProvider = context.read<AuthProvider>();
 
       final cents = parseBRLMaskToCents(_valueController.text);
@@ -738,9 +739,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                         );
                       }),
                       const SizedBox(height: 24),
-                      Consumer<TransactionsProvider>(
-                        builder: (context, txProvider, child) {
-                          final busy = _isSubmitting || txProvider.isLoading;
+                      Consumer<TransactionsState>(
+                        builder: (context, txState, child) {
+                          final busy = _isSubmitting || txState.isLoading;
                           final isScheduled =
                               TransactionDatePolicy.isStrictlyAfterToday(
                                 _selectedDate,

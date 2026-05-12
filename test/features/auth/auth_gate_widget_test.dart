@@ -5,8 +5,10 @@ import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/pages/login_page.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -16,8 +18,8 @@ Widget _buildGate(AuthProvider authProvider) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-      ChangeNotifierProvider<TransactionsProvider>(
-        create: (_) => TransactionsProvider(FakeTransactionsRepository()),
+      StateNotifierProvider<TransactionsNotifier, TransactionsState>(
+        create: (_) => TransactionsNotifier(FakeTransactionsRepository()),
       ),
       ChangeNotifierProvider<ContactsProvider>(
         create: (_) => ContactsProvider(FakeContactsRepository()),

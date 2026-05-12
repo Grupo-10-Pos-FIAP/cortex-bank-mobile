@@ -4,11 +4,12 @@ import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
+import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 
 import '../../helpers/helpers.dart';
 
@@ -20,14 +21,14 @@ void main() {
       final completer = Completer<Result<BalanceSummary>>();
       final repo = FakeTransactionsRepository()
         ..getBalanceSummaryCompleter = completer;
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
 
       final loadFuture = provider.loadBalanceSummary(forceRefresh: true);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChangeNotifierProvider<TransactionsProvider>.value(
+            body: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
               value: provider,
               child: const AppBalanceCard(mostrarSaldoInicial: true),
             ),
@@ -54,13 +55,13 @@ void main() {
         ..getBalanceSummaryResult = FailureResult(
           const Failure(message: 'Falha ao obter saldo'),
         );
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
       await provider.loadBalanceSummary(forceRefresh: true);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChangeNotifierProvider<TransactionsProvider>.value(
+            body: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
               value: provider,
               child: const AppBalanceCard(mostrarSaldoInicial: true),
             ),

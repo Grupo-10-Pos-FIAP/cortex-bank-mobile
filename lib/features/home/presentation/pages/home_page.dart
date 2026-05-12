@@ -2,7 +2,7 @@ import 'package:cortex_bank_mobile/features/auth/presentation/pages/profile_tab_
 import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/dashboard_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/pages/transaction_tab_loader.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,8 +25,8 @@ class _HomePageState extends State<HomePage> {
     _pageController = PageController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Carrega saldo e transações imediatamente
-      context.read<TransactionsProvider>().loadBalanceSummary();
-      context.read<TransactionsProvider>().loadTransactions();
+      context.read<TransactionsNotifier>().loadBalanceSummary();
+      context.read<TransactionsNotifier>().loadTransactions();
       // Pré-carrega contatos em background para deixar pronto antes do usuário navegar
       context.read<ContactsProvider>().loadContacts();
     });

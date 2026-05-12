@@ -5,13 +5,13 @@ import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/helpers.dart';
 
 void main() {
-  group('TransactionsProvider', () {
+  group('TransactionsNotifier', () {
     test(
       'deve carregar e ordenar primeira página quando loadTransactionsPaginated tiver sucesso',
       () async {
@@ -26,7 +26,7 @@ void main() {
               endCursor: const StringTransactionPageCursor('doc-1'),
             ),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         await provider.loadTransactionsPaginated();
 
@@ -62,7 +62,7 @@ void main() {
               endCursor: const StringTransactionPageCursor('doc-2'),
             ),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         await provider.loadTransactionsPaginated();
         await provider.loadMoreTransactions();
@@ -106,11 +106,11 @@ void main() {
             ),
           );
 
-        final first = TransactionsProvider(repo);
+        final first = TransactionsNotifier(repo);
         await first.loadTransactionsPaginated();
         await first.loadMoreTransactions();
 
-        final second = TransactionsProvider(repo);
+        final second = TransactionsNotifier(repo);
         await second.loadTransactions();
 
         expect(second.transactions.map((e) => e.id).toList(), ['a', 'b', 'c']);
@@ -123,7 +123,7 @@ void main() {
         ..getAllResult = FailureResult(
           const Failure(message: 'Erro ao carregar transacoes'),
         );
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
 
       await provider.loadTransactions();
 
@@ -146,7 +146,7 @@ void main() {
           ..getPageNextResult = FailureResult(
             const Failure(message: 'Erro ao carregar mais'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactionsPaginated();
 
         await provider.loadMoreTransactions();
@@ -171,7 +171,7 @@ void main() {
           ..getPageNextResult = FailureResult(
             const Failure(message: 'Erro ao carregar mais'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactionsPaginated();
         await provider.loadMoreTransactions();
 
@@ -191,7 +191,7 @@ void main() {
       () async {
         final repo = FakeTransactionsRepository()
           ..getPageResult = Success(TransactionPage(items: [], hasMore: false));
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactionsPaginated();
 
         await provider.loadMoreTransactions();
@@ -205,7 +205,7 @@ void main() {
       () async {
         final repo = FakeTransactionsRepository()
           ..addResult = const Success('new-id');
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         final transaction = buildTransaction(
           id: '',
           date: DateTime(2024, 5, 1),
@@ -232,7 +232,7 @@ void main() {
           ..addResult = FailureResult(
             const Failure(message: 'Erro ao adicionar'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         final created = await provider.addTransaction(
           buildTransaction(id: '', date: DateTime(2024, 5, 1)),
@@ -253,7 +253,7 @@ void main() {
             buildTransaction(id: 't1', date: DateTime(2024, 5, 1), value: 10),
           ])
           ..updateResult = const Success(null);
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         final ok = await provider.updateTransaction(
@@ -276,7 +276,7 @@ void main() {
           ..updateResult = FailureResult(
             const Failure(message: 'Erro ao atualizar'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         final ok = await provider.updateTransaction(
@@ -296,7 +296,7 @@ void main() {
           ..getAllResult = Success([
             buildTransaction(id: 't1', date: DateTime(2024, 5, 1)),
           ]);
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         await provider.deleteTransaction('t1');
@@ -317,7 +317,7 @@ void main() {
           ..deleteResult = FailureResult(
             const Failure(message: 'Erro ao remover'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         await provider.deleteTransaction('t1');
@@ -337,7 +337,7 @@ void main() {
           ..uploadReceiptResult = FailureResult(
             const Failure(message: 'Falha upload'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         final updated = await provider.uploadReceipt(
@@ -360,7 +360,7 @@ void main() {
         final repo = FakeTransactionsRepository()
           ..getAllResult = Success([original])
           ..uploadReceiptResult = Success(updated);
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         final result = await provider.uploadReceipt(
@@ -381,7 +381,7 @@ void main() {
           ..getAllResult = Success([
             buildTransaction(id: 't1', date: DateTime(2024, 5, 1)),
           ]);
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         final original = provider.transactions.first;
@@ -401,7 +401,7 @@ void main() {
           ..uploadReceiptsResult = FailureResult(
             const Failure(message: 'Falha upload em lote'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
 
         final result = await provider.uploadReceipts(
@@ -423,7 +423,7 @@ void main() {
           ..getBalanceSummaryResult = Success(
             buildBalanceSummary(balanceCents: 5000),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         await provider.loadBalanceSummary();
 
@@ -436,7 +436,7 @@ void main() {
         ..getBalanceSummaryResult = FailureResult(
           const Failure(message: 'Erro saldo'),
         );
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
 
       await provider.loadBalanceSummary();
 
@@ -452,7 +452,7 @@ void main() {
         final completer = Completer<Result<BalanceSummary>>();
         final repo = FakeTransactionsRepository()
           ..getBalanceSummaryCompleter = completer;
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         final pending = provider.loadBalanceSummary(forceRefresh: true);
 
@@ -477,7 +477,7 @@ void main() {
           ..getBalanceSummaryResult = FailureResult(
             const Failure(message: 'Erro saldo'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
         await provider.loadTransactions();
         await provider.loadBalanceSummary(forceRefresh: true);
 
@@ -500,7 +500,7 @@ void main() {
             buildTransaction(id: 'a', date: sameDate),
             buildTransaction(id: 'b', date: sameDate),
           ]);
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         await provider.loadTransactions();
 

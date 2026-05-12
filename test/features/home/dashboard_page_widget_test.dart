@@ -1,11 +1,12 @@
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/home/presentation/pages/dashboard_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
+import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 
 import '../../helpers/helpers.dart';
 
@@ -22,12 +23,12 @@ void main() {
               balanceCents: 8000,
             ),
           );
-        final tx = TransactionsProvider(repo);
+        final tx = TransactionsNotifier(repo);
         await tx.loadBalanceSummary();
 
         await tester.pumpWidget(
           MaterialApp(
-            home: ChangeNotifierProvider<TransactionsProvider>.value(
+            home: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
               value: tx,
               child: const Scaffold(body: DashboardPage()),
             ),

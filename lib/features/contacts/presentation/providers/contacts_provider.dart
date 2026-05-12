@@ -49,6 +49,20 @@ class ContactsProvider extends ChangeNotifier {
     }
   }
 
+  String? _boundUserId;
+
+  /// Alinha o cache em memória ao usuário autenticado (troca de conta / logout).
+  void syncAuthUserId(String? userId) {
+    if (_boundUserId == userId) return;
+    _boundUserId = userId;
+    _contacts = [];
+    _selectedContactId = null;
+    _errorMessage = null;
+    _isLoading = false;
+    CacheManager.remove(_contactsCacheKey);
+    notifyListeners();
+  }
+
   // Carregar contatos
   Future<void> loadContacts({bool forceRefresh = false}) async {
     if (_isLoading) return;

@@ -9,7 +9,9 @@ import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transac
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
+import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -19,11 +21,13 @@ import '../../helpers/helpers.dart';
 /// Cenários com [TransactionDatePolicy.today] usam a data local do runner; com
 /// flakiness (meia-noite / TZ), prefira datas fixas nos fakes (sem mudar `lib/`).
 
-Widget _buildPage(TransactionsProvider provider) {
+Widget _buildPage(TransactionsNotifier notifier) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => AuthProvider(FakeAuthRepository())),
-      ChangeNotifierProvider<TransactionsProvider>.value(value: provider),
+      StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
+        value: notifier,
+      ),
     ],
     child: const MaterialApp(home: ExtratoPage()),
   );
@@ -36,7 +40,7 @@ void main() {
     ) async {
       final repo = FakeTransactionsRepository()
         ..getPageCompleter = Completer<Result<TransactionPage>>();
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
 
       await tester.pumpWidget(_buildPage(provider));
       await tester.pump();
@@ -63,7 +67,7 @@ void main() {
         ..getPageResult = FailureResult(
           const Failure(message: 'Erro ao carregar transacoes'),
         );
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
 
       await tester.pumpWidget(_buildPage(provider));
       await tester.pump();
@@ -80,7 +84,7 @@ void main() {
         ..getPageResult = const Success(
           TransactionPage(items: [], hasMore: false, endCursor: null),
         );
-      final provider = TransactionsProvider(repo);
+      final provider = TransactionsNotifier(repo);
 
       await tester.pumpWidget(_buildPage(provider));
       await tester.pump();
@@ -105,7 +109,7 @@ void main() {
               endCursor: null,
             ),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         await tester.pumpWidget(_buildPage(provider));
         await tester.pump();
@@ -155,7 +159,7 @@ void main() {
           ..getPageNextResult = FailureResult(
             const Failure(message: 'Erro ao carregar mais'),
           );
-        final provider = TransactionsProvider(repo);
+        final provider = TransactionsNotifier(repo);
 
         await tester.pumpWidget(_buildPage(provider));
         await tester.pump();

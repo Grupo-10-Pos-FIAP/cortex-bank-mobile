@@ -1,7 +1,8 @@
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
-import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_provider.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
+import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,21 +28,25 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TransactionsProvider>(
-      builder: (context, provider, child) {
-        final summary = provider.balanceSummary;
-        final err = provider.balanceSummaryError;
-        final loading = provider.isBalanceSummaryLoading;
-        final balanceCents = summary?.balanceCents;
+    return Selector<TransactionsState, (int?, String?, bool)>(
+      selector: (_, s) => (
+        s.balanceSummary?.balanceCents,
+        s.balanceSummaryError,
+        s.isBalanceSummaryLoading,
+      ),
+      builder: (context, snapshot, child) {
+        final err = snapshot.$2;
+        final loading = snapshot.$3;
+        final balanceCents = snapshot.$1;
         final saldoReal = (balanceCents ?? 0) / 100;
 
         Widget body;
         if (err != null) {
           body = AppErrorMessage(
             message: err,
-            onDismiss: () => context.read<TransactionsProvider>().clearError(),
+            onDismiss: () => context.read<TransactionsNotifier>().clearError(),
           );
-        } else if (loading && summary == null) {
+        } else if (loading && balanceCents == null) {
           body = Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Align(
