@@ -11,36 +11,8 @@ import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:provider/provider.dart';
 
 /// Shell do fluxo autenticado: providers de dados da sessão + [Navigator] interno.
-class AuthenticatedAppShell extends StatefulWidget {
+class AuthenticatedAppShell extends StatelessWidget {
   const AuthenticatedAppShell({super.key});
-
-  @override
-  State<AuthenticatedAppShell> createState() => _AuthenticatedAppShellState();
-}
-
-class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
-  late final AuthProvider _auth;
-  late final TransactionsNotifier _transactions;
-
-  @override
-  void initState() {
-    super.initState();
-    _auth = context.read<AuthProvider>();
-    _transactions = TransactionsNotifier(getIt<ITransactionsRepository>());
-    _syncTransactions();
-    _auth.addListener(_syncTransactions);
-  }
-
-  void _syncTransactions() {
-    _transactions.syncAuthUserId(_auth.user?.uid);
-  }
-
-  @override
-  void dispose() {
-    _auth.removeListener(_syncTransactions);
-    _transactions.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,12 +25,27 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
             return contacts;
           },
         ),
-        StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
-          value: _transactions,
+        ProxyProvider<AuthProvider, TransactionsNotifier>(
+          create: (_) => TransactionsNotifier(getIt<ITransactionsRepository>()),
+          update: (_, auth, previous) {
+            previous!.syncAuthUserId(auth.user?.uid);
+            return previous;
+          },
+          dispose: (_, notifier) => notifier.dispose(),
         ),
       ],
-      child: Navigator(
-        onGenerateRoute: AuthenticatedNavigator.onGenerateRoute,
+      child: Builder(
+        builder: (context) {
+          return StateNotifierProvider<
+            TransactionsNotifier,
+            TransactionsState
+          >.value(
+            value: context.read<TransactionsNotifier>(),
+            child: Navigator(
+              onGenerateRoute: AuthenticatedNavigator.onGenerateRoute,
+            ),
+          );
+        },
       ),
     );
   }
