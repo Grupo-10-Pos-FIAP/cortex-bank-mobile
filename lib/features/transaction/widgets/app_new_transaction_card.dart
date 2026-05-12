@@ -255,7 +255,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
           selectedValueType = null;
           selectedValueCategory = null;
           selectedTitularidade = null;
-          _selectedDate = TransactionDatePolicy.today;
+          _selectedDate = DateTime.now();
           _attachments.clear();
           contactsProvider.setSelectedContactId(null);
         });
@@ -543,7 +543,13 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                                 'Hoje até ${TransactionDatePolicy.futureDaysInclusive} dias à frente',
                           );
                           if (picked != null) {
-                            setState(() => _selectedDate = picked);
+                            setState(
+                              () => _selectedDate =
+                                  TransactionDatePolicy.combineDateWithTime(
+                                picked,
+                                _selectedDate,
+                              ),
+                            );
                           }
                         },
                         child: InputDecorator(

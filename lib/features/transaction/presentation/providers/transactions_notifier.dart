@@ -20,12 +20,16 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
   String? _boundUserId;
 
+  /// Invalida conclusões de [loadTransactionsPaginated] / [loadMoreTransactions] obsoletas.
+  int _listEpoch = 0;
+
   /// Quando o usuário autenticado muda (login / logout / troca de conta), limpa estado e cache.
   void syncAuthUserId(String? userId) {
     if (_boundUserId == userId) return;
     _boundUserId = userId;
     CacheManager.remove(_transactionsCacheKey);
     CacheManager.remove(_balanceSummaryCacheKey);
+    _listEpoch++;
     state = TransactionsState.initial();
   }
 
@@ -127,12 +131,14 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
   Future<void> loadTransactionsPaginated({
     StatementFilterCriteria? criteria,
   }) async {
+    final epoch = ++_listEpoch;
     state = state.copyWith(
       listPhase: TransactionsListPhase.loading,
       clearTransactionsError: true,
       lastCursor: null,
       clearLastCursor: true,
       hasMore: true,
+      isLoadingMore: false,
       currentFilterCriteria: criteria,
       clearFilterCriteria: criteria == null,
     );
@@ -142,6 +148,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       state = state.copyWith(listPhase: TransactionsListPhase.idle);
       return;
     }
+    if (epoch != _listEpoch) return;
 
     result.fold(
       (page) {
@@ -171,6 +178,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
   Future<void> loadMoreTransactions() async {
     if (state.isLoadingMore || !state.hasMore) return;
 
+    final epoch = _listEpoch;
     state = state.copyWith(isLoadingMore: true);
 
     final result = await _repository.getPage(
@@ -179,6 +187,10 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       criteria: state.currentFilterCriteria,
     );
     if (!mounted) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
+    if (epoch != _listEpoch) {
       state = state.copyWith(isLoadingMore: false);
       return;
     }

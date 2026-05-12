@@ -16,6 +16,26 @@ abstract class TransactionDatePolicy {
 
   static DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  /// Usa o dia civil de [day] com hora/minuto/segundo de [timeSource]
+  /// (útil após [showDatePicker], que devolve meia-noite).
+  static DateTime combineDateWithTime(DateTime day, DateTime timeSource) {
+    return DateTime(
+      day.year,
+      day.month,
+      day.day,
+      timeSource.hour,
+      timeSource.minute,
+      timeSource.second,
+      timeSource.millisecond,
+      timeSource.microsecond,
+    );
+  }
+
+  /// Como [clampToAllowedRange], mas mantém o horário de [date].
+  static DateTime clampToAllowedRangePreservingTime(DateTime date) {
+    return combineDateWithTime(clampToAllowedRange(date), date);
+  }
+
   static DateTime clampToAllowedRange(DateTime date) {
     final d = dateOnly(date);
     if (d.isBefore(today)) return today;
