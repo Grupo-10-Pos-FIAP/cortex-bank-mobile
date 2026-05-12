@@ -18,6 +18,12 @@ abstract class ITransactionsRepository {
     StatementFilterCriteria? criteria,
   });
 
+  /// Reatividade: atualizações da primeira página via listener Firestore.
+  Stream<TransactionPage> watchFirstPage(
+    int limit, {
+    StatementFilterCriteria? criteria,
+  });
+
   Future<Result<Transaction>> uploadReceipt(
     Transaction transaction,
     List<int> fileBytes,

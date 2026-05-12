@@ -129,6 +129,35 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     }
   }
 
+  @override
+  Stream<TransactionPage> watchFirstPage(
+    int limit, {
+    StatementFilterCriteria? criteria,
+  }) {
+    final fetchLimit = limit + 1;
+    Query<Map<String, dynamic>> query = _buildQueryWithFilters(criteria)
+        .orderBy('date', descending: true)
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(fetchLimit);
+
+    return query.snapshots().map((snapshot) {
+      final allDocs = snapshot.docs;
+      final hasMore = allDocs.length > limit;
+      final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
+      final items = pageDocs
+          .map((d) => transactionFromFirestoreMap(d.data(), d.id))
+          .toList();
+
+      return TransactionPage(
+        items: items,
+        hasMore: hasMore,
+        endCursor: pageDocs.isNotEmpty
+            ? FirestoreTransactionPageCursor(pageDocs.last)
+            : null,
+      );
+    });
+  }
+
   Future<TransactionPage> _getPageWithDateFallback(
     int limit, {
     TransactionPageCursor? startAfterCursor,

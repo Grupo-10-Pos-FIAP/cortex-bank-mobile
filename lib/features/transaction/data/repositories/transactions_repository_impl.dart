@@ -89,6 +89,22 @@ class TransactionsRepositoryImpl implements ITransactionsRepository {
   }
 
   @override
+  Stream<TransactionPage> watchFirstPage(
+    int limit, {
+    StatementFilterCriteria? criteria,
+  }) {
+    try {
+      return _dataSource.watchFirstPage(limit, criteria: criteria);
+    } catch (e) {
+      safeLogError('Erro ao abrir stream de transações', e);
+      return Stream.error(
+        Exception('Erro ao carregar transações'),
+        StackTrace.current,
+      );
+    }
+  }
+
+  @override
   Future<Result<BalanceSummary>> getBalanceSummary() async {
     try {
       final summary = await _dataSource.getBalanceSummary();

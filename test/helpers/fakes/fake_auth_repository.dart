@@ -27,6 +27,17 @@ class FakeAuthRepository implements IAuthRepository {
   int currentUserCalls = 0;
   int signOutCalls = 0;
 
+  /// Quando não nulo, usado por [watchFirebaseSessionSignedIn] em testes.
+  StreamController<bool>? firebaseSessionController;
+
+  @override
+  Stream<bool> watchFirebaseSessionSignedIn() {
+    if (firebaseSessionController != null) {
+      return firebaseSessionController!.stream;
+    }
+    return const Stream.empty();
+  }
+
   String? lastSignInEmail;
   String? lastSignInPassword;
   String? lastSignUpFullName;

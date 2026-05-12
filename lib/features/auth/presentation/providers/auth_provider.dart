@@ -16,11 +16,65 @@ class AuthProvider extends ChangeNotifier {
   Future<void>? _pendingLoadCurrentUser;
   Future<void>? _backgroundRefreshCurrentUser;
 
+  StreamSubscription<bool>? _firebaseSessionSub;
+  bool _reactiveAuthStarted = false;
+  int _authReactiveGeneration = 0;
+
   User? get user => _user;
   bool get loading => _loading;
   bool get hasResolvedInitialAuth => _hasResolvedInitialAuth;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
+
+  /// Inicia escuta reativa à sessão Firebase ([authStateChanges] via repositório).
+  /// Deve ser chamado após [Firebase.initializeApp] (ex.: na splash).
+  void startReactiveAuthListener() {
+    if (_reactiveAuthStarted) return;
+    _reactiveAuthStarted = true;
+    _firebaseSessionSub = _authRepository.watchFirebaseSessionSignedIn().listen(
+      _onFirebaseSessionSignedIn,
+      onError: (_) {},
+    );
+  }
+
+  void _onFirebaseSessionSignedIn(bool signedIn) {
+    unawaited(_handleFirebaseSessionSignedInAsync(signedIn));
+  }
+
+  Future<void> _handleFirebaseSessionSignedInAsync(bool signedIn) async {
+    final gen = ++_authReactiveGeneration;
+
+    if (!signedIn) {
+      _user = null;
+      _hasResolvedInitialAuth = true;
+      _errorMessage = null;
+      _loading = false;
+      if (gen == _authReactiveGeneration) {
+        notifyListeners();
+      }
+      return;
+    }
+
+    _loading = true;
+    notifyListeners();
+
+    final result = await _authRepository.getCurrentUser(forceRefresh: true);
+    if (gen != _authReactiveGeneration) return;
+
+    result.fold(
+      (u) {
+        _user = u;
+        _errorMessage = null;
+      },
+      (f) {
+        _user = null;
+        _errorMessage = f.message;
+      },
+    );
+    _hasResolvedInitialAuth = true;
+    _loading = false;
+    notifyListeners();
+  }
 
   Future<void> loadCurrentUser({bool force = false}) {
     if (_pendingLoadCurrentUser != null) {
@@ -187,5 +241,11 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _firebaseSessionSub?.cancel();
+    super.dispose();
   }
 }

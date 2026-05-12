@@ -16,4 +16,10 @@ abstract class TransactionsDataSource {
     TransactionPageCursor? startAfterCursor,
     StatementFilterCriteria? criteria,
   });
+
+  /// Primeira página em tempo real (Firestore [snapshots]).
+  Stream<TransactionPage> watchFirstPage(
+    int limit, {
+    StatementFilterCriteria? criteria,
+  });
 }

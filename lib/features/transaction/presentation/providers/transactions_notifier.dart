@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/repositories/i_transactions_repository.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
@@ -23,10 +26,18 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
   /// Invalida conclusões de [loadTransactionsPaginated] / [loadMoreTransactions] obsoletas.
   int _listEpoch = 0;
 
+  /// [hasMore] vindo de [loadMoreTransactions] (além da primeira página reativa).
+  bool _extraPagesHaveMore = false;
+
+  StreamSubscription<TransactionPage>? _firstPageStreamSub;
+
   /// Quando o usuário autenticado muda (login / logout / troca de conta), limpa estado e cache.
   void syncAuthUserId(String? userId) {
     if (_boundUserId == userId) return;
     _boundUserId = userId;
+    _firstPageStreamSub?.cancel();
+    _firstPageStreamSub = null;
+    _extraPagesHaveMore = false;
     CacheManager.remove(_transactionsCacheKey);
     CacheManager.remove(_balanceSummaryCacheKey);
     _listEpoch++;
@@ -131,7 +142,12 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
   Future<void> loadTransactionsPaginated({
     StatementFilterCriteria? criteria,
   }) async {
+    await _firstPageStreamSub?.cancel();
+    _firstPageStreamSub = null;
+
     final epoch = ++_listEpoch;
+    _extraPagesHaveMore = false;
+
     state = state.copyWith(
       listPhase: TransactionsListPhase.loading,
       clearTransactionsError: true,
@@ -143,35 +159,65 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       clearFilterCriteria: criteria == null,
     );
 
-    final result = await _repository.getPage(_pageSize, criteria: criteria);
+    final firstEvent = Completer<void>();
+    late final StreamSubscription<TransactionPage> sub;
+    sub = _repository.watchFirstPage(_pageSize, criteria: criteria).listen(
+      (page) {
+        if (epoch != _listEpoch) return;
+        _applyFirstPageFromStream(page, epoch);
+        if (!firstEvent.isCompleted) firstEvent.complete();
+      },
+      onError: (Object e, StackTrace stackTrace) {
+        if (epoch != _listEpoch) return;
+        state = state.copyWith(
+          listPhase: TransactionsListPhase.failure,
+          transactionsError: 'Erro ao carregar transações',
+          isLoadingMore: false,
+        );
+        if (!firstEvent.isCompleted) firstEvent.complete();
+      },
+    );
+    _firstPageStreamSub = sub;
+
+    await firstEvent.future;
     if (!mounted) {
       state = state.copyWith(listPhase: TransactionsListPhase.idle);
       return;
     }
+    if (epoch != _listEpoch) {
+      await sub.cancel();
+    }
+  }
+
+  void _applyFirstPageFromStream(TransactionPage streamPage, int epoch) {
     if (epoch != _listEpoch) return;
 
-    result.fold(
-      (page) {
-        final list = List<Transaction>.from(page.items);
-        _sortTransactionsNewestFirst(list);
-        CacheManager.set(
-          _transactionsCacheKey,
-          List<Transaction>.from(list),
-          ttl: _transactionsCacheTtl,
-        );
-        state = state.copyWith(
-          transactions: list,
-          listPhase: TransactionsListPhase.ready,
-          lastCursor: page.endCursor,
-          hasMore: page.hasMore,
-        );
-      },
-      (failure) {
-        state = state.copyWith(
-          listPhase: TransactionsListPhase.failure,
-          transactionsError: failure.message,
-        );
-      },
+    final prefixIds = streamPage.items.map((e) => e.id).toSet();
+    final tail = state.transactions
+        .where((t) => !prefixIds.contains(t.id))
+        .toList();
+    final merged = [...streamPage.items, ...tail];
+    _sortTransactionsNewestFirst(merged);
+
+    CacheManager.set(
+      _transactionsCacheKey,
+      List<Transaction>.from(merged),
+      ttl: _transactionsCacheTtl,
+    );
+
+    final keepCursor = tail.isNotEmpty || state.lastCursor != null;
+    final nextCursor = keepCursor ? state.lastCursor : streamPage.endCursor;
+    final hasMore = tail.isNotEmpty
+        ? _extraPagesHaveMore
+        : (streamPage.hasMore || _extraPagesHaveMore);
+
+    state = state.copyWith(
+      transactions: merged,
+      listPhase: TransactionsListPhase.ready,
+      lastCursor: nextCursor,
+      clearLastCursor: nextCursor == null,
+      hasMore: hasMore,
+      isLoadingMore: state.isLoadingMore,
     );
   }
 
@@ -197,6 +243,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
     result.fold(
       (page) {
+        _extraPagesHaveMore = page.hasMore;
         final existing = state.transactions.map((t) => t.id).toSet();
         final merged = [
           ...state.transactions,
@@ -488,5 +535,11 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       clearTransactionsError: true,
       clearBalanceSummaryError: true,
     );
+  }
+
+  @override
+  void dispose() {
+    _firstPageStreamSub?.cancel();
+    super.dispose();
   }
 }

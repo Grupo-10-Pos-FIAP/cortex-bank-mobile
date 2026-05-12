@@ -29,12 +29,12 @@ Future<void> main() async {
   });
 
   try {
-    final authProvider = AuthProvider(getIt<IAuthRepository>());
-
     runApp(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider.value(value: authProvider),
+          ChangeNotifierProvider(
+            create: (_) => AuthProvider(getIt<IAuthRepository>()),
+          ),
         ],
         child: const App(),
       ),

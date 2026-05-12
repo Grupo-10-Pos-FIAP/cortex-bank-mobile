@@ -11,6 +11,10 @@ class AuthRepositoryImpl implements IAuthRepository {
   final AuthDataSource _remote;
 
   @override
+  Stream<bool> watchFirebaseSessionSignedIn() =>
+      _remote.watchFirebaseSessionSignedIn();
+
+  @override
   Future<User?> getCachedCurrentUser() async {
     return _remote.getCachedCurrentUser();
   }

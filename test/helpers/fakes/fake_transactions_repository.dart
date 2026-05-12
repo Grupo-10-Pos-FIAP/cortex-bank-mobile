@@ -38,6 +38,9 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   int getBalanceSummaryCalls = 0;
   int uploadReceiptCalls = 0;
   int uploadReceiptsCalls = 0;
+  int watchFirstPageCalls = 0;
+
+  StreamController<TransactionPage>? watchFirstPageController;
 
   TransactionPageCursor? lastStartAfterCursor;
   StatementFilterCriteria? lastGetPageCriteria;
@@ -95,6 +98,44 @@ class FakeTransactionsRepository implements ITransactionsRepository {
             balanceCents: 0,
           ),
         );
+  }
+
+  @override
+  Stream<TransactionPage> watchFirstPage(
+    int limit, {
+    StatementFilterCriteria? criteria,
+  }) {
+    watchFirstPageCalls += 1;
+    lastGetPageCriteria = criteria;
+    if (watchFirstPageController != null) {
+      return watchFirstPageController!.stream;
+    }
+    if (getPageCompleter != null) {
+      return Stream.fromFuture(
+        getPageCompleter!.future.then(
+          (r) => r.fold<TransactionPage>(
+            (p) => p,
+            (f) => throw Exception(f.message),
+          ),
+        ),
+      );
+    }
+    if (mirrorTimelineInMemory) {
+      return Stream.fromFuture(
+        getPage(limit, criteria: criteria).then(
+          (r) => r.fold<TransactionPage>(
+            (p) => p,
+            (f) => throw Exception(f.message),
+          ),
+        ),
+      );
+    }
+    final result =
+        getPageResult ?? Success(TransactionPage(items: [], hasMore: false));
+    return result.fold(
+      (page) => Stream.value(page),
+      (f) => Stream.error(Exception(f.message)),
+    );
   }
 
   @override

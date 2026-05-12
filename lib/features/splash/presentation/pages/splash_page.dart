@@ -57,6 +57,7 @@ class _SplashPageState extends State<SplashPage>
       setState(() => _startupReady = true);
       await context.read<AuthProvider>().loadCurrentUser();
       if (!mounted) return;
+      context.read<AuthProvider>().startReactiveAuthListener();
       _scheduleNavigationAfterAuthReady();
       return;
     }
@@ -82,6 +83,7 @@ class _SplashPageState extends State<SplashPage>
       setState(() => _startupReady = true);
       await context.read<AuthProvider>().loadCurrentUser();
       if (!mounted) return;
+      context.read<AuthProvider>().startReactiveAuthListener();
       _scheduleNavigationAfterAuthReady();
     } on FirebaseException catch (e) {
       if (!mounted) return;
@@ -93,6 +95,7 @@ class _SplashPageState extends State<SplashPage>
         try {
           await context.read<AuthProvider>().loadCurrentUser();
           if (!mounted) return;
+          context.read<AuthProvider>().startReactiveAuthListener();
           setState(() => _startupReady = true);
           _scheduleNavigationAfterAuthReady();
           return;

@@ -191,5 +191,27 @@ void main() {
         expect(provider.isAuthenticated, true);
       },
     );
+
+    test(
+      'deve limpar usuario quando stream reativo emitir sessao encerrada',
+      () async {
+        final session = StreamController<bool>();
+        final repo = FakeAuthRepository()
+          ..firebaseSessionController = session
+          ..currentUserResult = Success(buildUser());
+        final provider = AuthProvider(repo);
+        provider.startReactiveAuthListener();
+
+        await provider.loadCurrentUser();
+        expect(provider.isAuthenticated, true);
+
+        session.add(false);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(provider.isAuthenticated, false);
+        expect(provider.user, isNull);
+        await session.close();
+      },
+    );
   });
 }

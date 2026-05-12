@@ -25,6 +25,27 @@ void main() {
       },
     );
 
+    test('deve repassar stream de watchFirstPage do datasource', () async {
+      final ds = MockTransactionsDataSource();
+      final storage = MockReceiptStorageDataSource();
+      final page = TransactionPage(
+        items: [buildTransaction(id: 'w1')],
+        hasMore: false,
+        endCursor: null,
+      );
+      when(
+        () => ds.watchFirstPage(any(), criteria: any(named: 'criteria')),
+      ).thenAnswer((_) => Stream.value(page));
+      final repository = TransactionsRepositoryImpl(ds, storage);
+
+      final emitted = await repository
+          .watchFirstPage(10, criteria: null)
+          .first;
+
+      expect(emitted.items.first.id, 'w1');
+      verify(() => ds.watchFirstPage(10, criteria: null)).called(1);
+    });
+
     test('deve mapear exceção quando getAll lançar', () async {
       final ds = MockTransactionsDataSource();
       final storage = MockReceiptStorageDataSource();

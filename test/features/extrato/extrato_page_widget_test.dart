@@ -73,7 +73,7 @@ void main() {
       await tester.pump();
       await pumpUntil(tester, () => !provider.isLoading);
 
-      expect(provider.transactionsError, 'Erro ao carregar transacoes');
+      expect(provider.transactionsError, 'Erro ao carregar transações');
       expect(find.byType(TransactionCard), findsNothing);
     });
 

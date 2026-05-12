@@ -25,6 +25,10 @@ class AuthDataSourceFirebase implements AuthDataSource {
   fa.FirebaseAuth get _auth => fa.FirebaseAuth.instance;
   UserDataSource get _userDataSource => getIt<UserDataSource>();
 
+  @override
+  Stream<bool> watchFirebaseSessionSignedIn() =>
+      _auth.authStateChanges().map((u) => u != null);
+
   /// No iOS, o [GoogleSignIn] nativo exige um OAuth client id (normalmente o
   /// `CLIENT_ID` do `GoogleService-Info.plist`). Se o plist versionado estiver
   /// incompleto, use `GOOGLE_SIGN_IN_IOS_CLIENT_ID` no `.env` (mesmo valor).

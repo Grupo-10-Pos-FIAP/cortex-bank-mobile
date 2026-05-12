@@ -196,7 +196,7 @@ void main() {
 
         await provider.loadMoreTransactions();
 
-        expect(repo.getPageCalls, 1);
+        expect(repo.getPageCalls, 0);
       },
     );
 
