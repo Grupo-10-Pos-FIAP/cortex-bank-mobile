@@ -3,6 +3,7 @@ import 'package:cortex_bank_mobile/core/utils/date_formatter.dart';
 import 'package:cortex_bank_mobile/core/utils/download_comprovante.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/data/comprovante_content.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_detail_modal.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_edit_modal.dart';
@@ -108,7 +109,9 @@ class TransactionCard extends StatelessWidget {
         ? '+${formatCentsToBRL(valueCents)}'
         : '-${formatCentsToBRL(valueCents)}';
 
-    final dateStr = DateFormatter.formatDate(transaction.date);
+    final dateLine = DateFormatter.formatDateOptionalTimeLine(
+      transaction.date,
+    );
     final statusLabel = model.TransactionStatus.labelPt(transaction.status);
     final titularName = context.select<AuthProvider, String?>(
       (auth) => auth.user?.username,
@@ -170,10 +173,25 @@ class TransactionCard extends StatelessWidget {
                                   model.TransactionStatus.pending
                           ? (model.Transaction t) {
                               if (!context.mounted) return;
+                              // Garante providers no subtree do Dialog (overlay pode não herdar o
+                              // MultiProvider do [AuthenticatedAppShell]).
+                              final contacts =
+                                  context.read<ContactsProvider>();
+                              final transactions =
+                                  context.read<TransactionsNotifier>();
                               showDialog<void>(
                                 context: context,
-                                builder: (editCtx) =>
-                                    TransactionEditModal(data: t),
+                                builder: (_) => MultiProvider(
+                                  providers: [
+                                    ChangeNotifierProvider<
+                                      ContactsProvider
+                                    >.value(value: contacts),
+                                    Provider<TransactionsNotifier>.value(
+                                      value: transactions,
+                                    ),
+                                  ],
+                                  child: TransactionEditModal(data: t),
+                                ),
                               );
                             }
                           : null,
@@ -238,7 +256,7 @@ class TransactionCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      'Agendada para: $dateStr',
+                                      'Agendada para: ${DateFormatter.formatDate(transaction.date)}',
                                       style: textTheme.bodySmall?.copyWith(
                                         fontSize:
                                             AppDesignTokens.fontSizeCaption,
@@ -373,7 +391,7 @@ class TransactionCard extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        dateStr,
+                                        dateLine,
                                         style: textTheme.bodySmall?.copyWith(
                                           fontSize:
                                               AppDesignTokens.fontSizeCaption,

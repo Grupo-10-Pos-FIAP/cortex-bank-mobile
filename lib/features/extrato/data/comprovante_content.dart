@@ -10,7 +10,8 @@ class ComprovanteContent {
 
   static String build(model.Transaction transaction, String deValue) {
     final dateStr = DateFormatter.formatDate(transaction.date);
-    final timeStr = DateFormatter.formatTime(transaction.date);
+    final timeStr = DateFormatter.formatTimeIfSpecified(transaction.date) ??
+        'não informada';
     final valueStr = _formatValue(transaction.value);
     final tipoStr = transaction.type == model.TransactionType.ted
         ? 'DOC/TED'

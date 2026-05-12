@@ -48,6 +48,15 @@ class TransactionEditModal extends StatefulWidget {
     return t;
   }
 
+  /// Assinatura da lista de contatos para [Selector] (alinhado a `app_new_transaction_card`).
+  static String contactsListSignature(ContactsProvider p) {
+    final sb = StringBuffer('${p.isLoading}|${p.selectedContactId}|');
+    for (final c in p.contacts) {
+      sb.write('${c.id}:${c.isFavorite}:${c.name};');
+    }
+    return sb.toString();
+  }
+
   @override
   State<TransactionEditModal> createState() => _TransactionEditModalState();
 }
@@ -96,7 +105,9 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       text: parsedOutra?.account ?? '',
     );
     _selectedCategory = widget.data.category;
-    _selectedDate = TransactionDatePolicy.clampToAllowedRange(widget.data.date);
+    _selectedDate = TransactionDatePolicy.clampToAllowedRangePreservingTime(
+      widget.data.date,
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<ContactsProvider>().loadContacts();
@@ -254,229 +265,244 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
   @override
   Widget build(BuildContext context) {
-    final fetchedContacts = context.watch<ContactsProvider>().contacts;
+    return Selector<ContactsProvider, String>(
+      selector: (_, p) => TransactionEditModal.contactsListSignature(p),
+      builder: (context, _, _) {
+        final fetchedContacts = context.read<ContactsProvider>().contacts;
 
-    final contactNames = fetchedContacts.map((c) => c.name).toList();
+        final contactNames = fetchedContacts.map((c) => c.name).toList();
 
-    const fixedOptions = ['Mesma Titularidade', 'Outra Titularidade'];
+        const fixedOptions = ['Mesma Titularidade', 'Outra Titularidade'];
 
-    final rawTo = widget.data.to?.trim();
-    final orphanTo =
-        rawTo != null &&
-            rawTo.isNotEmpty &&
-            !fixedOptions.contains(rawTo) &&
-            !contactNames.contains(rawTo) &&
-            !TedRecipientLine.looksLike(rawTo)
-        ? rawTo
-        : null;
+        final rawTo = widget.data.to?.trim();
+        final orphanTo =
+            rawTo != null &&
+                rawTo.isNotEmpty &&
+                !fixedOptions.contains(rawTo) &&
+                !contactNames.contains(rawTo) &&
+                !TedRecipientLine.looksLike(rawTo)
+            ? rawTo
+            : null;
 
-    final allToOptions = [...fixedOptions, ...contactNames, ?orphanTo];
+        final allToOptions = [...fixedOptions, ...contactNames, ?orphanTo];
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      backgroundColor: AppDesignTokens.colorWhite,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Editar Transação',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-
-            _buildDropdown<model.TransactionType>(
-              label: 'Tipo de transação',
-              value: _selectedType,
-              items: const [
-                DropdownMenuItem(
-                  value: model.TransactionType.ted,
-                  child: Text('TED/DOC'),
-                ),
-                DropdownMenuItem(
-                  value: model.TransactionType.credit,
-                  child: Text('Crédito'),
-                ),
-                DropdownMenuItem(
-                  value: model.TransactionType.debit,
-                  child: Text('Débito'),
-                ),
-              ],
-              onChanged: (val) => setState(() => _selectedType = val!),
-            ),
-
-            const SizedBox(height: 16),
-
-            AppTextFieldDecorator(
-              label: 'Valor a ser transferido',
-              controller: _valueController,
-              onChanged: (value) {},
-            ),
-
-            const SizedBox(height: 16),
-
-            InkWell(
-              onTap: () async {
-                final minD = TransactionDatePolicy.today;
-                final maxD = TransactionDatePolicy.maxSelectableDate;
-                final initial = TransactionDatePolicy.clampToAllowedRange(
-                  _selectedDate,
-                );
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: initial,
-                  firstDate: minD,
-                  lastDate: maxD,
-                  helpText:
-                      'Hoje até ${TransactionDatePolicy.futureDaysInclusive} dias à frente',
-                );
-                if (picked != null) {
-                  setState(() => _selectedDate = picked);
-                }
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Data da transação',
-                  filled: true,
-                  fillColor: AppDesignTokens.colorWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDesignTokens.borderRadiusDefault,
-                    ),
-                  ),
-                  suffixIcon: const Icon(Icons.calendar_today),
-                ),
-                child: Text(DateFormatter.formatDate(_selectedDate)),
-              ),
-            ),
-            if (TransactionDatePolicy.isStrictlyAfterToday(_selectedDate))
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  TransactionScheduleCopy.hintFutureDate,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppDesignTokens.colorContentDisabled,
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 16),
-
-            _buildDropdown<String>(
-              label: 'Destino (Para)',
-              value: _selectedTo,
-              items: allToOptions.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  _selectedTo = val!;
-                  if (_selectedTo != 'Outra Titularidade') {
-                    _clearOtherTitularidadeFields();
-                  }
-                });
-              },
-            ),
-
-            if (_selectedTo == 'Outra Titularidade') ...[
-              const SizedBox(height: 16),
-              Text(
-                'Dados do favorecido (outra titularidade)',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                label: 'Nome do favorecido',
-                controller: _otherTitularNameController,
-                showRequiredIndicator: true,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: 'Agência',
-                controller: _otherTitularBranchController,
-                showRequiredIndicator: true,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: 'Conta',
-                controller: _otherTitularAccountController,
-                showRequiredIndicator: true,
-                keyboardType: TextInputType.number,
-              ),
-            ],
-
-            const SizedBox(height: 24),
-            _buildDropdown<model.TransactionCategory>(
-              label: 'Categoria',
-              value: _selectedCategory,
-              items: model.TransactionCategory.values.map((cat) {
-                return DropdownMenuItem<model.TransactionCategory>(
-                  value: cat,
-                  child: Text(cat.label),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() => _selectedCategory = val!),
-            ),
-
-            const SizedBox(height: 16),
-
-            AppTextFieldDecorator(
-              label: 'Descrição (opcional)',
-              controller: _descriptionController,
-              onChanged: (value) {},
-              isCurrency: false,
-              maxLines: 3,
-            ),
-
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          backgroundColor: AppDesignTokens.colorWhite,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
+                const Text(
+                  'Editar Transação',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppDesignTokens.colorPrimary,
-                    foregroundColor: AppDesignTokens.colorWhite,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                const SizedBox(height: 24),
+
+                _buildDropdown<model.TransactionType>(
+                  label: 'Tipo de transação',
+                  value: _selectedType,
+                  items: const [
+                    DropdownMenuItem(
+                      value: model.TransactionType.ted,
+                      child: Text('TED/DOC'),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDesignTokens.borderRadiusDefault,
+                    DropdownMenuItem(
+                      value: model.TransactionType.credit,
+                      child: Text('Crédito'),
+                    ),
+                    DropdownMenuItem(
+                      value: model.TransactionType.debit,
+                      child: Text('Débito'),
+                    ),
+                  ],
+                  onChanged: (val) => setState(() => _selectedType = val!),
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextFieldDecorator(
+                  label: 'Valor a ser transferido',
+                  controller: _valueController,
+                  onChanged: (value) {},
+                ),
+
+                const SizedBox(height: 16),
+
+                InkWell(
+                  onTap: () async {
+                    final minD = TransactionDatePolicy.today;
+                    final maxD = TransactionDatePolicy.maxSelectableDate;
+                    final initial = TransactionDatePolicy.clampToAllowedRange(
+                      _selectedDate,
+                    );
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: initial,
+                      firstDate: minD,
+                      lastDate: maxD,
+                      helpText:
+                          'Hoje até ${TransactionDatePolicy.futureDaysInclusive} dias à frente',
+                    );
+                    if (picked != null) {
+                      setState(
+                        () => _selectedDate =
+                            TransactionDatePolicy.combineDateWithTime(
+                          picked,
+                          _selectedDate,
+                        ),
+                      );
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Data da transação',
+                      filled: true,
+                      fillColor: AppDesignTokens.colorWhite,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppDesignTokens.borderRadiusDefault,
+                        ),
+                      ),
+                      suffixIcon: const Icon(Icons.calendar_today),
+                    ),
+                    child: Text(DateFormatter.formatDate(_selectedDate)),
+                  ),
+                ),
+                if (TransactionDatePolicy.isStrictlyAfterToday(_selectedDate))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      TransactionScheduleCopy.hintFutureDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppDesignTokens.colorContentDisabled,
                       ),
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+
+                const SizedBox(height: 16),
+
+                _buildDropdown<String>(
+                  label: 'Destino (Para)',
+                  value: _selectedTo,
+                  items: allToOptions.map<DropdownMenuItem<String>>((
+                    String value,
+                  ) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedTo = val!;
+                      if (_selectedTo != 'Outra Titularidade') {
+                        _clearOtherTitularidadeFields();
+                      }
+                    });
+                  },
+                ),
+
+                if (_selectedTo == 'Outra Titularidade') ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Dados do favorecido (outra titularidade)',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    label: 'Nome do favorecido',
+                    controller: _otherTitularNameController,
+                    showRequiredIndicator: true,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    label: 'Agência',
+                    controller: _otherTitularBranchController,
+                    showRequiredIndicator: true,
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    label: 'Conta',
+                    controller: _otherTitularAccountController,
+                    showRequiredIndicator: true,
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+
+                const SizedBox(height: 24),
+                _buildDropdown<model.TransactionCategory>(
+                  label: 'Categoria',
+                  value: _selectedCategory,
+                  items: model.TransactionCategory.values.map((cat) {
+                    return DropdownMenuItem<model.TransactionCategory>(
+                      value: cat,
+                      child: Text(cat.label),
+                    );
+                  }).toList(),
+                  onChanged: (val) => setState(() => _selectedCategory = val!),
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextFieldDecorator(
+                  label: 'Descrição (opcional)',
+                  controller: _descriptionController,
+                  onChanged: (value) {},
+                  isCurrency: false,
+                  maxLines: 3,
+                ),
+
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancelar'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppDesignTokens.colorPrimary,
+                        foregroundColor: AppDesignTokens.colorWhite,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppDesignTokens.borderRadiusDefault,
                           ),
-                        )
-                      : const Text('Alterar'),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Alterar'),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

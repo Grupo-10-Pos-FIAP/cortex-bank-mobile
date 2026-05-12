@@ -61,7 +61,7 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
   String _dateFormatted(model.Transaction t) =>
       DateFormatter.formatDate(t.date);
   String _timeFormatted(model.Transaction t) =>
-      DateFormatter.formatTime(t.date);
+      DateFormatter.formatTimeForDetail(t.date);
   String _valueFormatted(model.Transaction t) {
     final cents = (t.value.abs() * 100).round();
     return formatCentsToBRL(cents);

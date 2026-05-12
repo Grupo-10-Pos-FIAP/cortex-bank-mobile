@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
     show parseBRLMaskToCents;
 import 'package:cortex_bank_mobile/features/extrato/extrato_pagination.dart';
@@ -20,6 +22,8 @@ class ExtratoPage extends StatefulWidget {
 }
 
 class _ExtratoPageState extends State<ExtratoPage> {
+  static const _searchDebounceDuration = Duration(milliseconds: 320);
+
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _minValueController = TextEditingController(
     text: 'R\$ 0,00',
@@ -28,6 +32,9 @@ class _ExtratoPageState extends State<ExtratoPage> {
     text: 'R\$ 0,00',
   );
   final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<String> _debouncedSearchQuery = ValueNotifier<String>('');
+
+  Timer? _searchDebounceTimer;
 
   DateTime? _dateStart;
   DateTime? _dateEnd;
@@ -40,6 +47,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   @override
   void initState() {
     super.initState();
+    _debouncedSearchQuery.value = _searchController.text;
     _applyPreset('last30');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -54,9 +62,16 @@ class _ExtratoPageState extends State<ExtratoPage> {
     });
   }
 
-  void _notifyFiltersChanged(VoidCallback update) {
-    update();
-    _scheduleCheckLoadMore();
+  void _onSearchTextChanged(String _) {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(_searchDebounceDuration, () {
+      if (!mounted) return;
+      final next = _searchController.text;
+      if (_debouncedSearchQuery.value != next) {
+        _debouncedSearchQuery.value = next;
+      }
+      _scheduleCheckLoadMore();
+    });
   }
 
   void _checkLoadMore() {
@@ -123,7 +138,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
   StatementFilterCriteria _additionalClientSideCriteria() {
     final serverCriteria = _serverSideFilterCriteria();
     return StatementFilterCriteria(
-      searchQuery: _searchController.text,
+      searchQuery: _debouncedSearchQuery.value,
       dateStart: null, // Já aplicado server-side
       dateEnd: null, // Já aplicado server-side
       tipoFiltro: serverCriteria.tipoFiltro != 'todas' ? 'todas' : _tipoFiltro,
@@ -198,6 +213,8 @@ class _ExtratoPageState extends State<ExtratoPage> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
+    _debouncedSearchQuery.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     _minValueController.dispose();
@@ -206,6 +223,8 @@ class _ExtratoPageState extends State<ExtratoPage> {
   }
 
   void _limparFiltros() {
+    _searchDebounceTimer?.cancel();
+    _debouncedSearchQuery.value = '';
     setState(() {
       _searchController.clear();
       _minValueController.text = 'R\$ 0,00';
@@ -385,151 +404,175 @@ class _ExtratoPageState extends State<ExtratoPage> {
         elevation: 0,
         centerTitle: false,
       ),
-      body: Selector<TransactionsState, (int, bool, bool, bool, String?, TransactionsListPhase)>(
-        selector: (_, s) {
-          final idsVersion = Object.hashAll(
-            s.transactions.map(
-              (e) => Object.hash(
-                e.id,
-                e.value,
-                e.date.millisecondsSinceEpoch,
-                e.status,
-                e.receiptUrls.length,
-              ),
-            ),
-          );
-          return (
-            idsVersion,
-            s.isLoading,
-            s.isLoadingMore,
-            s.hasMore,
-            s.transactionsError,
-            s.listPhase,
-          );
-        },
-        builder: (context, tuple, _) {
-          final tx = context.read<TransactionsNotifier>();
-          if (tx.isLoading && tx.transactions.isEmpty) {
-            return const AppLoading();
-          }
-          // Aplicar filtros client-side (search + filtros não suportados server-side)
-          final filtered = applyStatementFilter(
-            tx.transactions,
-            _additionalClientSideCriteria(),
-          );
-          _scheduleCheckLoadMore();
-          return NotificationListener<ScrollNotification>(
-            onNotification: (ScrollNotification n) {
-              if (n is ScrollUpdateNotification ||
-                  n is ScrollEndNotification ||
-                  n is OverscrollNotification) {
-                _checkLoadMore();
-              }
-              return false;
-            },
-            child: NotificationListener<ScrollMetricsNotification>(
-              onNotification: (_) {
-                _scheduleCheckLoadMore();
-                return false;
-              },
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: ExtratoStatementFiltersPanel(
-                      searchController: _searchController,
-                      onSearchChanged: (_) =>
-                          _notifyFiltersChanged(() => setState(() {})),
-                      periodoTexto: _periodoTexto,
-                      onPeriodTap: _showPeriodoOptions,
-                      tipoFiltro: _tipoFiltro,
-                      onTipoChanged: (v) {
-                        setState(() => _tipoFiltro = v ?? 'todas');
-                        _loadWithServerSideFilters();
-                      },
-                      statusFiltro: _statusFiltro,
-                      onStatusChanged: (v) {
-                        setState(() => _statusFiltro = v ?? 'todas');
-                        _loadWithServerSideFilters();
-                      },
-                      categoriaFiltro: _categoriaFiltro,
-                      onCategoriaChanged: (v) {
-                        setState(() => _categoriaFiltro = v ?? 'todas');
-                        _loadWithServerSideFilters();
-                      },
-                      minValueController: _minValueController,
-                      maxValueController: _maxValueController,
-                      onMinMaxChanged: () {
-                        setState(() {});
-                        _loadWithServerSideFilters();
-                      },
-                      onClearFilters: _limparFiltros,
-                    ),
+      body:
+          Selector<
+            TransactionsState,
+            (int, bool, bool, bool, String?, TransactionsListPhase)
+          >(
+            selector: (_, s) {
+              final idsVersion = Object.hashAll(
+                s.transactions.map(
+                  (e) => Object.hash(
+                    e.id,
+                    e.value,
+                    e.date.millisecondsSinceEpoch,
+                    e.status,
+                    e.receiptUrls.length,
                   ),
-                  if (filtered.isEmpty)
-                    SliverFillRemaining(
-                      child: Center(
-                        child: tx.isLoadingMore && tx.transactions.isNotEmpty
-                            ? const CircularProgressIndicator(strokeWidth: 2)
-                            : Text(
-                                _extratoEmptyMessage(tx),
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontSize: AppDesignTokens.fontSizeBody,
-                                      color:
-                                          AppDesignTokens.colorContentDisabled,
-                                    ),
-                              ),
-                      ),
-                    )
-                  else ...[
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDesignTokens.spacingMd,
-                      ),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, i) {
-                          final t = filtered[i];
-                          return TransactionCard(
-                            key: ValueKey(t.id),
-                            transaction: t,
-                            onDelete: () => tx.deleteTransaction(t.id),
-                          );
-                        }, childCount: filtered.length),
-                      ),
-                    ),
-                    if (tx.isLoadingMore)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      ),
-                    if (!tx.hasMore && filtered.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Center(
-                            child: Text(
-                              'Todas as transações carregadas',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontSize: AppDesignTokens.fontSizeSmall,
-                                    color: AppDesignTokens.colorContentDisabled,
-                                  ),
+                ),
+              );
+              return (
+                idsVersion,
+                s.isLoading,
+                s.isLoadingMore,
+                s.hasMore,
+                s.transactionsError,
+                s.listPhase,
+              );
+            },
+            builder: (context, tuple, _) {
+              final tx = context.read<TransactionsNotifier>();
+              if (tx.isLoading && tx.transactions.isEmpty) {
+                return const AppLoading();
+              }
+              return ValueListenableBuilder<String>(
+                valueListenable: _debouncedSearchQuery,
+                builder: (context, _, _) {
+                  // Aplicar filtros client-side (search debounced + filtros não suportados server-side)
+                  final filtered = applyStatementFilter(
+                    tx.transactions,
+                    _additionalClientSideCriteria(),
+                  );
+                  _scheduleCheckLoadMore();
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (ScrollNotification n) {
+                      if (n is ScrollUpdateNotification ||
+                          n is ScrollEndNotification ||
+                          n is OverscrollNotification) {
+                        _checkLoadMore();
+                      }
+                      return false;
+                    },
+                    child: NotificationListener<ScrollMetricsNotification>(
+                      onNotification: (_) {
+                        _scheduleCheckLoadMore();
+                        return false;
+                      },
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: ExtratoStatementFiltersPanel(
+                              searchController: _searchController,
+                              onSearchChanged: _onSearchTextChanged,
+                              periodoTexto: _periodoTexto,
+                              onPeriodTap: _showPeriodoOptions,
+                              tipoFiltro: _tipoFiltro,
+                              onTipoChanged: (v) {
+                                setState(() => _tipoFiltro = v ?? 'todas');
+                                _loadWithServerSideFilters();
+                              },
+                              statusFiltro: _statusFiltro,
+                              onStatusChanged: (v) {
+                                setState(() => _statusFiltro = v ?? 'todas');
+                                _loadWithServerSideFilters();
+                              },
+                              categoriaFiltro: _categoriaFiltro,
+                              onCategoriaChanged: (v) {
+                                setState(() => _categoriaFiltro = v ?? 'todas');
+                                _loadWithServerSideFilters();
+                              },
+                              minValueController: _minValueController,
+                              maxValueController: _maxValueController,
+                              onMinMaxChanged: () {
+                                setState(() {});
+                                _loadWithServerSideFilters();
+                              },
+                              onClearFilters: _limparFiltros,
                             ),
                           ),
-                        ),
+                          if (filtered.isEmpty)
+                            SliverFillRemaining(
+                              child: Center(
+                                child:
+                                    tx.isLoadingMore &&
+                                        tx.transactions.isNotEmpty
+                                    ? const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      )
+                                    : Text(
+                                        _extratoEmptyMessage(tx),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontSize:
+                                                  AppDesignTokens.fontSizeBody,
+                                              color: AppDesignTokens
+                                                  .colorContentDisabled,
+                                            ),
+                                      ),
+                              ),
+                            )
+                          else ...[
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppDesignTokens.spacingMd,
+                              ),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate((
+                                  context,
+                                  i,
+                                ) {
+                                  final t = filtered[i];
+                                  return TransactionCard(
+                                    key: ValueKey(t.id),
+                                    transaction: t,
+                                    onDelete: () => tx.deleteTransaction(t.id),
+                                  );
+                                }, childCount: filtered.length),
+                              ),
+                            ),
+                            if (tx.isLoadingMore)
+                              const SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (!tx.hasMore && filtered.isNotEmpty)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Center(
+                                    child: Text(
+                                      'Todas as transações carregadas',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            fontSize:
+                                                AppDesignTokens.fontSizeSmall,
+                                            color: AppDesignTokens
+                                                .colorContentDisabled,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ],
                       ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
     );
   }
 }
