@@ -66,9 +66,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<!-- URL scheme obrigatório para o Google Sign-In no iOS.
-	     Substitua o valor abaixo pelo REVERSED_CLIENT_ID do seu GoogleService-Info.plist
-	     (disponível após ativar o Google Sign-In no Firebase Console). -->
+	<key>GIDClientID</key>
+	<string>521427493265-4upva1ncnv5crkqvjuv02jg414v5q9i7.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -76,7 +75,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>REVERSED_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.521427493265-4upva1ncnv5crkqvjuv02jg414v5q9i7</string>
 			</array>
 		</dict>
 	</array>

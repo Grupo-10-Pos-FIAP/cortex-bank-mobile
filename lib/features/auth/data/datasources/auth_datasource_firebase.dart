@@ -3,7 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
 import 'package:cortex_bank_mobile/core/utils/bank_account_generator.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:cortex_bank_mobile/core/di/injection.dart';
@@ -22,7 +24,31 @@ const _userCacheTtl = Duration(minutes: 10);
 class AuthDataSourceFirebase implements AuthDataSource {
   fa.FirebaseAuth get _auth => fa.FirebaseAuth.instance;
   UserDataSource get _userDataSource => getIt<UserDataSource>();
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  /// No iOS, o [GoogleSignIn] nativo exige um OAuth client id (normalmente o
+  /// `CLIENT_ID` do `GoogleService-Info.plist`). Se o plist versionado estiver
+  /// incompleto, use `GOOGLE_SIGN_IN_IOS_CLIENT_ID` no `.env` (mesmo valor).
+  late final GoogleSignIn _googleSignIn = _createGoogleSignIn();
+
+  static GoogleSignIn _createGoogleSignIn() {
+    if (kIsWeb) {
+      return GoogleSignIn();
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final clientId = dotenv.env['GOOGLE_SIGN_IN_IOS_CLIENT_ID']?.trim();
+      final serverClientId =
+          dotenv.env['GOOGLE_SIGN_IN_SERVER_CLIENT_ID']?.trim();
+      if (clientId != null && clientId.isNotEmpty) {
+        return GoogleSignIn(
+          clientId: clientId,
+          serverClientId: (serverClientId != null && serverClientId.isNotEmpty)
+              ? serverClientId
+              : null,
+        );
+      }
+    }
+    return GoogleSignIn();
+  }
 
   String _userCacheKey(String uid) => 'auth.user.$uid';
 
