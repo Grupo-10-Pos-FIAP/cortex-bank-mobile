@@ -413,48 +413,6 @@ class TransactionCard extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4, right: 4),
-              child: IconButton(
-                key: const Key('extrato.transaction.delete'),
-                tooltip: 'Excluir',
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: AppDesignTokens.colorFeedbackAlert,
-                ),
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Excluir transação?'),
-                      content: const Text(
-                        'Esta transação será removida do extrato. Deseja continuar?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancelar'),
-                        ),
-                        TextButton(
-                          key: const Key('extrato.transaction.delete.confirm'),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(
-                            'Excluir',
-                            style: TextStyle(
-                              color: AppDesignTokens.colorFeedbackAlert,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    onDelete();
-                  }
-                },
-              ),
-            ),
           ],
         ),
       ),
