@@ -8,6 +8,7 @@ import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
+import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
@@ -231,7 +232,11 @@ void main() {
       final tx = TransactionsNotifier(txRepo);
       await tx.loadBalanceSummary();
 
-      final contacts = ContactsProvider(FakeContactsRepository());
+      final contactsRepo = FakeContactsRepository()
+        ..getAllResult = Success([
+          Contact(id: 'c1', name: 'Maria Silva'),
+        ]);
+      final contacts = ContactsProvider(contactsRepo);
       await contacts.loadContacts();
 
       await pumpGoldenMaterialApp(
@@ -266,7 +271,16 @@ void main() {
             t,
             find.byKey(const Key('transaction.form.value')),
           );
+          // postFrameCallback loadContacts + timer de validação do valor (600ms).
+          await t.pump(const Duration(milliseconds: 700));
+          await pumpUntil(
+            t,
+            () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
+            timeout: const Duration(seconds: 3),
+            reason: 'Aguardando fim do loading de contatos',
+          );
           await pumpSettleAnimations(t);
+          await t.pump();
         },
       );
 

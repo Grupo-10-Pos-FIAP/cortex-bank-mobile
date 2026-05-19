@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:cortex_bank_mobile/app.dart';
 import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
+import 'package:cortex_bank_mobile/core/cache/sensitive_cache_manager.dart';
 import 'package:cortex_bank_mobile/core/di/injection.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/features/auth/domain/repositories/i_auth_repository.dart';
@@ -23,10 +24,13 @@ Future<void> main() async {
     return;
   }
 
-  // Inicializar cache local
-  CacheManager.initialize().then((_) {
-    safeLogInfo('Cache Manager inicializado');
-  });
+  try {
+    await SensitiveCacheManager.initialize();
+    await CacheManager.initialize();
+    safeLogInfo('Cache managers inicializados');
+  } catch (e) {
+    safeLogError('Erro ao inicializar cache', e);
+  }
 
   try {
     runApp(

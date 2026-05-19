@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
+import 'package:cortex_bank_mobile/core/cache/cache_serializers.dart';
+import 'package:cortex_bank_mobile/core/cache/sensitive_cache_manager.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
@@ -38,8 +39,8 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     _firstPageStreamSub?.cancel();
     _firstPageStreamSub = null;
     _extraPagesHaveMore = false;
-    CacheManager.remove(_transactionsCacheKey);
-    CacheManager.remove(_balanceSummaryCacheKey);
+    SensitiveCacheManager.remove(_transactionsCacheKey);
+    SensitiveCacheManager.remove(_balanceSummaryCacheKey);
     _listEpoch++;
     state = TransactionsState.initial();
   }
@@ -69,9 +70,12 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
   Future<void> loadTransactions({bool forceRefresh = false}) async {
     if (state.listPhase == TransactionsListPhase.loading) return;
     if (!forceRefresh) {
-      final cachedTransactions = CacheManager.get<List<Transaction>>(
-        _transactionsCacheKey,
-      );
+      final cachedTransactions =
+          SensitiveCacheManager.getJson<List<Transaction>>(
+            _transactionsCacheKey,
+            (json) =>
+                CacheSerializers.transactionsFromJson(json! as List<dynamic>),
+          );
       if (cachedTransactions != null) {
         var next = state;
         if (state.transactions.isEmpty) {
@@ -112,9 +116,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       (success) {
         final list = List<Transaction>.from(success);
         _sortTransactionsNewestFirst(list);
-        CacheManager.set(
+        SensitiveCacheManager.setJson(
           _transactionsCacheKey,
-          List<Transaction>.from(list),
+          CacheSerializers.transactionsToJson(list),
           ttl: _transactionsCacheTtl,
         );
         state = state.copyWith(
@@ -199,9 +203,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     final merged = [...streamPage.items, ...tail];
     _sortTransactionsNewestFirst(merged);
 
-    CacheManager.set(
+    SensitiveCacheManager.setJson(
       _transactionsCacheKey,
-      List<Transaction>.from(merged),
+      CacheSerializers.transactionsToJson(merged),
       ttl: _transactionsCacheTtl,
     );
 
@@ -250,9 +254,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
           ...page.items.where((t) => !existing.contains(t.id)),
         ];
         _sortTransactionsNewestFirst(merged);
-        CacheManager.set(
+        SensitiveCacheManager.setJson(
           _transactionsCacheKey,
-          List<Transaction>.from(merged),
+          CacheSerializers.transactionsToJson(merged),
           ttl: _transactionsCacheTtl,
         );
         state = state.copyWith(
@@ -273,8 +277,11 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
   Future<void> loadBalanceSummary({bool forceRefresh = false}) async {
     if (!forceRefresh) {
-      final cachedSummary = CacheManager.get<BalanceSummary>(
+      final cachedSummary = SensitiveCacheManager.getJson<BalanceSummary>(
         _balanceSummaryCacheKey,
+        (json) => CacheSerializers.balanceSummaryFromJson(
+          json! as Map<String, dynamic>,
+        ),
       );
       if (cachedSummary != null) {
         var next = state;
@@ -312,9 +319,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
     result.fold(
       (success) {
-        CacheManager.set(
+        SensitiveCacheManager.setJson(
           _balanceSummaryCacheKey,
-          success,
+          CacheSerializers.balanceSummaryToJson(success),
           ttl: _balanceSummaryCacheTtl,
         );
         state = state.copyWith(
@@ -354,9 +361,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
         created = transaction.copyWith(id: id);
         final list = [created!, ...state.transactions];
         _sortTransactionsNewestFirst(list);
-        CacheManager.set(
+        SensitiveCacheManager.setJson(
           _transactionsCacheKey,
-          List<Transaction>.from(list),
+          CacheSerializers.transactionsToJson(list),
           ttl: _transactionsCacheTtl,
         );
         state = state.copyWith(
@@ -398,9 +405,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
           final list = List<Transaction>.from(state.transactions);
           list[index] = transaction;
           _sortTransactionsNewestFirst(list);
-          CacheManager.set(
+          SensitiveCacheManager.setJson(
             _transactionsCacheKey,
-            List<Transaction>.from(list),
+            CacheSerializers.transactionsToJson(list),
             ttl: _transactionsCacheTtl,
           );
           state = state.copyWith(
@@ -445,9 +452,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
         if (index != -1) {
           final list = List<Transaction>.from(state.transactions);
           list[index] = updated;
-          CacheManager.set(
+          SensitiveCacheManager.setJson(
             _transactionsCacheKey,
-            List<Transaction>.from(list),
+            CacheSerializers.transactionsToJson(list),
             ttl: _transactionsCacheTtl,
           );
           state = state.copyWith(transactions: list);
@@ -474,9 +481,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
         if (index != -1) {
           final list = List<Transaction>.from(state.transactions);
           list[index] = updated;
-          CacheManager.set(
+          SensitiveCacheManager.setJson(
             _transactionsCacheKey,
-            List<Transaction>.from(list),
+            CacheSerializers.transactionsToJson(list),
             ttl: _transactionsCacheTtl,
           );
           state = state.copyWith(transactions: list);
@@ -506,9 +513,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       (_) {
         final list = List<Transaction>.from(state.transactions)
           ..removeWhere((t) => t.id == id);
-        CacheManager.set(
+        SensitiveCacheManager.setJson(
           _transactionsCacheKey,
-          List<Transaction>.from(list),
+          CacheSerializers.transactionsToJson(list),
           ttl: _transactionsCacheTtl,
         );
         state = state.copyWith(

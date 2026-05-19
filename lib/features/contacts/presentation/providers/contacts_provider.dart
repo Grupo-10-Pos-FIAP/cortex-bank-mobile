@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
+import 'package:cortex_bank_mobile/core/cache/cache_serializers.dart';
+import 'package:cortex_bank_mobile/core/cache/sensitive_cache_manager.dart';
 import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
 import 'package:cortex_bank_mobile/features/contacts/domain/repositories/i_contacts_repository.dart';
 
@@ -59,7 +60,7 @@ class ContactsProvider extends ChangeNotifier {
     _selectedContactId = null;
     _errorMessage = null;
     _isLoading = false;
-    CacheManager.remove(_contactsCacheKey);
+    SensitiveCacheManager.remove(_contactsCacheKey);
     notifyListeners();
   }
 
@@ -67,7 +68,10 @@ class ContactsProvider extends ChangeNotifier {
   Future<void> loadContacts({bool forceRefresh = false}) async {
     if (_isLoading) return;
     if (!forceRefresh) {
-      final cachedContacts = CacheManager.get<List<Contact>>(_contactsCacheKey);
+      final cachedContacts = SensitiveCacheManager.getJson<List<Contact>>(
+        _contactsCacheKey,
+        (json) => CacheSerializers.contactsFromJson(json! as List<dynamic>),
+      );
       if (cachedContacts != null) {
         if (_contacts.isEmpty) {
           _contacts = List<Contact>.from(cachedContacts);
@@ -88,9 +92,9 @@ class ContactsProvider extends ChangeNotifier {
     result.fold((success) {
       _contacts = List<Contact>.from(success);
       _dropSelectionIfContactMissing();
-      CacheManager.set(
+      SensitiveCacheManager.setJson(
         _contactsCacheKey,
-        List<Contact>.from(success),
+        CacheSerializers.contactsToJson(success),
         ttl: _contactsCacheTtl,
       );
     }, (failure) => _errorMessage = failure.message);
@@ -105,9 +109,9 @@ class ContactsProvider extends ChangeNotifier {
 
     result.fold((id) {
       _contacts.add(Contact(id: id, name: name));
-      CacheManager.set(
+      SensitiveCacheManager.setJson(
         _contactsCacheKey,
-        List<Contact>.from(_contacts),
+        CacheSerializers.contactsToJson(_contacts),
         ttl: _contactsCacheTtl,
       );
       notifyListeners();
@@ -136,9 +140,9 @@ class ContactsProvider extends ChangeNotifier {
       },
     );
 
-    CacheManager.set(
+    SensitiveCacheManager.setJson(
       _contactsCacheKey,
-      List<Contact>.from(_contacts),
+      CacheSerializers.contactsToJson(_contacts),
       ttl: _contactsCacheTtl,
     );
   }
@@ -153,9 +157,9 @@ class ContactsProvider extends ChangeNotifier {
         if (_selectedContactId == id) {
           _selectedContactId = null;
         }
-        CacheManager.set(
+        SensitiveCacheManager.setJson(
           _contactsCacheKey,
-          List<Contact>.from(_contacts),
+          CacheSerializers.contactsToJson(_contacts),
           ttl: _contactsCacheTtl,
         );
         notifyListeners();

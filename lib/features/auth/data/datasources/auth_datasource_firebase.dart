@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cortex_bank_mobile/core/cache/cache_manager.dart';
+import 'package:cortex_bank_mobile/core/cache/cache_serializers.dart';
+import 'package:cortex_bank_mobile/core/cache/sensitive_cache_manager.dart';
 import 'package:cortex_bank_mobile/core/utils/bank_account_generator.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:flutter/foundation.dart'
@@ -67,7 +68,11 @@ class AuthDataSourceFirebase implements AuthDataSource {
   void _cacheUser(User user) {
     final uid = user.uid;
     if (uid == null || uid.isEmpty) return;
-    CacheManager.set(_userCacheKey(uid), user, ttl: _userCacheTtl);
+    SensitiveCacheManager.setJson(
+      _userCacheKey(uid),
+      CacheSerializers.userToJson(user),
+      ttl: _userCacheTtl,
+    );
   }
 
 
@@ -107,7 +112,10 @@ class AuthDataSourceFirebase implements AuthDataSource {
   Future<User?> getCachedCurrentUser() async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) return null;
-    return CacheManager.get<User>(_userCacheKey(firebaseUser.uid));
+    return SensitiveCacheManager.getJson<User>(
+      _userCacheKey(firebaseUser.uid),
+      (json) => CacheSerializers.userFromJson(json! as Map<String, dynamic>),
+    );
   }
 
 
@@ -264,8 +272,9 @@ class AuthDataSourceFirebase implements AuthDataSource {
         if (refreshed == null) return const Success(null);
       }
 
-      final cachedUser = CacheManager.get<User>(
+      final cachedUser = SensitiveCacheManager.getJson<User>(
         _userCacheKey(firebaseUser.uid),
+        (json) => CacheSerializers.userFromJson(json! as Map<String, dynamic>),
       );
       if (!forceRefresh && cachedUser != null) return Success(cachedUser);
 
@@ -386,7 +395,7 @@ class AuthDataSourceFirebase implements AuthDataSource {
       // [SEGURANÇA] Remove cache ANTES do signOut para evitar janela de
       // acesso a dados de outra sessão em caso de re-login imediato.
       if (currentUid != null && currentUid.isNotEmpty) {
-        CacheManager.remove(_userCacheKey(currentUid));
+        SensitiveCacheManager.remove(_userCacheKey(currentUid));
       }
 
       await _auth.signOut();
