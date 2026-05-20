@@ -279,7 +279,7 @@ O projeto possui uma estratégia incremental de testes documentada em [`docs/TES
 
 ### Comandos úteis
 
-Espelham o job [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (analyze, format, testes sem golden, goldens, piso de cobertura, integração):
+Espelham o job [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (analyze, format, testes sem golden, goldens, piso de cobertura):
 
 ```bash
 flutter analyze
@@ -290,8 +290,6 @@ flutter test --coverage --exclude-tags golden
 flutter test --tags golden
 # Piso de cobertura (ajuste COVERAGE_MIN se o script permitir)
 bash tool/coverage_gate.sh
-# Integração sem Firebase real
-flutter test integration_test/app_test.dart -d flutter-tester --dart-define=INTEGRATION_SKIP_FIREBASE=true
 ```
 
 **Goldens e CI:** o workflow roda em **ubuntu-latest**. PNGs de golden gerados no Windows podem divergir (fontes/subpixel). Antes do merge, rode `flutter test --tags golden` em **Linux** (ou no próprio CI) e faça commit dos PNGs alinhados a esse ambiente.

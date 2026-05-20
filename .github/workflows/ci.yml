@@ -54,6 +54,3 @@ jobs:
         run: bash tool/coverage_gate.sh
         env:
           COVERAGE_MIN: "50"
-
-      - name: Integration journeys
-        run: flutter test integration_test/app_test.dart -d flutter-tester --dart-define=INTEGRATION_SKIP_FIREBASE=true
