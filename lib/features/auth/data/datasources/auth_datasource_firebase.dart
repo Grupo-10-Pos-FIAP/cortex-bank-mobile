@@ -357,6 +357,9 @@ class AuthDataSourceFirebase implements AuthDataSource {
           'createdAt': FieldValue.serverTimestamp(),
         };
         await _userDataSource.createUserProfile(newUserMap);
+
+        // ← Aguarda o doc propagar no Firestore antes de retornar
+        await Future.delayed(const Duration(milliseconds: 500));
         userData = newUserMap;
       }
 
