@@ -6,14 +6,10 @@ import 'pump_until.dart';
 import 'tolerance_golden_comparator.dart';
 
 void goldenTest(String description, WidgetTesterCallback callback) {
-  testWidgets(
-    description,
-    (tester) async {
-      useToleranceGoldenFileComparator();
-      await callback(tester);
-    },
-    tags: ['golden'],
-  );
+  testWidgets(description, (tester) async {
+    useToleranceGoldenFileComparator();
+    await callback(tester);
+  }, tags: ['golden']);
 }
 
 ThemeData goldenTestTheme() {
