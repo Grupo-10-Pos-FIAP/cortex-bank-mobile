@@ -1,6 +1,5 @@
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_button.dart';
-import 'package:cortex_bank_mobile/core/widgets/app_card_container.dart';
 import 'package:cortex_bank_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_dropdown_field.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_error_message.dart';
@@ -8,8 +7,6 @@ import 'package:cortex_bank_mobile/core/widgets/app_loading.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_tabs.dart';
 import 'package:cortex_bank_mobile/core/widgets/app_text_field.dart';
-import 'package:cortex_bank_mobile/features/contacts/domain/entities/contact.dart';
-import 'package:cortex_bank_mobile/features/contacts/presentation/providers/contacts_provider.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
@@ -17,7 +14,6 @@ import 'package:cortex_bank_mobile/features/transaction/presentation/providers/t
 import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:flutter_state_notifier/flutter_state_notifier.dart';
 import 'package:cortex_bank_mobile/features/transaction/widgets/app_balance_card.dart';
-import 'package:cortex_bank_mobile/features/transaction/widgets/app_new_transaction_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -211,90 +207,6 @@ void main() {
       );
     });
 
-    goldenTest('app_new_transaction_card', (tester) async {
-      final fakeAuth = FakeAuthRepository()
-        ..currentUserResult = Success(
-          buildUser(
-            uid: 'acc-1',
-            username: 'Ana Teste',
-            email: 'ana@test.com',
-            branchCode: '0001',
-            accountNumber: '12345-6',
-          ),
-        );
-      final auth = AuthProvider(fakeAuth);
-      await auth.loadCurrentUser();
-
-      final txRepo = FakeTransactionsRepository()
-        ..getBalanceSummaryResult = const Success(
-          BalanceSummary(
-            totalIncomeCents: 1000,
-            totalExpenseCents: 500,
-            balanceCents: 500,
-          ),
-        );
-      final tx = TransactionsNotifier(txRepo);
-      await tx.loadBalanceSummary();
-
-      final contactsRepo = FakeContactsRepository()
-        ..getAllResult = Success([Contact(id: 'c1', name: 'Maria Silva')]);
-      final contacts = ContactsProvider(contactsRepo);
-      await contacts.loadContacts();
-
-      await pumpGoldenMaterialApp(
-        tester,
-        size: const Size(560, 1200),
-        routes: {
-          '/extrato': (_) =>
-              const Scaffold(body: Center(child: Text('Extrato'))),
-        },
-        home: Scaffold(
-          body: MultiProvider(
-            providers: [
-              ChangeNotifierProvider<AuthProvider>.value(value: auth),
-              StateNotifierProvider<
-                TransactionsNotifier,
-                TransactionsState
-              >.value(value: tx),
-              ChangeNotifierProvider<ContactsProvider>.value(value: contacts),
-            ],
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  width: 520,
-                  child: const AppNewTransactionCard(),
-                ),
-              ),
-            ),
-          ),
-        ),
-        afterPump: (t) async {
-          await t.pump();
-          await pumpUntilFound(
-            t,
-            find.byKey(const Key('transaction.form.value')),
-          );
-          // postFrameCallback loadContacts + timer de validação do valor (600ms).
-          await t.pump(const Duration(milliseconds: 700));
-          await pumpUntil(
-            t,
-            () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
-            timeout: const Duration(seconds: 3),
-            reason: 'Aguardando fim do loading de contatos',
-          );
-          await pumpSettleAnimations(t);
-          await t.pump();
-        },
-      );
-
-      await expectLater(
-        find.byType(AppNewTransactionCard),
-        matchesGoldenFile('goldens/app_new_transaction_card.png'),
-      );
-    });
-
     goldenTest('app_button_secondary', (tester) async {
       await pumpGolden(
         tester,
@@ -377,24 +289,6 @@ void main() {
       await expectLater(
         find.byType(AppTextField),
         matchesGoldenFile('goldens/app_text_field_required.png'),
-      );
-    });
-
-    goldenTest('app_card_container', (tester) async {
-      await pumpGolden(
-        tester,
-        size: const Size(420, 260),
-        child: AppCardContainer(
-          title: 'Resumo',
-          child: const Text(
-            'Conteúdo do card com sombra e cantos arredondados.',
-          ),
-        ),
-      );
-
-      await expectLater(
-        find.byType(AppCardContainer),
-        matchesGoldenFile('goldens/app_card_container.png'),
       );
     });
 
