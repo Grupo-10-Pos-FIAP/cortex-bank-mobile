@@ -29,7 +29,10 @@ class FakeTransactionsTimelineMirror {
     return Success(List<Transaction>.from(_items));
   }
 
-  Result<TransactionPage> getPage(int limit, {TransactionPageCursor? startAfterCursor}) {
+  Result<TransactionPage> getPage(
+    int limit, {
+    TransactionPageCursor? startAfterCursor,
+  }) {
     sortNewestFirst();
     final afterId = switch (startAfterCursor) {
       null => null,

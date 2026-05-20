@@ -46,9 +46,7 @@ Future<void> _pumpTestApp(
   await auth.loadCurrentUser();
   await tester.pumpWidget(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AuthProvider>.value(value: auth),
-      ],
+      providers: [ChangeNotifierProvider<AuthProvider>.value(value: auth)],
       child: App(
         enableConnectivityWrapper: false,
         theme: integrationTestTheme(),

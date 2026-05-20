@@ -11,9 +11,7 @@ class ProfilePage extends StatelessWidget {
     final auth = context.read<AuthProvider>();
     await auth.signOut();
     if (!context.mounted) return;
-    Navigator.of(context, rootNavigator: true).pushReplacementNamed(
-      '/login',
-    );
+    Navigator.of(context, rootNavigator: true).pushReplacementNamed('/login');
   }
 
   @override

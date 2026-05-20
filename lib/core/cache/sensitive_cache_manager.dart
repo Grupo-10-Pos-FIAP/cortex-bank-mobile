@@ -39,24 +39,14 @@ class SensitiveCacheManager {
     return e;
   }
 
-  static void setJson(
-    String key,
-    Object jsonValue, {
-    Duration? ttl,
-  }) {
+  static void setJson(String key, Object jsonValue, {Duration? ttl}) {
     final plaintext = jsonEncode(jsonValue);
     final ciphertext = _enc.encryptString(plaintext);
     final expiry = ttl != null ? DateTime.now().add(ttl) : null;
-    _cache[key] = _SensitiveCacheEntry(
-      ciphertext: ciphertext,
-      expiry: expiry,
-    );
+    _cache[key] = _SensitiveCacheEntry(ciphertext: ciphertext, expiry: expiry);
   }
 
-  static T? getJson<T>(
-    String key,
-    T Function(Object? json) decode,
-  ) {
+  static T? getJson<T>(String key, T Function(Object? json) decode) {
     final entry = _cache[key];
     if (entry == null) return null;
     if (entry.isExpired) {

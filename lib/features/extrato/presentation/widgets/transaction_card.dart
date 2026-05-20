@@ -109,9 +109,7 @@ class TransactionCard extends StatelessWidget {
         ? '+${formatCentsToBRL(valueCents)}'
         : '-${formatCentsToBRL(valueCents)}';
 
-    final dateLine = DateFormatter.formatDateOptionalTimeLine(
-      transaction.date,
-    );
+    final dateLine = DateFormatter.formatDateOptionalTimeLine(transaction.date);
     final statusLabel = model.TransactionStatus.labelPt(transaction.status);
     final titularName = context.select<AuthProvider, String?>(
       (auth) => auth.user?.username,
@@ -175,10 +173,9 @@ class TransactionCard extends StatelessWidget {
                               if (!context.mounted) return;
                               // Garante providers no subtree do Dialog (overlay pode não herdar o
                               // MultiProvider do [AuthenticatedAppShell]).
-                              final contacts =
-                                  context.read<ContactsProvider>();
-                              final transactions =
-                                  context.read<TransactionsNotifier>();
+                              final contacts = context.read<ContactsProvider>();
+                              final transactions = context
+                                  .read<TransactionsNotifier>();
                               showDialog<void>(
                                 context: context,
                                 builder: (_) => MultiProvider(

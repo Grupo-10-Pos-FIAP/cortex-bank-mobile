@@ -232,8 +232,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
         : filteredItems;
     final batchLen = rawBatchLength ?? docs.length;
     final batchCap = fetchLimit ?? docs.length;
-    final hasMore =
-        filteredItems.length > limit || batchLen == batchCap;
+    final hasMore = filteredItems.length > limit || batchLen == batchCap;
     return TransactionPage(
       items: items,
       hasMore: hasMore,

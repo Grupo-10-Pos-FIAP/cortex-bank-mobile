@@ -28,10 +28,14 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
-              value: tx,
-              child: const Scaffold(body: DashboardPage()),
-            ),
+            home:
+                StateNotifierProvider<
+                  TransactionsNotifier,
+                  TransactionsState
+                >.value(
+                  value: tx,
+                  child: const Scaffold(body: DashboardPage()),
+                ),
           ),
         );
 

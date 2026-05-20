@@ -28,10 +28,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
-              value: provider,
-              child: const AppBalanceCard(mostrarSaldoInicial: true),
-            ),
+            body:
+                StateNotifierProvider<
+                  TransactionsNotifier,
+                  TransactionsState
+                >.value(
+                  value: provider,
+                  child: const AppBalanceCard(mostrarSaldoInicial: true),
+                ),
           ),
         ),
       );
@@ -61,10 +65,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
-              value: provider,
-              child: const AppBalanceCard(mostrarSaldoInicial: true),
-            ),
+            body:
+                StateNotifierProvider<
+                  TransactionsNotifier,
+                  TransactionsState
+                >.value(
+                  value: provider,
+                  child: const AppBalanceCard(mostrarSaldoInicial: true),
+                ),
           ),
         ),
       );

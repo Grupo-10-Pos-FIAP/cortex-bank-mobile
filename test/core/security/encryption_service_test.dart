@@ -29,6 +29,9 @@ void main() {
   });
 
   test('decryptString falha com blob inválido', () {
-    expect(() => encryption.decryptString('not-valid-base64!!!'), throwsA(anything));
+    expect(
+      () => encryption.decryptString('not-valid-base64!!!'),
+      throwsA(anything),
+    );
   });
 }

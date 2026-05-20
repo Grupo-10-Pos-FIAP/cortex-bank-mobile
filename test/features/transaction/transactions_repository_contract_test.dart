@@ -38,9 +38,7 @@ void main() {
       ).thenAnswer((_) => Stream.value(page));
       final repository = TransactionsRepositoryImpl(ds, storage);
 
-      final emitted = await repository
-          .watchFirstPage(10, criteria: null)
-          .first;
+      final emitted = await repository.watchFirstPage(10, criteria: null).first;
 
       expect(emitted.items.first.id, 'w1');
       verify(() => ds.watchFirstPage(10, criteria: null)).called(1);
@@ -61,10 +59,8 @@ void main() {
       final ds = MockTransactionsDataSource();
       final storage = MockReceiptStorageDataSource();
       when(
-        () => ds.getPage(
-          any(),
-          startAfterCursor: any(named: 'startAfterCursor'),
-        ),
+        () =>
+            ds.getPage(any(), startAfterCursor: any(named: 'startAfterCursor')),
       ).thenAnswer(
         (_) async => TransactionPage(
           items: [buildTransaction(id: 't10')],
@@ -94,10 +90,8 @@ void main() {
       final ds = MockTransactionsDataSource();
       final storage = MockReceiptStorageDataSource();
       when(
-        () => ds.getPage(
-          any(),
-          startAfterCursor: any(named: 'startAfterCursor'),
-        ),
+        () =>
+            ds.getPage(any(), startAfterCursor: any(named: 'startAfterCursor')),
       ).thenThrow(Exception('boom'));
       final repository = TransactionsRepositoryImpl(ds, storage);
 

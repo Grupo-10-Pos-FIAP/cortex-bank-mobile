@@ -166,22 +166,24 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
     final firstEvent = Completer<void>();
     late final StreamSubscription<TransactionPage> sub;
-    sub = _repository.watchFirstPage(_pageSize, criteria: criteria).listen(
-      (page) {
-        if (epoch != _listEpoch) return;
-        _applyFirstPageFromStream(page, epoch);
-        if (!firstEvent.isCompleted) firstEvent.complete();
-      },
-      onError: (Object e, StackTrace stackTrace) {
-        if (epoch != _listEpoch) return;
-        state = state.copyWith(
-          listPhase: TransactionsListPhase.failure,
-          transactionsError: 'Erro ao carregar transações',
-          isLoadingMore: false,
+    sub = _repository
+        .watchFirstPage(_pageSize, criteria: criteria)
+        .listen(
+          (page) {
+            if (epoch != _listEpoch) return;
+            _applyFirstPageFromStream(page, epoch);
+            if (!firstEvent.isCompleted) firstEvent.complete();
+          },
+          onError: (Object e, StackTrace stackTrace) {
+            if (epoch != _listEpoch) return;
+            state = state.copyWith(
+              listPhase: TransactionsListPhase.failure,
+              transactionsError: 'Erro ao carregar transações',
+              isLoadingMore: false,
+            );
+            if (!firstEvent.isCompleted) firstEvent.complete();
+          },
         );
-        if (!firstEvent.isCompleted) firstEvent.complete();
-      },
-    );
     _firstPageStreamSub = sub;
 
     await firstEvent.future;
@@ -199,9 +201,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
     final prefixIds = streamPage.items.map((e) => e.id).toSet();
     final tail = _extraPagesHaveMore
-        ? state.transactions
-              .where((t) => !prefixIds.contains(t.id))
-              .toList()
+        ? state.transactions.where((t) => !prefixIds.contains(t.id)).toList()
         : <Transaction>[];
     final merged = tail.isEmpty
         ? List<Transaction>.from(streamPage.items)
@@ -405,7 +405,9 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
 
     final isSuccess = result.fold(
       (_) {
-        final index = state.transactions.indexWhere((t) => t.id == transaction.id);
+        final index = state.transactions.indexWhere(
+          (t) => t.id == transaction.id,
+        );
         if (index != -1) {
           final list = List<Transaction>.from(state.transactions);
           list[index] = transaction;
@@ -503,9 +505,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
   }
 
   Future<void> deleteTransaction(String id) async {
-    state = state.copyWith(
-      listPhase: TransactionsListPhase.loading,
-    );
+    state = state.copyWith(listPhase: TransactionsListPhase.loading);
 
     final result = await _repository.delete(id);
     if (!mounted) {

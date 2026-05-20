@@ -13,9 +13,7 @@ Future<void> testExecutable(Future<void> Function() testMain) async {
   GoogleFonts.config.allowRuntimeFetching = false;
   registerCommonFallbackValues();
   SensitiveCacheManager.useEncryptionForTests(
-    EncryptionService(
-      Uint8List.fromList(List<int>.generate(32, (i) => i)),
-    ),
+    EncryptionService(Uint8List.fromList(List<int>.generate(32, (i) => i))),
   );
   setUp(() {
     CacheManager.clear();

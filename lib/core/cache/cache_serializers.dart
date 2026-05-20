@@ -41,20 +41,20 @@ abstract final class CacheSerializers {
       status: json['status'] as String? ?? TransactionStatus.completed,
       category: TransactionCategory.values.byName(json['category'] as String),
       description: json['description'] as String?,
-      receiptUrls: (json['receiptUrls'] as List<dynamic>?)
+      receiptUrls:
+          (json['receiptUrls'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
     );
   }
 
-  static List<Map<String, dynamic>> transactionsToJson(List<Transaction> list) =>
-      list.map(transactionToJson).toList();
+  static List<Map<String, dynamic>> transactionsToJson(
+    List<Transaction> list,
+  ) => list.map(transactionToJson).toList();
 
   static List<Transaction> transactionsFromJson(List<dynamic> json) =>
-      json
-          .map((e) => transactionFromJson(e as Map<String, dynamic>))
-          .toList();
+      json.map((e) => transactionFromJson(e as Map<String, dynamic>)).toList();
 
   static Map<String, dynamic> contactToJson(Contact c) => {
     'id': c.id,

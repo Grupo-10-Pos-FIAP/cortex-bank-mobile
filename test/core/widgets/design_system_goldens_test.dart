@@ -191,13 +191,17 @@ void main() {
               const Scaffold(body: Center(child: Text('Extrato'))),
         },
         home: Scaffold(
-          body: StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(
-            value: provider,
-            child: const Padding(
-              padding: EdgeInsets.all(24),
-              child: AppBalanceCard(mostrarSaldoInicial: true),
-            ),
-          ),
+          body:
+              StateNotifierProvider<
+                TransactionsNotifier,
+                TransactionsState
+              >.value(
+                value: provider,
+                child: const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: AppBalanceCard(mostrarSaldoInicial: true),
+                ),
+              ),
         ),
       );
 
@@ -233,9 +237,7 @@ void main() {
       await tx.loadBalanceSummary();
 
       final contactsRepo = FakeContactsRepository()
-        ..getAllResult = Success([
-          Contact(id: 'c1', name: 'Maria Silva'),
-        ]);
+        ..getAllResult = Success([Contact(id: 'c1', name: 'Maria Silva')]);
       final contacts = ContactsProvider(contactsRepo);
       await contacts.loadContacts();
 
@@ -250,7 +252,10 @@ void main() {
           body: MultiProvider(
             providers: [
               ChangeNotifierProvider<AuthProvider>.value(value: auth),
-              StateNotifierProvider<TransactionsNotifier, TransactionsState>.value(value: tx),
+              StateNotifierProvider<
+                TransactionsNotifier,
+                TransactionsState
+              >.value(value: tx),
               ChangeNotifierProvider<ContactsProvider>.value(value: contacts),
             ],
             child: SingleChildScrollView(

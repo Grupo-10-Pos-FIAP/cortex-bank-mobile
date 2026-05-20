@@ -17,7 +17,6 @@ import 'package:cortex_bank_mobile/features/auth/data/datasources/user_datasourc
 import 'package:cortex_bank_mobile/features/auth/data/mappers/auth_error_mapper.dart';
 import 'package:cortex_bank_mobile/features/auth/domain/entities/user.dart';
 
-
 const _authTimeout = Duration(seconds: 25);
 const _userCacheTtl = Duration(minutes: 10);
 
@@ -25,7 +24,6 @@ const _userCacheTtl = Duration(minutes: 10);
 /// Complementa o bloqueio do Firebase mas protege também contra abuso local.
 const _maxSignInAttempts = 5;
 const _signInBlockDuration = Duration(minutes: 15);
-
 
 class AuthDataSourceFirebase implements AuthDataSource {
   fa.FirebaseAuth get _auth => fa.FirebaseAuth.instance;
@@ -35,7 +33,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
   // no lado do cliente, reduzindo chamadas desnecessárias ao Firebase em
   // ataques de força bruta.
   final Map<String, _RateLimitEntry> _signInAttempts = {};
-
 
   /// No iOS, o [GoogleSignIn] nativo exige um OAuth client id (normalmente o
   /// `CLIENT_ID` do `GoogleService-Info.plist`). Se o plist versionado estiver
@@ -62,7 +59,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
     return GoogleSignIn();
   }
 
-
   String _userCacheKey(String uid) => 'auth.user.$uid';
 
   void _cacheUser(User user) {
@@ -74,7 +70,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
       ttl: _userCacheTtl,
     );
   }
-
 
   /// [SEGURANÇA] Verifica se o e-mail está bloqueado por excesso de tentativas.
   /// Retorna uma [Failure] se bloqueado, ou `null` se pode prosseguir.
@@ -102,11 +97,9 @@ class AuthDataSourceFirebase implements AuthDataSource {
   /// [SEGURANÇA] Limpa o contador de tentativas após login bem-sucedido.
   void _clearAttempts(String email) => _signInAttempts.remove(email);
 
-
   @override
   Stream<bool> watchFirebaseSessionSignedIn() =>
       _auth.authStateChanges().map((u) => u != null);
-
 
   @override
   Future<User?> getCachedCurrentUser() async {
@@ -117,7 +110,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
       (json) => CacheSerializers.userFromJson(json! as Map<String, dynamic>),
     );
   }
-
 
   @override
   Future<Result<User>> signIn(String email, String password) async {
@@ -173,7 +165,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
       );
     }
   }
-
 
   @override
   Future<Result<User>> signUp(
@@ -257,7 +248,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
     return Success(newUser);
   }
 
-
   @override
   Future<Result<User?>> getCurrentUser({bool forceRefresh = false}) async {
     try {
@@ -294,7 +284,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
       );
     }
   }
-
 
   @override
   Future<Result<User>> signInWithGoogle() async {
@@ -386,7 +375,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
     }
   }
 
-
   @override
   Future<Result<void>> signOut() async {
     try {
@@ -417,7 +405,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
       );
     }
   }
-
 
   /// [SEGURANÇA] Valida entrada do cadastro no cliente antes de chamar o Firebase,
   /// reduzindo requisições malformadas e fornecendo feedback imediato.
@@ -487,7 +474,6 @@ class AuthDataSourceFirebase implements AuthDataSource {
     return false;
   }
 }
-
 
 class _RateLimitEntry {
   int attempts = 0;

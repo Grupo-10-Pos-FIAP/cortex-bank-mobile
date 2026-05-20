@@ -138,8 +138,10 @@ class _BalanceEvolutionChartState extends State<BalanceEvolutionChart> {
             series: <CartesianSeries<_BalanceEvolutionData, String>>[
               LineSeries<_BalanceEvolutionData, String>(
                 dataSource: chartData,
-                xValueMapper: (_BalanceEvolutionData balance, _) => balance.month,
-                yValueMapper: (_BalanceEvolutionData balance, _) => balance.amount,
+                xValueMapper: (_BalanceEvolutionData balance, _) =>
+                    balance.month,
+                yValueMapper: (_BalanceEvolutionData balance, _) =>
+                    balance.amount,
                 dataLabelMapper: (_BalanceEvolutionData balance, _) =>
                     formatReaisToBRL(balance.amount),
                 name: 'Saldo',

@@ -5,20 +5,10 @@ import 'package:cortex_bank_mobile/features/transaction/domain/statement/stateme
 import 'package:flutter/foundation.dart';
 
 /// Ciclo de vida da lista de transações (carregamento explícito).
-enum TransactionsListPhase {
-  idle,
-  loading,
-  ready,
-  failure,
-}
+enum TransactionsListPhase { idle, loading, ready, failure }
 
 /// Ciclo de vida do resumo de saldo.
-enum BalanceSummaryPhase {
-  idle,
-  loading,
-  ready,
-  failure,
-}
+enum BalanceSummaryPhase { idle, loading, ready, failure }
 
 @immutable
 class TransactionsState {

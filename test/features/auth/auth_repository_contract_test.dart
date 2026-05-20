@@ -142,12 +142,15 @@ void main() {
 
     test('deve repassar stream de sessão do datasource', () async {
       final remote = MockAuthDataSource();
-      when(() => remote.watchFirebaseSessionSignedIn()).thenAnswer(
-        (_) => Stream<bool>.fromIterable([true, false]),
-      );
+      when(
+        () => remote.watchFirebaseSessionSignedIn(),
+      ).thenAnswer((_) => Stream<bool>.fromIterable([true, false]));
       final repository = AuthRepositoryImpl(remote: remote);
 
-      final values = await repository.watchFirebaseSessionSignedIn().take(2).toList();
+      final values = await repository
+          .watchFirebaseSessionSignedIn()
+          .take(2)
+          .toList();
 
       expect(values, [true, false]);
       verify(() => remote.watchFirebaseSessionSignedIn()).called(1);

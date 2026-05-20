@@ -352,9 +352,9 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
                       setState(
                         () => _selectedDate =
                             TransactionDatePolicy.combineDateWithTime(
-                          picked,
-                          _selectedDate,
-                        ),
+                              picked,
+                              _selectedDate,
+                            ),
                       );
                     }
                   },

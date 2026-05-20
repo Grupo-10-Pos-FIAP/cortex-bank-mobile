@@ -546,9 +546,9 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
                             setState(
                               () => _selectedDate =
                                   TransactionDatePolicy.combineDateWithTime(
-                                picked,
-                                _selectedDate,
-                              ),
+                                    picked,
+                                    _selectedDate,
+                                  ),
                             );
                           }
                         },

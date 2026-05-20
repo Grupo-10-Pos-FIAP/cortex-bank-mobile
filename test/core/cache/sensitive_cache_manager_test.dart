@@ -37,11 +37,9 @@ void main() {
   });
 
   test('entrada expirada retorna null', () async {
-    SensitiveCacheManager.setJson(
-      'k',
-      {'x': 1},
-      ttl: const Duration(milliseconds: 50),
-    );
+    SensitiveCacheManager.setJson('k', {
+      'x': 1,
+    }, ttl: const Duration(milliseconds: 50));
     await Future<void>.delayed(const Duration(milliseconds: 60));
     final read = SensitiveCacheManager.getJson<int>(
       'k',
