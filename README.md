@@ -1,36 +1,122 @@
 # Cortex Bank Mobile
 
-Desenvolver uma aplicação de gerenciamento financeiro, utilizando Flutter Mobile, com funcionalidades avançadas que foram ensinadas nas disciplinas. A aplicação deve ser capaz de gerenciar transações financeiras, integrando recursos de navegação, segurança, autenticação e armazenamento em cloud.
+Aplicativo de gerenciamento financeiro em **Flutter** (Android, iOS e Web), com autenticação, extrato, transações, contatos e dashboard. Backend em **Firebase**; arquitetura modular em camadas (Clean Architecture pragmática), cache, paginação e programação reativa no fluxo de transações.
 
-## Instruções para rodar localmente (resumo)
+**Repositório:** [https://github.com/Grupo-10-Pos-FIAP/cortex-bank-mobile](https://github.com/Grupo-10-Pos-FIAP/cortex-bank-mobile)
 
-Este README reúne o necessário para executar o app na sua máquina:
+---
+
+## Índice
 
 | Tema | Seção |
 | ---- | ----- |
-| Ferramentas e SDKs instalados no sistema | **Dependências necessárias** |
-| Projeto Firebase, `.env`, arquivos nativos e regras | **Configuração do Firebase** |
-| `flutter pub get`, dispositivo/emulador e `flutter run` | **Executar o projeto** |
+| Stack do projeto | [Tecnologias utilizadas](#tecnologias-utilizadas) |
+| Rodar o app (resumo) | [Passo a passo para rodar localmente](#passo-a-passo-para-rodar-localmente) |
+| Flutter, JDK, Xcode | [Pré-requisitos](#pré-requisitos) |
+| Firebase, `.env`, regras | [Configuração do Firebase](#configuração-do-firebase) |
+| Instalar SDK do zero | [Instalação do ambiente (detalhado)](#instalação-do-ambiente-detalhado) |
+| CI e cobertura | [Testes](#testes) |
 
-## Dependências necessárias
+---
+
+## Tecnologias utilizadas
+
+| Grupo | Tecnologias |
+| ----- | ----------- |
+| **Base** | [Flutter](https://flutter.dev/) (canal stable), Dart `^3.10.7` |
+| **Backend / BaaS** | [Firebase Auth](https://firebase.google.com/docs/auth), [Cloud Firestore](https://firebase.google.com/docs/firestore), [Firebase Storage](https://firebase.google.com/docs/storage) |
+| **Arquitetura e estado** | Organização por features + camadas (apresentação, domínio, dados), [Provider](https://pub.dev/packages/provider), [StateNotifier](https://pub.dev/packages/state_notifier), [GetIt](https://pub.dev/packages/get_it) |
+| **UI e plataformas** | Material Design, [google_fonts](https://pub.dev/packages/google_fonts), [Syncfusion Flutter Charts](https://pub.dev/packages/syncfusion_flutter_charts) — **Android, iOS e Web** |
+| **Performance** | Cache em memória com TTL (`SensitiveCacheManager`), persistência offline do Firestore (100 MB), lazy loading com `deferred` na web, paginação de transações |
+| **Segurança** | [flutter_secure_storage](https://pub.dev/packages/flutter_secure_storage), cifra AES-256-GCM ([encrypt](https://pub.dev/packages/encrypt)), validação de `.env`, regras [firestore.rules](firestore.rules) e [storage.rules](storage.rules) |
+| **Integração e utilitários** | [flutter_dotenv](https://pub.dev/packages/flutter_dotenv), [Google Sign-In](https://pub.dev/packages/google_sign_in), [connectivity_plus](https://pub.dev/packages/connectivity_plus), anexos ([file_picker](https://pub.dev/packages/file_picker)) |
+| **Testes** | `flutter_test`, [mocktail](https://pub.dev/packages/mocktail), `integration_test` |
+
+Dependências completas e versões: [`pubspec.yaml`](pubspec.yaml).
+
+**Segredos:** use `.env` (copie de [`.env.example`](.env.example)) e arquivos nativos do Firebase (`google-services.json`, `GoogleService-Info.plist`). **Não** commite `.env` nem chaves reais — já estão no `.gitignore`.
+
+---
+
+## Passo a passo para rodar localmente
+
+1. **Clonar o repositório**
+
+   ```bash
+   git clone https://github.com/Grupo-10-Pos-FIAP/cortex-bank-mobile.git
+   cd cortex-bank-mobile
+   ```
+
+2. **Instalar o Flutter** (canal stable) e validar o ambiente:
+
+   ```bash
+   flutter doctor
+   ```
+
+   Se ainda não tiver Flutter/Android/Xcode, veja [Instalação do ambiente (detalhado)](#instalação-do-ambiente-detalhado).
+
+3. **Instalar dependências Dart**
+
+   ```bash
+   flutter pub get
+   ```
+
+4. **Configurar Firebase** (obrigatório para o app funcionar de ponta a ponta):
+
+   - Crie ou use um projeto no [Firebase Console](https://console.firebase.google.com/).
+   - Registre os apps com os IDs deste repositório:
+     - **Android:** `com.example.cortex_bank_mobile`
+     - **iOS:** `com.example.cortexBankMobile`
+   - Siga o guia completo em [Configuração do Firebase](#configuração-do-firebase) (FlutterFire CLI recomendado).
+
+   Resumo rápido:
+
+   ```bash
+   cp .env.example .env
+   # Edite .env com as chaves do seu projeto Firebase
+   dart pub global activate flutterfire_cli
+   flutterfire configure
+   ```
+
+5. **Publicar regras de segurança** no Console (ou via Firebase CLI): copie o conteúdo de [`firestore.rules`](firestore.rules) e [`storage.rules`](storage.rules) para Firestore → Regras e Storage → Regras.
+
+6. **Escolher dispositivo e executar**
+
+   ```bash
+   flutter devices
+   flutter run
+   ```
+
+   Exemplos por plataforma:
+
+   ```bash
+   flutter run -d chrome          # Web
+   flutter run -d <id_android>    # Emulador ou aparelho Android
+   flutter run -d <id_ios>        # Simulador ou iPhone (macOS)
+   ```
+
+7. **Testes (opcional)** — veja [Testes](#testes).
+
+Na primeira execução, a splash valida o `.env` e inicializa o Firebase; se faltar variável ou arquivo nativo, o app exibe **Configuração incompleta**.
+
+---
+
+## Pré-requisitos
 
 | Item | Detalhe |
 | ---- | ------- |
 | **Flutter** | Canal **stable**, com Dart compatível com o `pubspec.yaml` (atualmente `sdk: ^3.10.7`). Confira com `flutter --version`. |
 | **Android** | Android Studio, SDK Android e **JDK 17** (o `android/app/build.gradle.kts` do projeto usa Java 17). |
 | **iOS (somente macOS)** | Xcode atualizado (abra uma vez após instalar para concluir componentes). CocoaPods para dependências nativas. |
-| **Conta** | Projeto no [Firebase Console](https://console.firebase.google.com/) com apps **Android** e **iOS** registrados (ou use o fluxo da FlutterFire CLI abaixo). |
+| **Web** | Chrome (ou outro navegador suportado pelo `flutter run -d chrome`). |
+| **Conta** | Projeto no [Firebase Console](https://console.firebase.google.com/) com apps **Android**, **iOS** e/ou **Web** registrados (ou use o fluxo da FlutterFire CLI abaixo). |
 
 **IDs usados neste repositório** (devem bater com os apps cadastrados no Firebase):
 
 - **Android** — `applicationId`: `com.example.cortex_bank_mobile`
 - **iOS** — Bundle ID: `com.example.cortexBankMobile`
 
-**Pacotes Dart / Flutter:** as bibliotecas do app estão declaradas em `pubspec.yaml` (Firebase, Provider, etc.). Após clonar o projeto, instale-as com:
-
-```bash
-flutter pub get
-```
+---
 
 ## Configuração do Firebase
 
@@ -38,8 +124,8 @@ flutter pub get
 
 Em um projeto **novo** no [Firebase Console](https://console.firebase.google.com/), configure pelo menos:
 
-1. **Apps**: registrar **Android** com o pacote `com.example.cortex_bank_mobile` e **iOS** com o bundle `com.example.cortexBankMobile` (valores usados neste repositório).
-2. **Authentication** → habilitar **E-mail/senha** (o app usa login e cadastro com e-mail e senha).
+1. **Apps**: registrar **Android** com o pacote `com.example.cortex_bank_mobile`, **iOS** com o bundle `com.example.cortexBankMobile` e, para Web, o app web do Firebase (valores usados neste repositório).
+2. **Authentication** → habilitar **E-mail/senha** (o app usa login e cadastro com e-mail e senha). Opcional: **Google** para login social.
 3. **Firestore Database** → criar o banco (modo de sua escolha).
 4. **Storage** → ativar o armazenamento (o app usa anexos/recibos).
 5. **Regras de segurança**: publicar regras alinhadas aos arquivos **`firestore.rules`** e **`storage.rules`** na raiz do repositório (cole o conteúdo em Firestore → Regras e Storage → Regras no Console, ou use a [Firebase CLI](https://firebase.google.com/docs/cli) com deploy, se utilizar).
@@ -98,31 +184,24 @@ Copie `.env.example` para `.env` e preencha com os valores do seu projeto no [Fi
 
 `FIREBASE_IOS_BUNDLE_ID` deve ser o mesmo do app iOS no Firebase; neste projeto o bundle ID é `com.example.cortexBankMobile`.
 
+Opcional no iOS para Google Sign-In: `GOOGLE_SIGN_IN_IOS_CLIENT_ID`, `GOOGLE_SIGN_IN_SERVER_CLIENT_ID` (veja comentários em `.env.example`).
+
 Se alguma variável obrigatória para a plataforma atual estiver ausente, o app exibirá uma tela de **"Configuração incompleta"** em vez de inicializar o Firebase.
 
-## Executar o projeto
+---
 
-Passos mínimos após ter as **dependências** e a **configuração do Firebase** prontas:
+## Instalação do ambiente (detalhado)
 
-1. Entrar na pasta raiz do projeto (clone Git).
-2. `flutter pub get`
-3. Garantir `.env`, `lib/firebase_options.dart`, `android/app/google-services.json` (Android) e `ios/Runner/GoogleService-Info.plist` (iOS) coerentes com o **mesmo** projeto Firebase.
-4. `flutter doctor` — corrigir o que estiver pendente (SDK Android, Xcode no Mac, licenças).
-5. Ligar emulador ou conectar aparelho; opcionalmente `flutter devices`.
-6. `flutter run` ou `flutter run -d <id_do_dispositivo>`.
+Use esta seção se você ainda **não** tiver Flutter ou o SDK Android/iOS instalados. Os comandos do projeto (`flutter pub get`, `flutter doctor`, `flutter run`) são os mesmos em qualquer sistema.
 
-A seguir: detalhes por sistema operacional se você ainda estiver **instalando o ambiente do zero**.
-
-Se você ainda não tem Flutter nem Android configurados, siga os passos abaixo. Os comandos do projeto (`flutter pub get`, `flutter doctor`, `flutter run`) são os mesmos em qualquer sistema.
-
-Além do Flutter, é preciso concluir a **Configuração do Firebase** (integração no app, FlutterFire CLI ou manual, e tabela de variáveis **`.env`**): `.env`, `firebase_options.dart` e arquivos nativos (`google-services.json` / `GoogleService-Info.plist`) alinhados ao mesmo projeto.
+Além do Flutter, conclua a [Configuração do Firebase](#configuração-do-firebase): `.env`, `firebase_options.dart` e arquivos nativos (`google-services.json` / `GoogleService-Info.plist`) alinhados ao mesmo projeto.
 
 ### Windows
 
 1. Instale o Flutter SDK seguindo o guia oficial: [Instalação no Windows](https://docs.flutter.dev/get-started/install/windows) (inclui Git for Windows e verificação com `flutter doctor`).
 2. Para desenvolvimento Android no Windows, use o **Android Studio** e o SDK Android como descrito na mesma documentação; aceite as licenças com `flutter doctor --android-licenses`.
 3. Se o Gradle reclamar de versão do Java, configure **JDK 17** no Android Studio (**Settings → Build, Execution, Deployment → Build Tools → Gradle**).
-4. Na pasta do projeto: `flutter pub get`, configure o Firebase (`.env` + arquivos nativos + `firebase_options.dart`, conforme as seções acima) e rode `flutter run` (ou escolha o dispositivo com `flutter devices`).
+4. Na pasta do projeto: `flutter pub get`, configure o Firebase conforme [Passo a passo](#passo-a-passo-para-rodar-localmente) e rode `flutter run` (ou escolha o dispositivo com `flutter devices`).
 
 *Nota: desenvolvimento iOS nativo não roda no Windows; use macOS (ou CI) para build/execução em iPhone/Simulator.*
 
@@ -133,8 +212,6 @@ Além do Flutter, é preciso concluir a **Configuração do Firebase** (integra�
 3. No projeto: `flutter pub get`, configure Firebase como nas seções acima, depois `flutter run`.
 
 ### macOS (passo a passo detalhado)
-
-Se você ainda não tem Flutter nem Android configurados, siga estes passos no **macOS**.
 
 #### 1. Instalar o Flutter
 
@@ -197,7 +274,7 @@ Se você ainda não tem Flutter nem Android configurados, siga estes passos no *
    flutter pub get
    ```
 
-2. Configure o Firebase: copie `.env.example` para `.env`, preencha as variáveis para Android e/ou iOS (tabela em **Variáveis de ambiente (`.env`)**), e garanta `google-services.json`, `GoogleService-Info.plist` e `lib/firebase_options.dart` coerentes com o mesmo projeto (recomendado: **FlutterFire CLI** na seção **Configuração do Firebase**).
+2. Configure o Firebase: copie `.env.example` para `.env`, preencha as variáveis para Android e/ou iOS (tabela em **Variáveis de ambiente (`.env`)**), e garanta `google-services.json`, `GoogleService-Info.plist` e `lib/firebase_options.dart` coerentes com o mesmo projeto (recomendado: **FlutterFire CLI** na seção [Configuração do Firebase](#configuração-do-firebase)).
 
 #### 4. Rodar no Android
 
@@ -273,6 +350,8 @@ Para rodar no **simulador do iPhone** não é necessária conta paga da Apple; b
    flutter run -d <nome_do_iphone>
    ```
 
+---
+
 ## Testes
 
 O projeto possui uma estratégia incremental de testes documentada em [`docs/TESTES.md`](docs/TESTES.md).
@@ -302,11 +381,13 @@ O job de **unit/widget** no CI usa ordem de testes aleatória com seed fixo para
 - Toda nova regra de negócio deve incluir teste unitário.
 - Alterações relevantes em providers devem incluir testes de estado.
 
+---
+
 ## Licença
 
 Este projeto foi desenvolvido como parte do trabalho de pós-graduação em Engenharia de Front End.
 
-## Autores
+## Autoras
 
 - [Gabrielle Martins](https://github.com/Gabrielle-96)
 - [Helen Cris](https://github.com/HelenCrisM)
