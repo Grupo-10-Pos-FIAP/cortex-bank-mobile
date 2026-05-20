@@ -30,6 +30,72 @@ class StatementFilterCriteria {
   final int maxCents;
 }
 
+/// Valor de `type` no Firestore para [StatementFilterCriteria.tipoFiltro] da UI.
+String? tipoFiltroToFirestoreType(String tipoFiltro) {
+  switch (tipoFiltro) {
+    case 'credito':
+      return 'credit';
+    case 'debito':
+      return 'debit';
+    case 'ted':
+      return 'ted';
+    default:
+      return null;
+  }
+}
+
+/// Valor de `status` no Firestore para [StatementFilterCriteria.statusFiltro] da UI.
+String? statusFiltroToFirestoreStatus(String statusFiltro) {
+  switch (statusFiltro) {
+    case 'completa':
+      return TransactionStatus.completed;
+    case 'agendada':
+      return TransactionStatus.scheduled;
+    case 'pendente':
+      return TransactionStatus.pending;
+    default:
+      return null;
+  }
+}
+
+/// Critérios para filtro na camada data (sem busca textual da UI).
+StatementFilterCriteria criteriaForDatasourceFilter(
+  StatementFilterCriteria criteria,
+) {
+  return StatementFilterCriteria(
+    searchQuery: '',
+    dateStart: criteria.dateStart,
+    dateEnd: criteria.dateEnd,
+    tipoFiltro: criteria.tipoFiltro,
+    statusFiltro: criteria.statusFiltro,
+    categoriaFiltro: criteria.categoriaFiltro,
+    minCents: criteria.minCents,
+    maxCents: criteria.maxCents,
+  );
+}
+
+/// Quantos filtros secundários (além de data) estão ativos.
+int countActiveSecondaryFilters(StatementFilterCriteria criteria) {
+  var count = 0;
+  if (criteria.tipoFiltro != 'todas') count++;
+  if (criteria.statusFiltro != 'todas') count++;
+  if (criteria.categoriaFiltro != 'todas') count++;
+  if (criteria.minCents > 0 || criteria.maxCents > 0) count++;
+  return count;
+}
+
+/// Usa leitura por data + [applyStatementFilter] no datasource (combinações / valor).
+bool needsDatasourcePostFilter(StatementFilterCriteria? criteria) {
+  if (criteria == null) return false;
+  var equalityCount = 0;
+  if (criteria.tipoFiltro != 'todas') equalityCount++;
+  if (criteria.statusFiltro != 'todas') equalityCount++;
+  if (criteria.categoriaFiltro != 'todas') equalityCount++;
+  if (equalityCount > 1) return true;
+  if (criteria.minCents > 0 || criteria.maxCents > 0) return true;
+  return false;
+}
+
 /// Filtra mantendo a ordem relativa da lista de entrada (apenas `where` encadeados).
 List<Transaction> applyStatementFilter(
   List<Transaction> source,

@@ -93,6 +93,14 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     TransactionPageCursor? startAfterCursor,
     StatementFilterCriteria? criteria,
   }) async {
+    if (criteria != null && needsDatasourcePostFilter(criteria)) {
+      return _getPageWithCriteriaPostFilter(
+        limit,
+        startAfterCursor: startAfterCursor,
+        criteria: criteria,
+      );
+    }
+
     final fetchLimit = limit + 1;
     Query<Map<String, dynamic>> query = _buildQueryWithFilters(criteria)
         .orderBy('date', descending: true)
@@ -103,23 +111,10 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
 
     try {
       final snapshot = await query.get();
-      final allDocs = snapshot.docs;
-      final hasMore = allDocs.length > limit;
-      final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
-      final items = pageDocs
-          .map((d) => transactionFromFirestoreMap(d.data(), d.id))
-          .toList();
-
-      return TransactionPage(
-        items: items,
-        hasMore: hasMore,
-        endCursor: pageDocs.isNotEmpty
-            ? FirestoreTransactionPageCursor(pageDocs.last)
-            : null,
-      );
+      return _transactionPageFromDocs(snapshot.docs, limit);
     } on FirebaseException catch (e) {
       if (e.code == 'failed-precondition' && criteria != null) {
-        return await _getPageWithDateFallback(
+        return _getPageWithCriteriaPostFilter(
           limit,
           startAfterCursor: startAfterCursor,
           criteria: criteria,
@@ -134,31 +129,43 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     int limit, {
     StatementFilterCriteria? criteria,
   }) {
+    if (criteria != null && needsDatasourcePostFilter(criteria)) {
+      return _watchFirstPageWithPostFilter(limit, criteria);
+    }
+
     final fetchLimit = limit + 1;
     Query<Map<String, dynamic>> query = _buildQueryWithFilters(criteria)
         .orderBy('date', descending: true)
         .orderBy(FieldPath.documentId, descending: true)
         .limit(fetchLimit);
 
-    return query.snapshots().map((snapshot) {
-      final allDocs = snapshot.docs;
-      final hasMore = allDocs.length > limit;
-      final pageDocs = hasMore ? allDocs.sublist(0, limit) : allDocs;
-      final items = pageDocs
-          .map((d) => transactionFromFirestoreMap(d.data(), d.id))
-          .toList();
-
-      return TransactionPage(
-        items: items,
-        hasMore: hasMore,
-        endCursor: pageDocs.isNotEmpty
-            ? FirestoreTransactionPageCursor(pageDocs.last)
-            : null,
-      );
-    });
+    return query.snapshots().map(
+      (snapshot) => _transactionPageFromDocs(snapshot.docs, limit),
+    );
   }
 
-  Future<TransactionPage> _getPageWithDateFallback(
+  Stream<TransactionPage> _watchFirstPageWithPostFilter(
+    int limit,
+    StatementFilterCriteria criteria,
+  ) {
+    final fetchLimit = (limit * 3) + 1;
+    var query = _buildQueryWithDateFilters(criteria)
+        .orderBy('date', descending: true)
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(fetchLimit);
+
+    final filterCriteria = criteriaForDatasourceFilter(criteria);
+
+    return query.snapshots().map(
+      (snapshot) => _transactionPageFromFilteredDocs(
+        snapshot.docs,
+        limit,
+        filterCriteria,
+      ),
+    );
+  }
+
+  Future<TransactionPage> _getPageWithCriteriaPostFilter(
     int limit, {
     TransactionPageCursor? startAfterCursor,
     required StatementFilterCriteria criteria,
@@ -172,12 +179,48 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     query = _queryAfterCursor(query, startAfterCursor);
 
     final snapshot = await query.get();
-    final filteredDocs = <DocumentSnapshot<Map<String, dynamic>>>[];
+    final filterCriteria = criteriaForDatasourceFilter(criteria);
+    return _transactionPageFromFilteredDocs(
+      snapshot.docs,
+      limit,
+      filterCriteria,
+      rawBatchLength: snapshot.docs.length,
+      fetchLimit: fetchLimit,
+    );
+  }
+
+  TransactionPage _transactionPageFromDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    int limit,
+  ) {
+    final hasMore = docs.length > limit;
+    final pageDocs = hasMore ? docs.sublist(0, limit) : docs;
+    final items = pageDocs
+        .map((d) => transactionFromFirestoreMap(d.data(), d.id))
+        .toList();
+
+    return TransactionPage(
+      items: items,
+      hasMore: hasMore,
+      endCursor: pageDocs.isNotEmpty
+          ? FirestoreTransactionPageCursor(pageDocs.last)
+          : null,
+    );
+  }
+
+  TransactionPage _transactionPageFromFilteredDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    int limit,
+    StatementFilterCriteria filterCriteria, {
+    int? rawBatchLength,
+    int? fetchLimit,
+  }) {
+    final filteredDocs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
     final filteredItems = <model.Transaction>[];
 
-    for (final doc in snapshot.docs) {
+    for (final doc in docs) {
       final transaction = transactionFromFirestoreMap(doc.data(), doc.id);
-      if (applyStatementFilter([transaction], criteria).isNotEmpty) {
+      if (applyStatementFilter([transaction], filterCriteria).isNotEmpty) {
         filteredDocs.add(doc);
         filteredItems.add(transaction);
         if (filteredItems.length > limit) break;
@@ -187,8 +230,10 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     final items = filteredItems.length > limit
         ? filteredItems.sublist(0, limit)
         : filteredItems;
+    final batchLen = rawBatchLength ?? docs.length;
+    final batchCap = fetchLimit ?? docs.length;
     final hasMore =
-        filteredItems.length > limit || snapshot.docs.length == fetchLimit;
+        filteredItems.length > limit || batchLen == batchCap;
     return TransactionPage(
       items: items,
       hasMore: hasMore,
@@ -199,7 +244,6 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
   }
 
   /// Constrói uma query com filtros server-side aplicados.
-  /// NOTA: Por limitações de índices, aplicamos apenas filtros que têm índices compostos.
   Query<Map<String, dynamic>> _buildQueryWithFilters(
     StatementFilterCriteria? criteria,
   ) {
@@ -207,53 +251,24 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
 
     if (criteria == null) return query;
 
-    // Aplicar apenas filtros que sabemos ter índices
-    // Priorizar filtros mais comuns primeiro
+    query = _buildQueryWithDateFilters(criteria);
 
-    // Filtro de data - sempre aplicado se presente
-    if (criteria.dateStart != null) {
-      final start = DateTime(
-        criteria.dateStart!.year,
-        criteria.dateStart!.month,
-        criteria.dateStart!.day,
-      );
-      query = query.where(
-        'date',
-        isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-      );
+    if (needsDatasourcePostFilter(criteria)) {
+      return query;
     }
 
-    if (criteria.dateEnd != null) {
-      final end = DateTime(
-        criteria.dateEnd!.year,
-        criteria.dateEnd!.month,
-        criteria.dateEnd!.day,
-        23,
-        59,
-        59,
-        999,
-      );
-      query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(end));
+    final typeValue = tipoFiltroToFirestoreType(criteria.tipoFiltro);
+    if (typeValue != null) {
+      query = query.where('type', isEqualTo: typeValue);
     }
 
-    // Aplicar apenas UM filtro adicional para evitar problemas de índices
-    // Prioridade: tipo > status > categoria > valor
-    if (criteria.tipoFiltro != 'todas') {
-      query = query.where('type', isEqualTo: criteria.tipoFiltro);
-    } else if (criteria.statusFiltro != 'todas') {
-      final statusMap = {
-        'completa': 'completed',
-        'agendada': 'scheduled',
-        'pendente': 'pending',
-      };
-      final statusValue = statusMap[criteria.statusFiltro];
-      if (statusValue != null) {
-        query = query.where('status', isEqualTo: statusValue);
-      }
-    } else if (criteria.categoriaFiltro != 'todas') {
+    final statusValue = statusFiltroToFirestoreStatus(criteria.statusFiltro);
+    if (statusValue != null) {
+      query = query.where('status', isEqualTo: statusValue);
+    }
+
+    if (criteria.categoriaFiltro != 'todas') {
       query = query.where('category', isEqualTo: criteria.categoriaFiltro);
-    } else if (criteria.minCents > 0 || criteria.maxCents > 0) {
-      // Filtros de valor são mais complexos, deixar para client-side por enquanto
     }
 
     return query;

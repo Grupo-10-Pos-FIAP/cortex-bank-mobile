@@ -153,6 +153,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     _extraPagesHaveMore = false;
 
     state = state.copyWith(
+      transactions: const [],
       listPhase: TransactionsListPhase.loading,
       clearTransactionsError: true,
       lastCursor: null,
@@ -197,10 +198,14 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     if (epoch != _listEpoch) return;
 
     final prefixIds = streamPage.items.map((e) => e.id).toSet();
-    final tail = state.transactions
-        .where((t) => !prefixIds.contains(t.id))
-        .toList();
-    final merged = [...streamPage.items, ...tail];
+    final tail = _extraPagesHaveMore
+        ? state.transactions
+              .where((t) => !prefixIds.contains(t.id))
+              .toList()
+        : <Transaction>[];
+    final merged = tail.isEmpty
+        ? List<Transaction>.from(streamPage.items)
+        : [...streamPage.items, ...tail];
     _sortTransactionsNewestFirst(merged);
 
     SensitiveCacheManager.setJson(

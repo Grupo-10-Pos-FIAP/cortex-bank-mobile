@@ -5,6 +5,7 @@ import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,6 +36,54 @@ void main() {
         expect(provider.isLoading, false);
         expect(provider.transactionsError, isNull);
         expect(provider.balanceSummaryError, isNull);
+      },
+    );
+
+    test(
+      'deve substituir lista e repassar criteria ao refiltrar com loadTransactionsPaginated',
+      () async {
+        final repo = FakeTransactionsRepository()
+          ..getPageResult = Success(
+            TransactionPage(
+              items: [buildTransaction(id: 'c1', date: DateTime(2024, 6, 1))],
+              hasMore: false,
+              endCursor: null,
+            ),
+          );
+        final provider = TransactionsNotifier(repo);
+
+        const creditCriteria = StatementFilterCriteria(
+          searchQuery: '',
+          tipoFiltro: 'credito',
+          statusFiltro: 'todas',
+          minCents: 0,
+          maxCents: 0,
+        );
+        await provider.loadTransactionsPaginated(criteria: creditCriteria);
+
+        expect(provider.transactions.map((e) => e.id).toList(), ['c1']);
+        expect(repo.lastGetPageCriteria?.tipoFiltro, 'credito');
+
+        repo.getPageResult = Success(
+          TransactionPage(
+            items: [buildTransaction(id: 'd1', date: DateTime(2024, 5, 1))],
+            hasMore: false,
+            endCursor: null,
+          ),
+        );
+
+        const debitCriteria = StatementFilterCriteria(
+          searchQuery: '',
+          tipoFiltro: 'debito',
+          statusFiltro: 'todas',
+          minCents: 0,
+          maxCents: 0,
+        );
+        await provider.loadTransactionsPaginated(criteria: debitCriteria);
+
+        expect(provider.transactions.map((e) => e.id).toList(), ['d1']);
+        expect(provider.transactions.any((t) => t.id == 'c1'), isFalse);
+        expect(repo.lastGetPageCriteria?.tipoFiltro, 'debito');
       },
     );
 

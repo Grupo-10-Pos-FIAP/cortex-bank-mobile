@@ -79,10 +79,7 @@ class _ExtratoPageState extends State<ExtratoPage> {
     final loaded = tx.transactions;
     // Filtra apenas por searchQuery (client-side); outros filtros já estão server-side
     // Aplicar filtros client-side (search + filtros não suportados server-side)
-    final filtered = applyStatementFilter(
-      loaded,
-      _additionalClientSideCriteria(),
-    );
+    final filtered = applyStatementFilter(loaded, _uiSearchOnlyCriteria());
 
     var scrollHasClients = false;
     var hasViewportDimension = false;
@@ -134,22 +131,17 @@ class _ExtratoPageState extends State<ExtratoPage> {
     );
   }
 
-  /// Critérios aplicados client-side para filtros não suportados server-side.
-  StatementFilterCriteria _additionalClientSideCriteria() {
-    final serverCriteria = _serverSideFilterCriteria();
+  /// Busca textual na UI; data/tipo/status/categoria/valor vêm do Firestore.
+  StatementFilterCriteria _uiSearchOnlyCriteria() {
     return StatementFilterCriteria(
       searchQuery: _debouncedSearchQuery.value,
-      dateStart: null, // Já aplicado server-side
-      dateEnd: null, // Já aplicado server-side
-      tipoFiltro: serverCriteria.tipoFiltro != 'todas' ? 'todas' : _tipoFiltro,
-      statusFiltro: serverCriteria.statusFiltro != 'todas'
-          ? 'todas'
-          : _statusFiltro,
-      categoriaFiltro: serverCriteria.categoriaFiltro != 'todas'
-          ? 'todas'
-          : _categoriaFiltro,
-      minCents: parseBRLMaskToCents(_minValueController.text),
-      maxCents: parseBRLMaskToCents(_maxValueController.text),
+      dateStart: null,
+      dateEnd: null,
+      tipoFiltro: 'todas',
+      statusFiltro: 'todas',
+      categoriaFiltro: 'todas',
+      minCents: 0,
+      maxCents: 0,
     );
   }
 
@@ -438,10 +430,10 @@ class _ExtratoPageState extends State<ExtratoPage> {
               return ValueListenableBuilder<String>(
                 valueListenable: _debouncedSearchQuery,
                 builder: (context, _, _) {
-                  // Aplicar filtros client-side (search debounced + filtros não suportados server-side)
+                  // Busca local sobre o conjunto já filtrado no Firestore (datasource).
                   final filtered = applyStatementFilter(
                     tx.transactions,
-                    _additionalClientSideCriteria(),
+                    _uiSearchOnlyCriteria(),
                   );
                   _scheduleCheckLoadMore();
                   return NotificationListener<ScrollNotification>(
