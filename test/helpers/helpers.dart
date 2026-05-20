@@ -9,6 +9,7 @@ library;
 export 'factories/factories.dart';
 export 'fakes/fakes.dart';
 export 'golden_harness.dart';
+export 'tolerance_golden_comparator.dart';
 export 'golden_timing.dart';
 export 'matchers/result_matchers.dart';
 export 'mocks/mocks.dart';
