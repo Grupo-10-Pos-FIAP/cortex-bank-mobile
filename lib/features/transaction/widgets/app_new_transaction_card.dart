@@ -309,24 +309,27 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
 
   Widget _buildTitularidadeTile({required String title, required int index}) {
     final isSelected = selectedTitularidade == index;
-    return ListTile(
-      key: ValueKey<String>('transaction.form.titularidade.$index'),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      tileColor: isSelected
-          ? AppDesignTokens.colorPrimary.withValues(alpha: 0.1)
-          : null,
-      selected: isSelected,
-      selectedTileColor: AppDesignTokens.colorPrimary.withValues(alpha: 0.15),
-      onTap: () {
-        context.read<ContactsProvider>().setSelectedContactId(null);
-        setState(() {
-          selectedTitularidade = index;
-          if (index != 1) {
-            _clearOtherTitularidadeFields();
-          }
-        });
-      },
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        key: ValueKey<String>('transaction.form.titularidade.$index'),
+        title: Text(title),
+        trailing: const Icon(Icons.chevron_right),
+        tileColor: isSelected
+            ? AppDesignTokens.colorPrimary.withValues(alpha: 0.1)
+            : null,
+        selected: isSelected,
+        selectedTileColor: AppDesignTokens.colorPrimary.withValues(alpha: 0.15),
+        onTap: () {
+          context.read<ContactsProvider>().setSelectedContactId(null);
+          setState(() {
+            selectedTitularidade = index;
+            if (index != 1) {
+              _clearOtherTitularidadeFields();
+            }
+          });
+        },
+      ),
     );
   }
 

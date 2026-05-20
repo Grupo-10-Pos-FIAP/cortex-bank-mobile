@@ -7,7 +7,6 @@ import 'package:cortex_bank_mobile/features/transaction/domain/entities/transact
     as model;
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -167,9 +166,13 @@ class _TransactionDetailModalState extends State<TransactionDetailModal> {
               value: _transaction.to ?? '—',
             ),
             const Divider(height: 1, color: Color(0xFFD9D9E0)),
-            _DetailRow(icon: MdiIcons.bank, label: 'Banco', value: _bankName),
             _DetailRow(
-              icon: MdiIcons.fileDocumentOutline,
+              icon: Icons.account_balance_outlined,
+              label: 'Banco',
+              value: _bankName,
+            ),
+            _DetailRow(
+              icon: Icons.description_outlined,
               label: 'Tipo',
               value: _tipoLabel(_transaction),
             ),

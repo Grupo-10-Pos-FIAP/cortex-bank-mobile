@@ -4,7 +4,6 @@ import 'package:cortex_bank_mobile/features/transaction/domain/entities/transact
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class ExtratoStatementFiltersPanel extends StatelessWidget {
   const ExtratoStatementFiltersPanel({
@@ -187,7 +186,7 @@ class ExtratoStatementFiltersPanel extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: onClearFilters,
-              icon: Icon(MdiIcons.eraser, size: 20),
+              icon: const Icon(Icons.filter_alt_off, size: 20),
               label: const Text('Limpar Filtros'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppDesignTokens.colorPrimary,
