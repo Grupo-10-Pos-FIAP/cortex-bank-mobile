@@ -52,18 +52,26 @@ void main() {
   group('firestoreDateEndForStatementQuery', () {
     test('deve estender até maxSelectableDate quando fim da UI é hoje', () {
       final today = TransactionDatePolicy.today;
-      final uiEnd = DateTime(today.year, today.month, today.day, 23, 59, 59, 999);
+      final uiEnd = DateTime(
+        today.year,
+        today.month,
+        today.day,
+        23,
+        59,
+        59,
+        999,
+      );
       final queryEnd = firestoreDateEndForStatementQuery(uiEnd);
       expect(
         TransactionDatePolicy.dateOnly(queryEnd),
-        TransactionDatePolicy.dateOnly(
-          TransactionDatePolicy.maxSelectableDate,
-        ),
+        TransactionDatePolicy.dateOnly(TransactionDatePolicy.maxSelectableDate),
       );
     });
 
     test('não deve estender quando fim da UI é só no passado', () {
-      final past = TransactionDatePolicy.today.subtract(const Duration(days: 5));
+      final past = TransactionDatePolicy.today.subtract(
+        const Duration(days: 5),
+      );
       final uiEnd = DateTime(past.year, past.month, past.day, 23, 59, 59, 999);
       expect(firestoreDateEndForStatementQuery(uiEnd), uiEnd);
     });

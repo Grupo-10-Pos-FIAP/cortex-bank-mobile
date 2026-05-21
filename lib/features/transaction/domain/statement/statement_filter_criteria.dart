@@ -159,18 +159,16 @@ List<Transaction> applyStatementFilter(
     final uiEndDay = TransactionDatePolicy.dateOnly(c.dateEnd!);
     final today = TransactionDatePolicy.today;
     final includeFutureScheduled = !uiEndDay.isBefore(today);
-    result = result
-        .where((t) {
-          if (includeFutureScheduled) {
-            final txDay = TransactionDatePolicy.dateOnly(t.date);
-            if (transactionDisplayStatus(t) == TransactionStatus.scheduled &&
-                txDay.isAfter(today)) {
-              return true;
-            }
-          }
-          return t.date.isBefore(end) || t.date.isAtSameMomentAs(end);
-        })
-        .toList();
+    result = result.where((t) {
+      if (includeFutureScheduled) {
+        final txDay = TransactionDatePolicy.dateOnly(t.date);
+        if (transactionDisplayStatus(t) == TransactionStatus.scheduled &&
+            txDay.isAfter(today)) {
+          return true;
+        }
+      }
+      return t.date.isBefore(end) || t.date.isAtSameMomentAs(end);
+    }).toList();
   }
   if (c.tipoFiltro == 'credito') {
     result = result.where((t) => t.type == TransactionType.credit).toList();

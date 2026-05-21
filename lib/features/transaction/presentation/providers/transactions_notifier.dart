@@ -224,11 +224,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
         .where((t) => !prefixIds.contains(t.id))
         .where((t) => !tail.any((x) => x.id == t.id))
         .toList();
-    final merged = [
-      ...streamPage.items,
-      ...localOnly,
-      ...tail,
-    ];
+    final merged = [...streamPage.items, ...localOnly, ...tail];
     _sortTransactionsNewestFirst(merged);
 
     SensitiveCacheManager.setJson(

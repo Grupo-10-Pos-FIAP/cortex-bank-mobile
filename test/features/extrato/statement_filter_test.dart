@@ -121,7 +121,15 @@ void main() {
         final c = StatementFilterCriteria(
           searchQuery: '',
           dateStart: dayBefore,
-          dateEnd: DateTime(today.year, today.month, today.day, 23, 59, 59, 999),
+          dateEnd: DateTime(
+            today.year,
+            today.month,
+            today.day,
+            23,
+            59,
+            59,
+            999,
+          ),
           tipoFiltro: 'todas',
           statusFiltro: 'todas',
           minCents: 0,
@@ -139,7 +147,15 @@ void main() {
         final c = StatementFilterCriteria(
           searchQuery: '',
           dateStart: pastEnd.subtract(const Duration(days: 1)),
-          dateEnd: DateTime(pastEnd.year, pastEnd.month, pastEnd.day, 23, 59, 59, 999),
+          dateEnd: DateTime(
+            pastEnd.year,
+            pastEnd.month,
+            pastEnd.day,
+            23,
+            59,
+            59,
+            999,
+          ),
           tipoFiltro: 'todas',
           statusFiltro: 'todas',
           minCents: 0,
