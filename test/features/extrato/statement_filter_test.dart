@@ -212,9 +212,10 @@ void main() {
           maxCents: 0,
         );
         expect(
-          applyStatementFilter([staleScheduled, ...list], c)
-              .map((e) => e.id)
-              .toList(),
+          applyStatementFilter([
+            staleScheduled,
+            ...list,
+          ], c).map((e) => e.id).toList(),
           ['c'],
         );
       },

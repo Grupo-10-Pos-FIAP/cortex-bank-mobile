@@ -24,18 +24,12 @@ class BalanceSummary {
       final cents = (t.value.abs() * 100).round();
 
       if (t.type == TransactionType.credit) {
-        if (TransactionDatePolicy.transactionAffectsBalanceNow(
-          t,
-          asOf: asOf,
-        )) {
+        if (TransactionDatePolicy.transactionAffectsBalanceNow(t, asOf: asOf)) {
           incomeCents += cents;
         }
       } else if (t.type == TransactionType.debit ||
           t.type == TransactionType.ted) {
-        if (TransactionDatePolicy.transactionAffectsBalanceNow(
-          t,
-          asOf: asOf,
-        )) {
+        if (TransactionDatePolicy.transactionAffectsBalanceNow(t, asOf: asOf)) {
           expenseCents += cents;
         }
       }

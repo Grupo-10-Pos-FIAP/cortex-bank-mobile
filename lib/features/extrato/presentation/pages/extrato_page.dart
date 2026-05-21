@@ -240,7 +240,9 @@ class _ExtratoPageState extends State<ExtratoPage> {
     final endInitialDay = StatementPeriodPolicy.dateOnly(endInitial);
     if (endInitialDay.isBefore(StatementPeriodPolicy.dateOnly(startDay))) {
       endInitial = startDay;
-    } else if (endInitialDay.isAfter(StatementPeriodPolicy.dateOnly(maxEndDateOnly))) {
+    } else if (endInitialDay.isAfter(
+      StatementPeriodPolicy.dateOnly(maxEndDateOnly),
+    )) {
       endInitial = maxEndDateOnly;
     }
 

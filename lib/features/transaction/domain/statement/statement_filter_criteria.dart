@@ -154,8 +154,7 @@ List<Transaction> applyStatementFilter(
   if (c.statusFiltro == 'completa') {
     result = result
         .where(
-          (t) =>
-              transactionDisplayStatus(t) == TransactionStatus.completed,
+          (t) => transactionDisplayStatus(t) == TransactionStatus.completed,
         )
         .toList();
   } else if (c.statusFiltro == 'agendada') {
@@ -166,9 +165,7 @@ List<Transaction> applyStatementFilter(
         .toList();
   } else if (c.statusFiltro == 'pendente') {
     result = result
-        .where(
-          (t) => transactionDisplayStatus(t) == TransactionStatus.pending,
-        )
+        .where((t) => transactionDisplayStatus(t) == TransactionStatus.pending)
         .toList();
   }
   if (c.categoriaFiltro != 'todas') {

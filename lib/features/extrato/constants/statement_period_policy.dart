@@ -22,15 +22,7 @@ abstract class StatementPeriodPolicy {
 
   /// Último instante do dia de hoje (fim do período).
   static DateTime get lastSelectableEnd {
-    return DateTime(
-      today.year,
-      today.month,
-      today.day,
-      23,
-      59,
-      59,
-      999,
-    );
+    return DateTime(today.year, today.month, today.day, 23, 59, 59, 999);
   }
 
   static DateTime clampStartDay(DateTime date) {
@@ -74,15 +66,8 @@ abstract class StatementPeriodPolicy {
     return inclusiveDayCount(s, e) <= maxInclusiveDays;
   }
 
-  static DateTime endOfDay(DateTime day) => DateTime(
-        day.year,
-        day.month,
-        day.day,
-        23,
-        59,
-        59,
-        999,
-      );
+  static DateTime endOfDay(DateTime day) =>
+      DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
 
   static String get rangeValidationMessage =>
       'O período deve ter entre ${_formatDay(earliestSelectableStart)} e hoje, '
