@@ -1,3 +1,5 @@
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_status_normalization.dart';
+
 import '../entities/transaction.dart';
 
 /// Critérios do extrato (sem [TextEditingController]); imutável.
@@ -84,12 +86,17 @@ int countActiveSecondaryFilters(StatementFilterCriteria criteria) {
   return count;
 }
 
+/// Status efetivo na UI (após [normalizeTransactionStatusForRead] no mapper).
+String transactionDisplayStatus(Transaction t) =>
+    normalizeTransactionStatusForRead(t.status, t.date);
+
 /// Usa leitura por data + [applyStatementFilter] no datasource (combinações / valor).
 bool needsDatasourcePostFilter(StatementFilterCriteria? criteria) {
   if (criteria == null) return false;
+  // Status no Firestore ≠ status exibido (ex.: Scheduled + data hoje → Completa).
+  if (criteria.statusFiltro != 'todas') return true;
   var equalityCount = 0;
   if (criteria.tipoFiltro != 'todas') equalityCount++;
-  if (criteria.statusFiltro != 'todas') equalityCount++;
   if (criteria.categoriaFiltro != 'todas') equalityCount++;
   if (equalityCount > 1) return true;
   if (criteria.minCents > 0 || criteria.maxCents > 0) return true;
@@ -146,15 +153,22 @@ List<Transaction> applyStatementFilter(
   }
   if (c.statusFiltro == 'completa') {
     result = result
-        .where((t) => t.status == TransactionStatus.completed)
+        .where(
+          (t) =>
+              transactionDisplayStatus(t) == TransactionStatus.completed,
+        )
         .toList();
   } else if (c.statusFiltro == 'agendada') {
     result = result
-        .where((t) => t.status == TransactionStatus.scheduled)
+        .where(
+          (t) => transactionDisplayStatus(t) == TransactionStatus.scheduled,
+        )
         .toList();
   } else if (c.statusFiltro == 'pendente') {
     result = result
-        .where((t) => t.status == TransactionStatus.pending)
+        .where(
+          (t) => transactionDisplayStatus(t) == TransactionStatus.pending,
+        )
         .toList();
   }
   if (c.categoriaFiltro != 'todas') {

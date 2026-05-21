@@ -86,5 +86,52 @@ void main() {
       expect(find.textContaining('R\$ 0,00'), findsNothing);
       expect(find.textContaining('Falha ao obter saldo'), findsOneWidget);
     });
+
+    testWidgets('exibe indicador ao atualizar saldo já carregado', (
+      tester,
+    ) async {
+      final repo = FakeTransactionsRepository()
+        ..getBalanceSummaryResult = Success(
+          buildBalanceSummary(balanceCents: 5000),
+        );
+      final provider = TransactionsNotifier(repo);
+      await provider.loadBalanceSummary(forceRefresh: true);
+
+      final completer = Completer<Result<BalanceSummary>>();
+      repo.getBalanceSummaryCompleter = completer;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body:
+                StateNotifierProvider<
+                  TransactionsNotifier,
+                  TransactionsState
+                >.value(
+                  value: provider,
+                  child: const AppBalanceCard(mostrarSaldoInicial: true),
+                ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('R\$ 50,00'), findsOneWidget);
+
+      final refreshFuture = provider.loadBalanceSummary(forceRefresh: true);
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('R\$ 50,00'), findsOneWidget);
+
+      completer.complete(Success(buildBalanceSummary(balanceCents: 6000)));
+      await refreshFuture;
+      await pumpUntil(
+        tester,
+        () => find.text('R\$ 60,00').evaluate().isNotEmpty,
+      );
+
+      expect(find.text('R\$ 60,00'), findsOneWidget);
+    });
   });
 }

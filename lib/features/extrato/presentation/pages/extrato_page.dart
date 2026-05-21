@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:cortex_bank_mobile/core/utils/currency_formatter.dart'
     show parseBRLMaskToCents;
+import 'package:cortex_bank_mobile/core/widgets/app_snackbar.dart';
+import 'package:cortex_bank_mobile/features/extrato/constants/statement_period_policy.dart';
 import 'package:cortex_bank_mobile/features/extrato/extrato_pagination.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/extrato_statement_filters_panel.dart';
 import 'package:cortex_bank_mobile/features/extrato/presentation/widgets/transaction_card.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
-import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/providers/transactions_notifier.dart';
 import 'package:cortex_bank_mobile/features/transaction/presentation/state/transactions_state.dart';
 import 'package:cortex_bank_mobile/shared/theme/app_design_tokens.dart';
@@ -161,43 +162,28 @@ class _ExtratoPageState extends State<ExtratoPage> {
   }
 
   void _applyPreset(String preset) {
-    final now = DateTime.now();
-    // Inclui o fim da janela de agendamento (hoje+N dias), senão transações
-    // futuras somem do extrato por causa do filtro de data.
-    final maxDay = TransactionDatePolicy.maxSelectableDate;
-    final end = DateTime(
-      maxDay.year,
-      maxDay.month,
-      maxDay.day,
-      23,
-      59,
-      59,
-      999,
-    );
+    final end = StatementPeriodPolicy.lastSelectableEnd;
     DateTime start;
     switch (preset) {
       case 'last7':
-        start = now.subtract(const Duration(days: 6));
-        start = DateTime(start.year, start.month, start.day);
+        start = StatementPeriodPolicy.today.subtract(const Duration(days: 6));
         break;
       case 'last15':
-        start = now.subtract(const Duration(days: 14));
-        start = DateTime(start.year, start.month, start.day);
+        start = StatementPeriodPolicy.today.subtract(const Duration(days: 14));
         break;
       case 'last30':
-        start = now.subtract(const Duration(days: 29));
-        start = DateTime(start.year, start.month, start.day);
+        start = StatementPeriodPolicy.today.subtract(const Duration(days: 29));
         break;
       case 'last90':
-        start = now.subtract(const Duration(days: 89));
-        start = DateTime(start.year, start.month, start.day);
+        start = StatementPeriodPolicy.earliestSelectableStart;
         break;
       default:
         return;
     }
+    start = StatementPeriodPolicy.clampStartDay(start);
     setState(() {
       _periodoPreset = preset;
-      _dateStart = start;
+      _dateStart = DateTime(start.year, start.month, start.day);
       _dateEnd = end;
     });
     _scheduleLoadWithServerSideFilters();
@@ -229,28 +215,64 @@ class _ExtratoPageState extends State<ExtratoPage> {
   }
 
   Future<void> _pickDateRangeCalendar() async {
-    final lastSelectable = TransactionDatePolicy.maxSelectableDate;
-    final start = await showDatePicker(
+    final earliest = StatementPeriodPolicy.earliestSelectableStart;
+    final today = StatementPeriodPolicy.today;
+
+    final startPicked = await showDatePicker(
       context: context,
-      initialDate: _dateStart ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: lastSelectable,
+      initialDate: today,
+      firstDate: earliest,
+      lastDate: today,
+      helpText:
+          'Data inicial (máx. ${StatementPeriodPolicy.maxInclusiveDays} dias até hoje)',
     );
-    if (start == null || !mounted) return;
-    final end = await showDatePicker(
-      context: context,
-      initialDate: _dateEnd ?? start,
-      firstDate: start,
-      lastDate: lastSelectable,
+    if (startPicked == null || !mounted) return;
+
+    final startDay = StatementPeriodPolicy.clampStartDay(startPicked);
+    final maxEndDay = StatementPeriodPolicy.maxEndDayForStart(startDay);
+    final maxEndDateOnly = DateTime(
+      maxEndDay.year,
+      maxEndDay.month,
+      maxEndDay.day,
     );
-    if (end != null && mounted) {
-      setState(() {
-        _periodoPreset = 'custom';
-        _dateStart = DateTime(start.year, start.month, start.day);
-        _dateEnd = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
-      });
-      _loadWithServerSideFilters();
+
+    var endInitial = StatementPeriodPolicy.clampEndDay(today);
+    final endInitialDay = StatementPeriodPolicy.dateOnly(endInitial);
+    if (endInitialDay.isBefore(StatementPeriodPolicy.dateOnly(startDay))) {
+      endInitial = startDay;
+    } else if (endInitialDay.isAfter(StatementPeriodPolicy.dateOnly(maxEndDateOnly))) {
+      endInitial = maxEndDateOnly;
     }
+
+    final endPicked = await showDatePicker(
+      context: context,
+      initialDate: endInitial,
+      firstDate: startDay,
+      lastDate: maxEndDateOnly,
+      helpText:
+          'Data final (entre início e hoje, máx. ${StatementPeriodPolicy.maxInclusiveDays} dias)',
+    );
+    if (endPicked == null || !mounted) return;
+
+    final rangeStart = DateTime(startDay.year, startDay.month, startDay.day);
+    final endDay = StatementPeriodPolicy.clampEndDay(endPicked);
+    final rangeEnd = StatementPeriodPolicy.endOfDay(endDay);
+
+    if (!StatementPeriodPolicy.isValidRange(rangeStart, rangeEnd)) {
+      AppSnackBar.error(
+        context,
+        StatementPeriodPolicy.rangeValidationMessage,
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
+    setState(() {
+      _periodoPreset = 'custom';
+      _dateStart = rangeStart;
+      _dateEnd = rangeEnd;
+    });
+    _loadWithServerSideFilters();
   }
 
   void _showPeriodoOptions() {

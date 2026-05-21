@@ -81,5 +81,16 @@ void main() {
       );
       expect(needsDatasourcePostFilter(c), isFalse);
     });
+
+    test('deve ser true com apenas filtro de status agendada', () {
+      const c = StatementFilterCriteria(
+        searchQuery: '',
+        tipoFiltro: 'todas',
+        statusFiltro: 'agendada',
+        minCents: 0,
+        maxCents: 0,
+      );
+      expect(needsDatasourcePostFilter(c), isTrue);
+    });
   });
 }

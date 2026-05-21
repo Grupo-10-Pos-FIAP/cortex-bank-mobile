@@ -117,7 +117,7 @@ class AppDropdownField<T> extends StatelessWidget {
         ],
         const SizedBox(height: AppDesignTokens.spacingSm),
         DropdownButtonFormField<T>(
-          key: formFieldKey,
+          key: formFieldKey ?? (value != null ? ObjectKey(value) : null),
           initialValue: value,
           items: items,
           onChanged: enabled ? onChanged : null,

@@ -29,6 +29,7 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   Completer<Result<TransactionPage>>? getPageCompleter;
   Completer<Result<List<Transaction>>>? getAllCompleter;
   Completer<Result<BalanceSummary>>? getBalanceSummaryCompleter;
+  Completer<Result<String>>? addCompleter;
 
   int getAllCalls = 0;
   int getPageCalls = 0;
@@ -52,6 +53,7 @@ class FakeTransactionsRepository implements ITransactionsRepository {
   Future<Result<String>> add(Transaction transaction) async {
     addCalls += 1;
     lastAdded = transaction;
+    if (addCompleter != null) return addCompleter!.future;
     final configured = addResult ?? const Success('id-1');
     return configured.fold((id) async {
       if (mirrorTimelineInMemory) {

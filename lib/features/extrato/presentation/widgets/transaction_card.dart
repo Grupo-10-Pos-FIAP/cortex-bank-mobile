@@ -176,10 +176,14 @@ class TransactionCard extends StatelessWidget {
                               final contacts = context.read<ContactsProvider>();
                               final transactions = context
                                   .read<TransactionsNotifier>();
+                              final auth = context.read<AuthProvider>();
                               showDialog<void>(
                                 context: context,
                                 builder: (_) => MultiProvider(
                                   providers: [
+                                    ChangeNotifierProvider<AuthProvider>.value(
+                                      value: auth,
+                                    ),
                                     ChangeNotifierProvider<
                                       ContactsProvider
                                     >.value(value: contacts),

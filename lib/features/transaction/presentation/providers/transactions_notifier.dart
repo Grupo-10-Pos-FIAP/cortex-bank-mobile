@@ -67,6 +67,22 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     });
   }
 
+  /// Atualiza [balanceSummary] a partir da lista em memória (feedback imediato).
+  void _syncBalanceSummaryFromTransactions() {
+    if (!mounted) return;
+    final summary = BalanceSummary.fromTransactions(state.transactions);
+    SensitiveCacheManager.setJson(
+      _balanceSummaryCacheKey,
+      CacheSerializers.balanceSummaryToJson(summary),
+      ttl: _balanceSummaryCacheTtl,
+    );
+    state = state.copyWith(
+      balanceSummary: summary,
+      balancePhase: BalanceSummaryPhase.ready,
+      clearBalanceSummaryError: true,
+    );
+  }
+
   Future<void> loadTransactions({bool forceRefresh = false}) async {
     if (state.listPhase == TransactionsListPhase.loading) return;
     if (!forceRefresh) {
@@ -384,8 +400,11 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
       },
     );
 
-    if (added && !skipBalanceRefresh) {
-      await loadBalanceSummary(forceRefresh: true);
+    if (added) {
+      _syncBalanceSummaryFromTransactions();
+      if (!skipBalanceRefresh) {
+        await loadBalanceSummary(forceRefresh: true);
+      }
     }
 
     return created;
@@ -436,6 +455,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     );
 
     if (isSuccess) {
+      _syncBalanceSummaryFromTransactions();
       await loadBalanceSummary(forceRefresh: true);
     }
 
@@ -538,6 +558,7 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     );
 
     if (removed) {
+      _syncBalanceSummaryFromTransactions();
       await loadBalanceSummary(forceRefresh: true);
     }
   }

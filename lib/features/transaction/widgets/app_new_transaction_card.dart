@@ -243,7 +243,7 @@ class _AppNewTransactionCardState extends State<AppNewTransactionCard> {
           if (updated == null) {
             failedReceiptNames.addAll(_attachments.map((a) => a.name));
           }
-          await txProvider.loadBalanceSummary();
+          await txProvider.loadBalanceSummary(forceRefresh: true);
         }
 
         if (!mounted) return;

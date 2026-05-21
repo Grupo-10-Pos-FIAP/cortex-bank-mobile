@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,9 +34,10 @@ Transaction _tx({
 }
 
 void main() {
-  final baseDate = DateTime(2025, 1, 15, 12, 0);
-  final dayBefore = DateTime(2025, 1, 14);
-  final dayAfter = DateTime(2025, 1, 16, 23, 59, 59, 999);
+  final today = TransactionDatePolicy.today;
+  final baseDate = DateTime(today.year, today.month, today.day, 12);
+  final dayBefore = today.subtract(const Duration(days: 1));
+  final dayAfter = TransactionDatePolicy.maxSelectableDate;
 
   final list = [
     _tx(
@@ -189,6 +191,34 @@ void main() {
       );
       expect(applyStatementFilter(list, c).map((e) => e.id).toList(), ['c']);
     });
+
+    test(
+      'agendada não inclui Scheduled persistido com data hoje (exibe Completa)',
+      () {
+        final today = TransactionDatePolicy.today;
+        final staleScheduled = _tx(
+          id: 'stale',
+          type: TransactionType.debit,
+          status: TransactionStatus.scheduled,
+          date: DateTime(today.year, today.month, today.day, 14, 30),
+        );
+        const c = StatementFilterCriteria(
+          searchQuery: '',
+          dateStart: null,
+          dateEnd: null,
+          tipoFiltro: 'todas',
+          statusFiltro: 'agendada',
+          minCents: 0,
+          maxCents: 0,
+        );
+        expect(
+          applyStatementFilter([staleScheduled, ...list], c)
+              .map((e) => e.id)
+              .toList(),
+          ['c'],
+        );
+      },
+    );
 
     test('deve ignorar filtro de valor quando min e max forem zero', () {
       const c = StatementFilterCriteria(

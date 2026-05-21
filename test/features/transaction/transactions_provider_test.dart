@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cortex_bank_mobile/core/errors/failure.dart';
 import 'package:cortex_bank_mobile/core/utils/result.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/entities/balance_summary.dart';
+import 'package:cortex_bank_mobile/features/transaction/domain/entities/transaction.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/pagination/transaction_page_cursor.dart';
 import 'package:cortex_bank_mobile/features/transaction/domain/statement/statement_filter_criteria.dart';
@@ -462,6 +463,93 @@ void main() {
 
         expect(result, isNull);
         expect(provider.transactionsError, 'Falha upload em lote');
+      },
+    );
+
+    test(
+      'deve atualizar saldo otimista ao addTransaction antes do refresh remoto',
+      () async {
+        final now = DateTime.now();
+        final existing = buildTransaction(
+          id: 't1',
+          type: TransactionType.credit,
+          value: 100,
+          date: now,
+          status: TransactionStatus.completed,
+        );
+        final newTx = buildTransaction(
+          id: '',
+          type: TransactionType.debit,
+          value: 50,
+          date: now,
+          status: TransactionStatus.completed,
+        );
+        final addCompleter = Completer<Result<String>>();
+        final balanceCompleter = Completer<Result<BalanceSummary>>();
+        final repo = FakeTransactionsRepository()
+          ..getAllResult = Success([existing])
+          ..addCompleter = addCompleter
+          ..getBalanceSummaryCompleter = balanceCompleter;
+        final provider = TransactionsNotifier(repo);
+        await provider.loadTransactions(forceRefresh: true);
+
+        final pending = provider.addTransaction(newTx);
+        addCompleter.complete(const Success('new-id'));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(provider.balanceSummary?.balanceCents, 5000);
+        expect(provider.isBalanceSummaryLoading, true);
+
+        balanceCompleter.complete(
+          Success(buildBalanceSummary(balanceCents: 9999)),
+        );
+        await pending;
+
+        expect(repo.getBalanceSummaryCalls, greaterThanOrEqualTo(1));
+        expect(provider.balanceSummary?.balanceCents, 9999);
+        expect(provider.isBalanceSummaryLoading, false);
+      },
+    );
+
+    test(
+      'deve atualizar saldo otimista com skipBalanceRefresh sem chamar remoto',
+      () async {
+        final repo = FakeTransactionsRepository()
+          ..getAllResult = Success(<Transaction>[])
+          ..addResult = const Success('new-id');
+        final provider = TransactionsNotifier(repo);
+        final tx = buildTransaction(
+          id: '',
+          type: TransactionType.credit,
+          value: 25,
+          date: DateTime.now(),
+          status: TransactionStatus.completed,
+        );
+
+        await provider.addTransaction(tx, skipBalanceRefresh: true);
+
+        expect(provider.balanceSummary?.balanceCents, 2500);
+        expect(repo.getBalanceSummaryCalls, 0);
+      },
+    );
+
+    test(
+      'loadBalanceSummary sem forceRefresh não refaz fetch quando já há resumo',
+      () async {
+        final repo = FakeTransactionsRepository()
+          ..getBalanceSummaryResult = Success(
+            buildBalanceSummary(balanceCents: 100),
+          );
+        final provider = TransactionsNotifier(repo);
+
+        await provider.loadBalanceSummary(forceRefresh: true);
+        expect(repo.getBalanceSummaryCalls, 1);
+
+        repo.getBalanceSummaryCalls = 0;
+        await provider.loadBalanceSummary();
+
+        expect(repo.getBalanceSummaryCalls, 0);
+        expect(provider.balanceSummary?.balanceCents, 100);
       },
     );
 

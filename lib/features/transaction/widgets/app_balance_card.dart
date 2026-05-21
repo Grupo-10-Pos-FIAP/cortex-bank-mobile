@@ -83,31 +83,47 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
             ),
           );
         } else {
+          final refreshing = loading && balanceCents != null;
           body = Row(
             children: [
-              Text(
-                _exibir
-                    ? formatCentsToBRLWithThousands(balanceCents)
-                    : '••••••',
-                style: GoogleFonts.roboto(
-                  fontSize: AppDesignTokens.fontSizeH1,
-                  fontWeight: AppDesignTokens.fontWeightSemibold,
-                  color: !_exibir
-                      ? AppDesignTokens.colorContentDefault
-                      : (saldoReal < 0
+              Opacity(
+                opacity: refreshing ? 0.55 : 1,
+                child: Row(
+                  children: [
+                    Text(
+                      _exibir
+                          ? formatCentsToBRLWithThousands(balanceCents)
+                          : '••••••',
+                      style: GoogleFonts.roboto(
+                        fontSize: AppDesignTokens.fontSizeH1,
+                        fontWeight: AppDesignTokens.fontWeightSemibold,
+                        color: !_exibir
+                            ? AppDesignTokens.colorContentDefault
+                            : (saldoReal < 0
+                                  ? AppDesignTokens.colorFeedbackAlert
+                                  : AppDesignTokens.colorContentDefault),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (_exibir)
+                      Icon(
+                        Icons.north_east,
+                        size: 20,
+                        color: saldoReal < 0
                             ? AppDesignTokens.colorFeedbackAlert
-                            : AppDesignTokens.colorContentDefault),
+                            : AppDesignTokens.colorContentDefault,
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              if (_exibir)
-                Icon(
-                  Icons.north_east,
-                  size: 20,
-                  color: saldoReal < 0
-                      ? AppDesignTokens.colorFeedbackAlert
-                      : AppDesignTokens.colorContentDefault,
+              if (refreshing) ...[
+                const SizedBox(width: 12),
+                const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+              ],
             ],
           );
         }

@@ -71,7 +71,41 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
   late String _selectedTo;
   late model.TransactionCategory _selectedCategory;
   late DateTime _selectedDate;
+  List<String> _contactNames = [];
   bool _isLoading = false;
+
+  /// Opções únicas do dropdown Destino; garante que [_selectedTo] esteja na lista.
+  List<String> _destinoDropdownOptions() {
+    const fixed = ['Mesma Titularidade', 'Outra Titularidade'];
+    final seen = <String>{};
+    final out = <String>[];
+
+    void add(String label) {
+      final t = label.trim();
+      if (t.isEmpty || !seen.add(t)) return;
+      out.add(t);
+    }
+
+    for (final s in fixed) {
+      add(s);
+    }
+    for (final name in _contactNames) {
+      add(name);
+    }
+
+    final rawTo = widget.data.to?.trim();
+    if (rawTo != null && rawTo.isNotEmpty) {
+      add(
+        TransactionEditModal.dropdownLabelForStoredTo(rawTo, _contactNames),
+      );
+      if (!seen.contains(rawTo)) {
+        add(rawTo);
+      }
+    }
+
+    add(_selectedTo);
+    return out;
+  }
 
   @override
   void initState() {
@@ -105,9 +139,15 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
       text: parsedOutra?.account ?? '',
     );
     _selectedCategory = widget.data.category;
-    _selectedDate = TransactionDatePolicy.clampToAllowedRangePreservingTime(
-      widget.data.date,
-    );
+    // Pendente/agendada: preserva a data salva (evita “completar” ao salvar sem o usuário mudar a data).
+    if (widget.data.status == model.TransactionStatus.pending ||
+        widget.data.status == model.TransactionStatus.scheduled) {
+      _selectedDate = widget.data.date;
+    } else {
+      _selectedDate = TransactionDatePolicy.clampToAllowedRangePreservingTime(
+        widget.data.date,
+      );
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<ContactsProvider>().loadContacts();
@@ -118,6 +158,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
           .map((c) => c.name)
           .toList();
       setState(() {
+        _contactNames = names;
         _selectedTo = TransactionEditModal.dropdownLabelForStoredTo(
           widget.data.to,
           names,
@@ -265,28 +306,12 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ContactsProvider, String>(
-      selector: (_, p) => TransactionEditModal.contactsListSignature(p),
-      builder: (context, _, _) {
-        final fetchedContacts = context.read<ContactsProvider>().contacts;
+    final allToOptions = _destinoDropdownOptions();
+    final destinoValue = allToOptions.contains(_selectedTo)
+        ? _selectedTo
+        : allToOptions.first;
 
-        final contactNames = fetchedContacts.map((c) => c.name).toList();
-
-        const fixedOptions = ['Mesma Titularidade', 'Outra Titularidade'];
-
-        final rawTo = widget.data.to?.trim();
-        final orphanTo =
-            rawTo != null &&
-                rawTo.isNotEmpty &&
-                !fixedOptions.contains(rawTo) &&
-                !contactNames.contains(rawTo) &&
-                !TedRecipientLine.looksLike(rawTo)
-            ? rawTo
-            : null;
-
-        final allToOptions = [...fixedOptions, ...contactNames, ?orphanTo];
-
-        return Dialog(
+    return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
@@ -389,7 +414,7 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
 
                 _buildDropdown<String>(
                   label: 'Destino (Para)',
-                  value: _selectedTo,
+                  value: destinoValue,
                   items: allToOptions.map<DropdownMenuItem<String>>((
                     String value,
                   ) {
@@ -502,8 +527,6 @@ class _TransactionEditModalState extends State<TransactionEditModal> {
             ),
           ),
         );
-      },
-    );
   }
 
   Widget _buildDropdown<T>({
