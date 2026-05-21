@@ -83,7 +83,7 @@ class _AppBalanceCardState extends State<AppBalanceCard> {
             ),
           );
         } else {
-          final refreshing = loading && balanceCents != null;
+          final refreshing = loading;
           body = Row(
             children: [
               Opacity(
