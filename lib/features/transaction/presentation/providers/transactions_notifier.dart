@@ -219,9 +219,16 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     final tail = _extraPagesHaveMore
         ? state.transactions.where((t) => !prefixIds.contains(t.id)).toList()
         : <Transaction>[];
-    final merged = tail.isEmpty
-        ? List<Transaction>.from(streamPage.items)
-        : [...streamPage.items, ...tail];
+    // Mantém itens locais (ex.: agendamento recém-criado) ainda fora do snapshot.
+    final localOnly = state.transactions
+        .where((t) => !prefixIds.contains(t.id))
+        .where((t) => !tail.any((x) => x.id == t.id))
+        .toList();
+    final merged = [
+      ...streamPage.items,
+      ...localOnly,
+      ...tail,
+    ];
     _sortTransactionsNewestFirst(merged);
 
     SensitiveCacheManager.setJson(

@@ -290,15 +290,7 @@ class TransactionsDataSourceFirestore implements TransactionsDataSource {
     }
 
     if (criteria.dateEnd != null) {
-      final end = DateTime(
-        criteria.dateEnd!.year,
-        criteria.dateEnd!.month,
-        criteria.dateEnd!.day,
-        23,
-        59,
-        59,
-        999,
-      );
+      final end = firestoreDateEndForStatementQuery(criteria.dateEnd!);
       query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(end));
     }
 

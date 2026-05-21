@@ -104,15 +104,51 @@ void main() {
       final c = StatementFilterCriteria(
         searchQuery: '',
         dateStart: dayBefore,
-        dateEnd: baseDate,
+        dateEnd: DateTime(today.year, today.month, today.day, 23, 59, 59, 999),
         tipoFiltro: 'todas',
         statusFiltro: 'todas',
         minCents: 0,
         maxCents: 0,
       );
       final out = applyStatementFilter(list, c);
-      expect(out.map((e) => e.id).toList(), ['a', 'b']);
+      // Inclui transações de hoje e agendada futura quando o fim do período é hoje.
+      expect(out.map((e) => e.id).toList(), ['a', 'b', 'c']);
     });
+
+    test(
+      'deve manter agendada futura quando período da UI termina em hoje',
+      () {
+        final c = StatementFilterCriteria(
+          searchQuery: '',
+          dateStart: dayBefore,
+          dateEnd: DateTime(today.year, today.month, today.day, 23, 59, 59, 999),
+          tipoFiltro: 'todas',
+          statusFiltro: 'todas',
+          minCents: 0,
+          maxCents: 0,
+        );
+        final out = applyStatementFilter(list, c);
+        expect(out.map((e) => e.id).toList(), contains('c'));
+      },
+    );
+
+    test(
+      'deve excluir agendada futura quando período da UI termina no passado',
+      () {
+        final pastEnd = dayBefore;
+        final c = StatementFilterCriteria(
+          searchQuery: '',
+          dateStart: pastEnd.subtract(const Duration(days: 1)),
+          dateEnd: DateTime(pastEnd.year, pastEnd.month, pastEnd.day, 23, 59, 59, 999),
+          tipoFiltro: 'todas',
+          statusFiltro: 'todas',
+          minCents: 0,
+          maxCents: 0,
+        );
+        final out = applyStatementFilter(list, c);
+        expect(out.map((e) => e.id).toList(), isNot(contains('c')));
+      },
+    );
 
     test('deve filtrar por tipo crédito', () {
       const c = StatementFilterCriteria(

@@ -1,3 +1,4 @@
+import 'package:cortex_bank_mobile/features/transaction/constants/transaction_date_policy.dart';
 import 'package:cortex_bank_mobile/features/transaction/constants/transaction_status_normalization.dart';
 
 import '../entities/transaction.dart';
@@ -60,6 +61,19 @@ String? statusFiltroToFirestoreStatus(String statusFiltro) {
   }
 }
 
+DateTime _endOfDay(DateTime day) =>
+    DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
+
+/// Estende o fim da query no Firestore para incluir agendamentos (até +30 dias)
+/// quando o período da UI termina em hoje ou depois.
+DateTime firestoreDateEndForStatementQuery(DateTime uiDateEnd) {
+  final uiDay = TransactionDatePolicy.dateOnly(uiDateEnd);
+  final today = TransactionDatePolicy.today;
+  if (uiDay.isBefore(today)) return uiDateEnd;
+  final maxEnd = _endOfDay(TransactionDatePolicy.maxSelectableDate);
+  return uiDateEnd.isAfter(maxEnd) ? uiDateEnd : maxEnd;
+}
+
 /// Critérios para filtro na camada data (sem busca textual da UI).
 StatementFilterCriteria criteriaForDatasourceFilter(
   StatementFilterCriteria criteria,
@@ -67,7 +81,9 @@ StatementFilterCriteria criteriaForDatasourceFilter(
   return StatementFilterCriteria(
     searchQuery: '',
     dateStart: criteria.dateStart,
-    dateEnd: criteria.dateEnd,
+    dateEnd: criteria.dateEnd == null
+        ? null
+        : firestoreDateEndForStatementQuery(criteria.dateEnd!),
     tipoFiltro: criteria.tipoFiltro,
     statusFiltro: criteria.statusFiltro,
     categoriaFiltro: criteria.categoriaFiltro,
@@ -140,8 +156,20 @@ List<Transaction> applyStatementFilter(
       59,
       999,
     );
+    final uiEndDay = TransactionDatePolicy.dateOnly(c.dateEnd!);
+    final today = TransactionDatePolicy.today;
+    final includeFutureScheduled = !uiEndDay.isBefore(today);
     result = result
-        .where((t) => t.date.isBefore(end) || t.date.isAtSameMomentAs(end))
+        .where((t) {
+          if (includeFutureScheduled) {
+            final txDay = TransactionDatePolicy.dateOnly(t.date);
+            if (transactionDisplayStatus(t) == TransactionStatus.scheduled &&
+                txDay.isAfter(today)) {
+              return true;
+            }
+          }
+          return t.date.isBefore(end) || t.date.isAtSameMomentAs(end);
+        })
         .toList();
   }
   if (c.tipoFiltro == 'credito') {
